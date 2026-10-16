@@ -52,29 +52,34 @@ export const WatchlistAPI = {
 
     async list() {
         const localList = Storage.get('watchlist', []);
+        const localItems = localList.map(id => Storage.get(`meta_${id}`, { id })).filter(it => it && it.id != null);
         try {
             const uid = this.getUserId();
             const res = await fetch(`${getApiBase()}/watchlist?user_id=${encodeURIComponent(uid)}`);
             if (res.ok) {
                 const data = await res.json();
                 const remoteItems = data.items || [];
-                // Return merged array of items
-                const idSet = new Set(localList);
-                remoteItems.forEach(it => { if (it.id) idSet.add(it.id); });
-                const mergedIds = Array.from(idSet);
-                Storage.set('watchlist', mergedIds);
-                return remoteItems;
+                const byId = new Map();
+                localItems.forEach(it => byId.set(String(it.id), it));
+                remoteItems.forEach(it => {
+                    if (it && it.id != null) {
+                        byId.set(String(it.id), { ...(byId.get(String(it.id)) || {}), ...it });
+                    }
+                });
+                const mergedItems = Array.from(byId.values());
+                Storage.set('watchlist', mergedItems.map(it => it.id));
+                return mergedItems;
             }
         } catch (e) {
             console.warn('[WatchlistAPI] Remote sync failed, using local:', e.message);
         }
-        return localList.map(id => Storage.get(`meta_${id}`, { id }));
+        return localItems;
     },
 
     async add(item) {
         const id = item.id;
         const localList = Storage.get('watchlist', []);
-        if (!localList.includes(id)) {
+        if (!localList.some(x => String(x) === String(id))) {
             Storage.set('watchlist', [...localList, id]);
         }
         Storage.set(`meta_${id}`, item);
@@ -120,26 +125,39 @@ export const WatchlistAPI = {
 export const HistoryAPI = {
     async list() {
         const localHist = Storage.get('history', {});
+        const localItems = Object.entries(localHist)
+            .map(([id, val]) => ({ id, ...(val || {}) }))
+            .sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
         try {
             const uid = WatchlistAPI.getUserId();
             const res = await fetch(`${getApiBase()}/history?user_id=${encodeURIComponent(uid)}`);
             if (res.ok) {
                 const data = await res.json();
                 const remoteItems = data.items || [];
-                return remoteItems;
+                if (remoteItems.length === 0) {
+                    return localItems;
+                }
+                const byId = new Map();
+                localItems.forEach(it => byId.set(String(it.id), it));
+                remoteItems.forEach(it => {
+                    if (it && it.id != null) {
+                        byId.set(String(it.id), { ...(byId.get(String(it.id)) || {}), ...it });
+                    }
+                });
+                return Array.from(byId.values()).sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
             }
         } catch (e) {
             console.warn('[HistoryAPI] Remote history sync failed:', e.message);
         }
-        return Object.entries(localHist)
-            .map(([id, val]) => ({ id, ...(val || {}) }))
-            .sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
+        return localItems;
     },
 
     async record(item, pct, currentTime = 0, duration = 0, season = null, episode = null) {
+        if (!item || item.id == null) return;
         const id = item.id;
         const entry = {
             id,
+            slug: item.slug,
             title: item.title,
             type: item.type || 'movie',
             poster: item.poster,
@@ -186,6 +204,8 @@ export const HistoryAPI = {
     },
 
     async clear() {
+        const localHist = Storage.get('history', {});
+        Object.keys(localHist).forEach(id => Storage.remove(`progress_${id}`));
         Storage.set('history', {});
         try {
             const uid = WatchlistAPI.getUserId();

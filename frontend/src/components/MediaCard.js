@@ -31,11 +31,10 @@ export default function MediaCard({ item, onPress, isLarge, showProgress, width,
     const hasDub = audioList.length > 0;
     const hasSub = subList.length > 0;
 
-    // MovieBox-style language badges. Show up to 2 audio dubs + 1 sub.
-    const topDubs   = audioList.slice(0, 2).map(l => (l.code || l.name || '').toUpperCase()).filter(Boolean);
-    const topSubs   = subList.slice(0, 1).map(l => (l.code || l.name || '').toUpperCase()).filter(Boolean);
+    // ShadowStream multi-lingual language badges. Show up to 2 audio dubs + 1 sub.
     const codeToLabel = (code) => {
-        const c = String(code || '').toLowerCase().trim();
+        const raw = typeof code === 'string' ? code : (code?.code || code?.name || '');
+        const c = String(raw || '').toLowerCase().trim();
         if (!c) return '';
         // Extract leading language code (e.g. 'fr-CA' -> 'fr', 'en-US' -> 'en')
         const iso = c.split(/[-_]/)[0].slice(0, 2);
@@ -46,8 +45,8 @@ export default function MediaCard({ item, onPress, isLarge, showProgress, width,
         };
         return map[iso] || iso.toUpperCase();
     };
-    const dubLabels = (audioList.length ? audioList : []).slice(0, 2).map(l => codeToLabel(l.code || l.name));
-    const subLabels = (subList.length ? subList : []).slice(0, 1).map(l => codeToLabel(l.code || l.name));
+    const dubLabels = Array.from(new Set((audioList.length ? audioList : []).map(l => codeToLabel(l)).filter(Boolean))).slice(0, 2);
+    const subLabels = Array.from(new Set((subList.length ? subList : []).map(l => codeToLabel(l)).filter(Boolean))).slice(0, 1);
 
     // Release status badge
     const releaseStatus = item.release_status || item.status || null;
@@ -85,9 +84,9 @@ export default function MediaCard({ item, onPress, isLarge, showProgress, width,
                     </View>
                 )}
 
-                {/* Release Status Badge - Top right */}
+                {/* Release Status Badge - Top right (offset below rating badge when both present) */}
                 {releaseStatus && (
-                    <View style={styles.releaseStatusBadge}>
+                    <View style={[styles.releaseStatusBadge, item.rating ? { top: 32 } : null]}>
                         <ReleaseStatusBadge status={releaseStatus} type={item.type} />
                     </View>
                 )}
@@ -139,8 +138,8 @@ export default function MediaCard({ item, onPress, isLarge, showProgress, width,
                         <Text style={styles.cardMetaDot}>• {item.runtime}m</Text>
                     ) : item.durationMinutes ? (
                         <Text style={styles.cardMetaDot}>• {item.durationMinutes}m</Text>
-                    ) : item.seasons ? (
-                        <Text style={styles.cardMetaDot}>• {item.seasons}S</Text>
+                    ) : (item.seasons || item.seasonCount) ? (
+                        <Text style={styles.cardMetaDot}>• {item.seasons || item.seasonCount}S</Text>
                     ) : null}
                 </View>
             </View>

@@ -34,7 +34,7 @@ export default function BlogsScreen({ navigation }) {
         title: 'Editorial Streaming Guides & Cinematic Deep Dives — ShadowStream',
         description: 'Explore expert editorial guides, 40-year cinema retrospectives, anime evolutions, Pakistani drama renaissance, and 2026 anticipated streaming previews.',
         keywords: 'streaming blogs, cinematic guides, anime history, short dramas, 2026 movies, ShadowStream editorial',
-        url: 'https://streamapp.muhd-faisal-work.workers.dev/blogs'
+        url: 'https://ssmoviestvs.site/blogs'
     });
 
     useEffect(() => {
@@ -87,7 +87,7 @@ export default function BlogsScreen({ navigation }) {
                 <View style={styles.heroBanner}>
                     <View style={styles.heroBadgeRow}>
                         <View style={styles.heroBadge}>
-                            <Text style={styles.heroBadgeText}>SULTRIX & RAULF EDITORIAL INTELLIGENCE</Text>
+                            <Text style={styles.heroBadgeText}>EDITORIAL INTELLIGENCE</Text>
                         </View>
                         <Text style={styles.heroDot}>•</Text>
                         <Text style={styles.heroSubText}>138,000+ Titles Analyzed Across 42 Nations</Text>
@@ -253,7 +253,7 @@ export default function BlogsScreen({ navigation }) {
                 <View style={styles.seoFooter}>
                     <Text style={styles.seoFooterTitle}>STREAMAPP EDITORIAL STANDARDS</Text>
                     <Text style={styles.seoFooterText}>
-                        All guides and analyses are generated in compliance with Sultrix and Raulf International SEO standards, cross-referenced with 138,000+ catalog titles, official TMDB metadata, and multi-mirror streaming verification.
+                        All guides and analyses are generated in compliance with global streaming standards, cross-referenced with 138,000+ catalog titles, official TMDB metadata, and multi-mirror streaming verification.
                     </Text>
                 </View>
             </ScrollView>

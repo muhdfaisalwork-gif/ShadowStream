@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS availability (
 );
 CREATE INDEX IF NOT EXISTS idx_avail_status ON availability(status);
 CREATE INDEX IF NOT EXISTS idx_avail_source ON availability(source_id);
+CREATE INDEX IF NOT EXISTS idx_availability_episode_id ON availability(episode_id, kind);
 
 -- Ingest audit ----------------------------------------------------
 CREATE TABLE IF NOT EXISTS ingest_log (

@@ -84,15 +84,28 @@ def export_taxonomy(conn: sqlite3.Connection, outdir: str) -> None:
         d["kind"] = d.get("type", "franchise")
         d["description"] = d.get("overview") or f"{d['name']} curated collection."
 
+        # Franchise sagas sort chronologically (with unknown years last);
+        # Studio hubs, streaming platforms, regional & thematic collections sort by popularity DESC.
+        is_chronological = d.get("type") == "franchise" and d["slug"] not in (
+            "pixar", "disney", "disney-classics", "marvel-universe", "dc-universe"
+        )
+        order_clause = (
+            "CASE WHEN t.year IS NULL THEN 1 ELSE 0 END, t.year ASC, t.popularity DESC"
+            if is_chronological
+            else "t.popularity DESC, t.rating DESC"
+        )
+
         # Fetch titles for this collection
-        col_titles = [
-            dict(tr) for tr in conn.execute(
-                "SELECT t.id, t.slug, t.title, t.year, t.type, t.rating, t.popularity, t.poster, t.backdrop "
-                "FROM titles t JOIN title_collections tc ON tc.title_id=t.id "
-                "WHERE tc.collection_id=? ORDER BY t.year ASC, t.popularity DESC",
-                (d["id"],)
-            ).fetchall()
-        ]
+        col_titles = []
+        for tr in conn.execute(
+            f"SELECT t.id, t.slug, t.title, t.year, t.type, t.rating, t.popularity, t.poster, t.backdrop "
+            f"FROM titles t JOIN title_collections tc ON tc.title_id=t.id "
+            f"WHERE tc.collection_id=? ORDER BY {order_clause}",
+            (d["id"],)
+        ).fetchall():
+            td = dict(tr)
+            td["year"] = sane_year(td.get("year"))
+            col_titles.append(td)
 
         if not d.get("poster") and col_titles and col_titles[0].get("poster"):
             d["poster"] = col_titles[0]["poster"]
@@ -100,9 +113,19 @@ def export_taxonomy(conn: sqlite3.Connection, outdir: str) -> None:
             d["backdrop"] = col_titles[0]["backdrop"]
         d["cover_image"] = d.get("backdrop") or d.get("poster")
 
+        payload = {"items": col_titles, "total": len(col_titles), "collection": d}
+
         # Save individual collections/{slug}.json
         with open(os.path.join(outdir, "collections", f"{d['slug']}.json"), "w", encoding="utf-8") as f:
-            json.dump({"items": col_titles, "total": len(col_titles), "collection": d}, f, ensure_ascii=False)
+            json.dump(payload, f, ensure_ascii=False)
+
+        # Also save on-{slug}.json alias for streaming platforms
+        if d["slug"] in ("netflix", "disney-plus", "max", "prime-video", "hulu", "apple-tv-plus", "paramount-plus", "peacock", "crunchyroll"):
+            with open(os.path.join(outdir, "collections", f"on-{d['slug']}.json"), "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False)
+            if d["slug"] == "apple-tv-plus":
+                with open(os.path.join(outdir, "collections", "on-apple-tv.json"), "w", encoding="utf-8") as f:
+                    json.dump(payload, f, ensure_ascii=False)
 
         collections.append(d)
 
@@ -651,6 +674,24 @@ def export_categories(conn: sqlite3.Connection, outdir: str, genre_map: dict, co
          "SELECT * FROM titles WHERE id IN (SELECT title_id FROM title_streaming_providers WHERE provider_id = "
          "(SELECT id FROM streaming_providers WHERE slug='apple-tv-plus')) ORDER BY popularity DESC LIMIT ?"),
 
+        ("on-paramount-plus", "⛰️ Paramount+ Exclusives",
+         "SELECT * FROM titles WHERE (id IN (SELECT title_id FROM title_streaming_providers WHERE provider_id = "
+         "(SELECT id FROM streaming_providers WHERE slug='paramount-plus')) OR id IN (SELECT title_id FROM title_collections "
+         "WHERE collection_id = (SELECT id FROM collections WHERE slug='paramount-plus'))) ORDER BY popularity DESC LIMIT ?"),
+
+        ("on-peacock", "🦚 Peacock & NBC Hub",
+         "SELECT * FROM titles WHERE (id IN (SELECT title_id FROM title_streaming_providers WHERE provider_id = "
+         "(SELECT id FROM streaming_providers WHERE slug='peacock')) OR id IN (SELECT title_id FROM title_collections "
+         "WHERE collection_id = (SELECT id FROM collections WHERE slug='peacock'))) ORDER BY popularity DESC LIMIT ?"),
+
+        ("universal-pictures", "🌍 Universal Pictures Showcase",
+         "SELECT * FROM titles WHERE id IN (SELECT title_id FROM title_collections WHERE collection_id = "
+         "(SELECT id FROM collections WHERE slug='universal-pictures')) ORDER BY popularity DESC LIMIT ?"),
+
+        ("sony-pictures", "🎬 Sony Pictures Blockbusters",
+         "SELECT * FROM titles WHERE id IN (SELECT title_id FROM title_collections WHERE collection_id = "
+         "(SELECT id FROM collections WHERE slug='sony-pictures')) ORDER BY popularity DESC LIMIT ?"),
+
         ("hot-short-dramas", "🔥 Hot Short TV Dramas",
          "SELECT * FROM titles WHERE type='short_drama' OR is_short_drama = 1 ORDER BY popularity DESC LIMIT ?"),
 
@@ -678,12 +719,29 @@ def export_categories(conn: sqlite3.Connection, outdir: str, genre_map: dict, co
             sql = f"{head}({where}) {EXCLUDE_NON_SCRIPTED_EPISODIC}{tail}"
         try:
             rows = conn.execute(sql, (limit,)).fetchall()
+            full_rows = conn.execute(sql, (150,)).fetchall()
         except Exception as e:
             print(f"  Warning: category '{section_id}' query failed: {e}")
             continue
         items = [title_row_to_dict(r, genre_map, country_map, availability_map, watch_provider_map) for r in rows]
         if items:  # only include non-empty sections
             sections.append({"id": section_id, "title": section_title, "items": items})
+            col_file = os.path.join(outdir, "collections", f"{section_id}.json")
+            if not os.path.exists(col_file):
+                full_items = [to_lite(title_row_to_dict(r, genre_map, country_map, availability_map, watch_provider_map)) for r in full_rows]
+                col_meta = {
+                    "slug": section_id,
+                    "name": section_title,
+                    "kind": "editorial",
+                    "description": f"Explore all titles in {section_title}.",
+                    "count": len(full_items),
+                    "title_count": len(full_items),
+                    "poster": items[0].get("poster"),
+                    "backdrop": items[0].get("backdrop") or items[0].get("poster"),
+                    "cover_image": items[0].get("backdrop") or items[0].get("poster"),
+                }
+                with open(col_file, "w", encoding="utf-8") as cf:
+                    json.dump({"items": full_items, "total": len(full_items), "collection": col_meta}, cf, ensure_ascii=False)
     with open(os.path.join(outdir, "categories.json"), "w", encoding="utf-8") as f:
         json.dump(sections, f, ensure_ascii=False)
     return sections

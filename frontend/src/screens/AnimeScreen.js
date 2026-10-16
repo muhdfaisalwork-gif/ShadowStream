@@ -11,12 +11,18 @@ import SkeletonGrid from '../components/SkeletonGrid';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
-export default function AnimeScreen({ navigation }) {
+export default function AnimeScreen({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
     const numCols = width >= 1400 ? 6 : width >= 1024 ? 5 : width >= 768 ? 4 : width >= 480 ? 3 : 2;
 
-    const [activeTab, setActiveTab] = useState('all');
+    const [activeTab, setActiveTab] = useState(route?.params?.filter || 'all');
+
+    useEffect(() => {
+        if (route?.params?.filter) {
+            setActiveTab(route.params.filter);
+        }
+    }, [route?.params?.filter]);
 
     useRouteMeta('Anime');
     const [selectedYearMin, setSelectedYearMin] = useState(null);

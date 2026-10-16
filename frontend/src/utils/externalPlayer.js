@@ -27,7 +27,7 @@ function callbackUrl(streamUrl) {
     const base =
         typeof window !== 'undefined' && window.location
             ? `${window.location.origin}/player-return`
-            : 'https://streamapp.muhd-faisal-work.workers.dev/player-return';
+            : 'https://ssmoviestvs.site/player-return';
     return `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
         streamUrl
     )}&title=Stream`;

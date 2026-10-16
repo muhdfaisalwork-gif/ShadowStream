@@ -7,6 +7,7 @@
  * No user-facing exposure: this router is mounted under /internal/admin/v1.
  */
 import express from 'express';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import sqlite3 from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
@@ -26,10 +27,36 @@ try {
     console.error('[admin] cannot open catalog.db at', CATALOG_DB, e.message);
 }
 
+function safeCompare(a, b) {
+    if (!a || !b) return false;
+    const bufA = Buffer.from(String(a));
+    const bufB = Buffer.from(String(b));
+    if (bufA.length !== bufB.length) {
+        crypto.timingSafeEqual(bufA, bufA);
+        return false;
+    }
+    return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function checkAdmin(req, res, next) {
-    if (!ADMIN_TOKEN) return next(); // dev mode
-    const token = req.headers['x-admin-token'] || req.query?.admin_token;
-    if (token !== ADMIN_TOKEN) {
+    const isDev = process.env.NODE_ENV !== 'production' && !ADMIN_TOKEN;
+    if (isDev) {
+        // In local development when ADMIN_TOKEN is not configured, confine strictly to loopback/localhost
+        const remoteIp = req.socket?.remoteAddress || req.ip || '';
+        const isLoopback = remoteIp === '127.0.0.1' || remoteIp === '::1' || remoteIp === '::ffff:127.0.0.1';
+        if (!isLoopback) {
+            return res.status(403).json({ error: 'admin_access_restricted_to_localhost_in_dev_mode' });
+        }
+        return next();
+    }
+
+    if (!ADMIN_TOKEN || ADMIN_TOKEN.trim().length < 8) {
+        return res.status(503).json({ error: 'admin_disabled_unconfigured_token' });
+    }
+
+    // Require token in header (never in query parameter to avoid log/referrer exposure)
+    const token = req.headers['x-admin-token'];
+    if (!token || !safeCompare(token, ADMIN_TOKEN)) {
         return res.status(401).json({ error: 'admin_auth_required' });
     }
     return next();

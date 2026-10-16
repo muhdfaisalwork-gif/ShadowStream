@@ -70,6 +70,9 @@ const PATHS = [
     '/api/v1/countries-catalog',
     '/api/v1/languages-catalog',
     '/api/v1/sitemap.xml',
+    '/api/v1/dub/download',
+    '/api/v1/dub/stream',
+    '/api/v1/blogs',
     '/health',
 ];
 // Generated SVG poster / backdrop endpoints (no sub-path so list them separately)
@@ -83,6 +86,7 @@ const DETAIL_PATHS = [
     '/api/v1/genres/',
     '/api/v1/countries/',
     '/api/v1/languages/',
+    '/api/v1/blogs/',
 ];
 for (const p of PATHS) {
     router.get(p, proxy(p));

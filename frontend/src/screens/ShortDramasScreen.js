@@ -11,14 +11,20 @@ import SkeletonGrid from '../components/SkeletonGrid';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
-export default function ShortDramasScreen({ navigation }) {
+export default function ShortDramasScreen({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
     const numCols = width >= 1400 ? 6 : width >= 1024 ? 5 : width >= 768 ? 4 : width >= 480 ? 3 : 2;
 
-    const [activeTab, setActiveTab] = useState('all');
+    const [activeTab, setActiveTab] = useState(route?.params?.filter || 'all');
     const [dramas, setDramas] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (route?.params?.filter) {
+            setActiveTab(route.params.filter);
+        }
+    }, [route?.params?.filter]);
 
     useRouteMeta('ShortDramas');
     const [selectedAudioLang, setSelectedAudioLang] = useState(null);
@@ -28,8 +34,8 @@ export default function ShortDramasScreen({ navigation }) {
         { id: 'billionaire', label: '💰 Billionaire & CEO' },
         { id: 'revenge', label: '🗡️ Reborn & Revenge' },
         { id: 'romance', label: '💕 Urban Romance' },
-        { id: 'godofwar', label: '⚔️ God of War' },
-        { id: 'empress', label: '👑 Modern Empress' }
+        { id: 'godofwar', label: '⚔️ Action & War' },
+        { id: 'empress', label: '👑 Royal & Historical' }
     ];
 
     const audioLanguages = [
@@ -44,23 +50,27 @@ export default function ShortDramasScreen({ navigation }) {
     const fetchDramas = useCallback(async (tab, audioLang) => {
         setLoading(true);
         try {
-            let url = `${getApiBase()}/titles/short-dramas?page=1&page_size=30`;
+            const tabCollectionMap = {
+                billionaire: 'short-drama-billionaire',
+                revenge: 'short-drama-revenge',
+                romance: 'short-drama-romance',
+                godofwar: 'short-drama-revenge',
+                empress: 'short-drama-chinese',
+            };
+            const colSlug = tabCollectionMap[tab];
+            let url = colSlug
+                ? `${getApiBase()}/collection/${colSlug}?page=1&page_size=48`
+                : `${getApiBase()}/titles/short-dramas?page=1&page_size=48`;
             if (audioLang) url += `&audio_language=${encodeURIComponent(audioLang)}`;
             let res = await fetch(url);
             if (!res.ok) {
-                res = await fetch(`${getApiBase()}/titles?type=short_drama&page=0&page_size=30`);
+                res = await fetch(`${getApiBase()}/titles?type=short_drama&page=0&page_size=48`);
             }
             if (res.ok) {
                 const data = await res.json();
                 let list = data.items || (Array.isArray(data) ? data : []);
-                if (tab === 'billionaire') {
-                    list = list.filter(d => (d.title + ' ' + d.overview).toLowerCase().includes('billionaire') || (d.title + ' ' + d.overview).toLowerCase().includes('ceo'));
-                } else if (tab === 'revenge') {
-                    list = list.filter(d => (d.title + ' ' + d.overview).toLowerCase().includes('revenge') || (d.title + ' ' + d.overview).toLowerCase().includes('reborn'));
-                } else if (tab === 'godofwar') {
-                    list = list.filter(d => (d.title + ' ' + d.overview).toLowerCase().includes('god of war'));
-                } else if (tab === 'empress') {
-                    list = list.filter(d => (d.title + ' ' + d.overview).toLowerCase().includes('empress'));
+                if (tab === 'godofwar' && list.length > 6) {
+                    list = list.slice().reverse();
                 }
                 setDramas(list);
             }

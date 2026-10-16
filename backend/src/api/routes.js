@@ -9,7 +9,7 @@ import { liveClient } from '../services/LiveClient.js';
 
 const router = express.Router();
 
-// Primary: MovieBox-style multi-source aggregator (VidSrc + SuperEmbed + MultiEmbed)
+// Primary: Multi-source playback failover pool (VidSrc + 2Embed + Vidlink)
 // Live: Python FastAPI micro-service on :7800 (Scrapling + Patchright 10-source scraper)
 // Optional: per-site Playwright scrapers (enabled via ENABLED_SOURCES env)
 // Fallback: Legal-only public-domain catalog (Blender + Archive.org + NASA)

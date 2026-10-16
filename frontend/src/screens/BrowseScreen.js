@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
     SafeAreaView, ActivityIndicator, useWindowDimensions
@@ -13,29 +13,89 @@ import ReleaseStatusFilter from '../components/ReleaseStatusFilter';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
+const CATEGORY_LABELS = {
+    'trending-today': '🔥 Trending Today',
+    'coming-soon': '🗓️ Coming Soon',
+    'top-rated': '⭐ Top Rated',
+    'playable-now': '▶️ Playable Now',
+    'latest-movies': '🎬 Latest Movies',
+    'latest-tv': '📺 Latest TV Shows',
+    'ongoing-tv': '📡 Ongoing TV Series',
+    'anime-picks': '⚡ Anime Picks',
+    'latest-animation': '🎨 Latest Animation',
+    'hot-short-dramas': '🔥 Hot Short TV Dramas',
+    'on-netflix': '🔴 On Netflix',
+    'netflix': '🔴 On Netflix',
+    'on-disney-plus': '🏰 On Disney+',
+    'disney-plus': '🏰 On Disney+',
+    'on-max': '📺 On Max (HBO)',
+    'max': '📺 On Max (HBO)',
+    'on-prime-video': '📦 On Prime Video',
+    'prime-video': '📦 On Prime Video',
+    'on-hulu': '💚 On Hulu',
+    'hulu': '💚 On Hulu',
+    'on-apple-tv': '🍎 On Apple TV+',
+    'apple-tv-plus': '🍎 On Apple TV+',
+    'on-paramount-plus': '⛰️ Paramount+ Exclusives',
+    'paramount-plus': '⛰️ Paramount+ Exclusives',
+    'on-peacock': '🦚 Peacock & NBC Hub',
+    'peacock': '🦚 Peacock & NBC Hub',
+    'universal-pictures': '🌍 Universal Pictures Showcase',
+    'sony-pictures': '🎬 Sony Pictures Blockbusters'
+};
+
 export default function BrowseScreen({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
     const numCols = width >= 1400 ? 6 : width >= 1024 ? 5 : width >= 768 ? 4 : width >= 480 ? 3 : 2;
 
-    useRouteMeta('Browse');
-    const [activeTab, setActiveTab] = useState(route?.params?.categoryId || 'movie');
-    const [selectedSort, setSelectedSort] = useState('popularity');
+    const rawCategoryId = route?.params?.categoryId || route?.params?.kind || null;
+    const isTypeTab = ['movie', 'tv', 'anime', 'short_drama'].includes(rawCategoryId);
+
+    const [activeCategory, setActiveCategory] = useState(() => (!isTypeTab && rawCategoryId) ? rawCategoryId : null);
+    const [categoryTitle, setCategoryTitle] = useState(() => route?.params?.categoryTitle || (rawCategoryId && CATEGORY_LABELS[rawCategoryId]) || null);
+    const [activeTab, setActiveTab] = useState(() => isTypeTab ? rawCategoryId : (rawCategoryId ? 'all' : 'movie'));
+    const [selectedSort, setSelectedSort] = useState(() => rawCategoryId === 'top-rated' ? 'rating' : 'popularity');
     const [selectedGenre, setSelectedGenre] = useState(null);
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [selectedAudioLang, setSelectedAudioLang] = useState(null);
     const [selectedSeriesType, setSelectedSeriesType] = useState(null);
-    const [selectedReleaseStatus, setSelectedReleaseStatus] = useState(null);
+    const [selectedReleaseStatus, setSelectedReleaseStatus] = useState(() => rawCategoryId === 'coming-soon' ? 'upcoming' : null);
     const [selectedYearMin, setSelectedYearMin] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
 
-    const [items, setItems] = useState([]);
-    const [total, setTotal] = useState(0);
+    useRouteMeta('Browse');
+
+    const [items, setItems] = useState(() => Array.isArray(route?.params?.initialItems) ? route.params.initialItems : []);
+    const [total, setTotal] = useState(() => Array.isArray(route?.params?.initialItems) ? route.params.initialItems.length : 0);
     const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => !(Array.isArray(route?.params?.initialItems) && route.params.initialItems.length > 0));
     const [loadingMore, setLoadingMore] = useState(false);
 
+    useEffect(() => {
+        const nextCat = route?.params?.categoryId || route?.params?.kind || null;
+        const nextIsType = ['movie', 'tv', 'anime', 'short_drama'].includes(nextCat);
+        if (nextIsType) {
+            setActiveCategory(null);
+            setCategoryTitle(null);
+            setActiveTab(nextCat);
+        } else if (nextCat) {
+            setActiveCategory(nextCat);
+            setCategoryTitle(route?.params?.categoryTitle || CATEGORY_LABELS[nextCat] || nextCat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+            setActiveTab('all');
+            if (nextCat === 'top-rated') setSelectedSort('rating');
+            else setSelectedSort('popularity');
+            if (nextCat === 'coming-soon') setSelectedReleaseStatus('upcoming');
+            else setSelectedReleaseStatus(null);
+            if (Array.isArray(route?.params?.initialItems) && route.params.initialItems.length > 0) {
+                setItems(route.params.initialItems);
+                setTotal(route.params.initialItems.length);
+            }
+        }
+    }, [route?.params?.categoryId, route?.params?.kind, route?.params?.categoryTitle]);
+
     const tabs = [
+        ...(activeCategory ? [{ id: 'all', label: '📂 All Media' }] : []),
         { id: 'movie', label: '🎬 Movies' },
         { id: 'tv', label: '📺 TV Series' },
         { id: 'anime', label: '🌸 Anime' },
@@ -50,13 +110,13 @@ export default function BrowseScreen({ route, navigation }) {
 
     const genres = [
         { id: null, label: 'All Genres' },
-        { id: 'Action', label: 'Action' },
-        { id: 'Comedy', label: 'Comedy' },
-        { id: 'Drama', label: 'Drama' },
-        { id: 'Sci-Fi', label: 'Sci-Fi' },
-        { id: 'Horror', label: 'Horror' },
-        { id: 'Romance', label: 'Romance' },
-        { id: 'Thriller', label: 'Thriller' }
+        { id: 'action', label: 'Action' },
+        { id: 'comedy', label: 'Comedy' },
+        { id: 'drama', label: 'Drama' },
+        { id: 'science-fiction', label: 'Sci-Fi' },
+        { id: 'horror', label: 'Horror' },
+        { id: 'romance', label: 'Romance' },
+        { id: 'thriller', label: 'Thriller' }
     ];
 
     const countries = [
@@ -105,17 +165,44 @@ export default function BrowseScreen({ route, navigation }) {
         { id: 'archive', label: 'Archive (40y+)' }
     ];
 
-    const fetchItems = useCallback(async (tab, sort, genre, country, audio, seriesType, releaseStatus, yearMin, pageNum, append = false) => {
+    const fetchItems = useCallback(async (categorySlug, tab, sort, genre, country, audio, seriesType, releaseStatus, yearMin, pageNum, append = false) => {
         if (pageNum === 1) setLoading(true);
         else setLoadingMore(true);
 
         try {
+            if (categorySlug && !genre && !country && !audio && !yearMin) {
+                const colSlug = categorySlug === 'playable-now' ? 'free-content' : categorySlug;
+                let colUrl = `${getApiBase()}/titles?collection=${encodeURIComponent(colSlug)}&page=${pageNum}&page_size=60&sort=${sort}`;
+                if (tab && tab !== 'all') colUrl += `&type=${encodeURIComponent(tab)}`;
+                const colRes = await fetch(colUrl);
+                if (colRes.ok) {
+                    const colData = await colRes.json();
+                    let colItems = colData.items || (Array.isArray(colData) ? colData : []);
+                    if (colItems.length > 0) {
+                        if (tab && tab !== 'all') {
+                            colItems = colItems.filter(it => it.type === tab || (tab === 'anime' && it.isAnime));
+                        }
+                        if (sort === 'rating') {
+                            colItems = colItems.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                        } else if (sort === 'year') {
+                            colItems = colItems.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
+                        }
+                        setTotal(colItems.length);
+                        setItems(colItems);
+                        setLoading(false);
+                        setLoadingMore(false);
+                        return;
+                    }
+                }
+            }
+
             let url = `${getApiBase()}/titles?page=${pageNum}&page_size=24&sort=${sort}`;
             if (tab === 'anime') url += '&type=anime';
             else if (tab === 'short_drama') url += '&type=short_drama';
             else if (tab === 'tv') url += '&type=tv';
             else url += '&type=movie';
 
+            if (categorySlug === 'top-rated') url += '&min_rating=7.5';
             if (genre) url += `&genre=${encodeURIComponent(genre)}`;
             if (country) url += `&country=${encodeURIComponent(country)}`;
             if (audio) url += `&audio_language=${encodeURIComponent(audio)}`;
@@ -144,32 +231,46 @@ export default function BrowseScreen({ route, navigation }) {
 
     useEffect(() => {
         setPage(1);
-        fetchItems(activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, 1, false);
-    }, [activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, fetchItems]);
+        fetchItems(activeCategory, activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, 1, false);
+    }, [activeCategory, activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, fetchItems]);
 
     const handleLoadMore = () => {
         if (loadingMore || items.length >= total) return;
         const nextPage = page + 1;
         setPage(nextPage);
-        fetchItems(activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, nextPage, true);
+        fetchItems(activeCategory, activeTab, selectedSort, selectedGenre, selectedCountry, selectedAudioLang, selectedSeriesType, selectedReleaseStatus, selectedYearMin, nextPage, true);
+    };
+
+    const clearCategory = () => {
+        setActiveCategory(null);
+        setCategoryTitle(null);
+        setActiveTab('movie');
+        setSelectedReleaseStatus(null);
     };
 
     return (
         <SafeAreaView style={styles.screen}>
-            <AppHeader navigation={navigation} activeRoute="Browse" title="Browse Catalog" />
+            <AppHeader navigation={navigation} activeRoute="Browse" title={categoryTitle || 'Browse Catalog'} />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.hubHero}>
                     <View style={styles.heroTopRow}>
-                        <View>
-                            <Text style={styles.hubTitle}>🌍 Global Catalog</Text>
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.hubTitle}>{categoryTitle || '🌍 Global Catalog'}</Text>
                             <Text style={styles.hubSub}>
-                                {total.toLocaleString()} titles available.
+                                {total.toLocaleString()} titles available{activeCategory ? ' in this section' : '.'}
                             </Text>
                         </View>
-                        <TouchableOpacity style={styles.toggleFilterBtn} onPress={() => setShowFilters(!showFilters)}>
-                            <Text style={styles.toggleFilterText}>{showFilters ? 'Hide Filters' : 'Show Filters'}</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {activeCategory && (
+                                <TouchableOpacity style={styles.toggleFilterBtn} onPress={clearCategory}>
+                                    <Text style={styles.toggleFilterText}>🌍 Global Catalog</Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity style={styles.toggleFilterBtn} onPress={() => setShowFilters(!showFilters)}>
+                                <Text style={styles.toggleFilterText}>{showFilters ? 'Hide Filters' : 'Show Filters'}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
 

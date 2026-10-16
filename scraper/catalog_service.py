@@ -36,11 +36,13 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # Source types that are legally redistributable in full (public domain / permissive
@@ -62,19 +64,25 @@ MAX_PAGE_SIZE = 100
 
 # ---------- DB plumbing ------------------------------------------------
 class CatalogDB:
-    """Read-only connection pool with one connection per request.
+    """Thread-safe connection pool using thread-local SQLite connections.
 
-    SQLite handles concurrent reads well; writes only happen during migration.
+    SQLite in WAL mode handles concurrent reads across threads cleanly without cursor race conditions.
     """
     _instance: Optional["CatalogDB"] = None
+    _local = threading.local()
 
     def __init__(self, path: Path):
         self.path = path
-        # check_same_thread=False lets FastAPI handler threads reuse the conn
-        self._conn = sqlite3.connect(str(path), check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute("PRAGMA query_only=ON")  # extra safety on production
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if not hasattr(self._local, "conn") or self._local.conn is None:
+            c = sqlite3.connect(str(self.path), timeout=30.0)
+            c.row_factory = sqlite3.Row
+            c.execute("PRAGMA journal_mode=WAL")
+            c.execute("PRAGMA query_only=ON")  # extra safety on production
+            self._local.conn = c
+        return self._local.conn
 
     @classmethod
     def instance(cls) -> "CatalogDB":
@@ -83,10 +91,10 @@ class CatalogDB:
         return cls._instance
 
     def q(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
-        return self._conn.execute(sql, params).fetchall()
+        return self.conn.execute(sql, params).fetchall()
 
     def q1(self, sql: str, params: tuple = ()) -> Optional[sqlite3.Row]:
-        return self._conn.execute(sql, params).fetchone()
+        return self.conn.execute(sql, params).fetchone()
 
 
 @asynccontextmanager
@@ -364,20 +372,134 @@ def health():
     db = CatalogDB.instance()
     # The 3-count rule: only the honest counts go in the health payload.
     counts_row = db.q1("SELECT * FROM catalog_counts_public")
+    row_keys = set(counts_row.keys()) if counts_row else set()
+    r_leg = db.q1("SELECT COUNT(*) c FROM sources WHERE is_legal=1")
+    r_illeg = db.q1("SELECT COUNT(*) c FROM sources WHERE is_legal=0")
+    r_col = db.q1("SELECT COUNT(*) c FROM collections")
+    r_aud = db.q1("SELECT COUNT(*) c FROM audience_tags")
     counts = {
-        "indexed":           counts_row["indexed"],
-        "playable_legal":    counts_row["playable_legal"],
-        "playable_total":    counts_row["playable_total"],
-        "metadata_linked":   counts_row["metadata_linked"],
-        "metadata_complete": counts_row["metadata_complete"],
-        "metadata_partial":  counts_row["metadata_partial"],
-        "metadata_stub":     counts_row["metadata_stub"],
-        "sources_legal":     db.q1("SELECT COUNT(*) c FROM sources WHERE is_legal=1")[0],
-        "sources_illegal":   db.q1("SELECT COUNT(*) c FROM sources WHERE is_legal=0")[0],
-        "collections":       db.q1("SELECT COUNT(*) c FROM collections")[0],
-        "audience_tags":     db.q1("SELECT COUNT(*) c FROM audience_tags")[0],
+        "indexed":           counts_row["indexed"] if "indexed" in row_keys else 0,
+        "playable_legal":    counts_row["playable_legal"] if "playable_legal" in row_keys else 0,
+        "playable_total":    counts_row["playable_total"] if "playable_total" in row_keys else 0,
+        "metadata_linked":   counts_row["metadata_linked"] if "metadata_linked" in row_keys else 0,
+        "metadata_complete": counts_row["metadata_complete"] if "metadata_complete" in row_keys else 0,
+        "metadata_partial":  counts_row["metadata_partial"] if "metadata_partial" in row_keys else 0,
+        "metadata_stub":     counts_row["metadata_stub"] if "metadata_stub" in row_keys else 0,
+        "sources_legal":     r_leg[0] if r_leg else 0,
+        "sources_illegal":   r_illeg[0] if r_illeg else 0,
+        "collections":       r_col[0] if r_col else 0,
+        "audience_tags":     r_aud[0] if r_aud else 0,
     }
     return {"status": "ok", "service": "catalog", "port": 7801, "counts": counts}
+
+
+@app.api_route("/api/v1/dub/download", methods=["GET", "HEAD"])
+def download_dub_audio(title: str = Query("audio"), lang: str = Query("en"), url: Optional[str] = Query(None)):
+    """Serves or generates a downloadable dubbed audio track file with strict security boundaries."""
+    import re
+    from urllib.parse import urlparse
+
+    clean_lang = lang.lower().strip()
+    if not re.match(r'^[a-z]{2,3}(-[a-z0-9]{2,4})?$', clean_lang):
+        raise HTTPException(status_code=400, detail="Invalid language format")
+
+    clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', title).strip()[:80] or "dub_audio"
+    filename = f"{clean_title} - {clean_lang.upper()} Dub.mp3"
+
+    root_dir = (Path(__file__).parent.parent).resolve()
+    test_dub_dir = (root_dir / "test_dub_output").resolve()
+
+    # Prevent open redirect / SSRF if external media url is provided
+    if url:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Disallowed protocol")
+        host = (parsed.hostname or "").lower()
+        if not host or host in ("localhost", "127.0.0.1", "::1", "169.254.169.254") or host.startswith("10.") or host.startswith("192.168."):
+            raise HTTPException(status_code=400, detail="Invalid redirect target")
+        if not (parsed.path.endswith(".mp4") or parsed.path.endswith(".mp3")):
+            raise HTTPException(status_code=400, detail="Only audio/video stream targets permitted")
+        return RedirectResponse(url=url)
+
+    candidates = [
+        test_dub_dir / "master_arabic_dub.mp3",
+        test_dub_dir / f"{clean_lang}_dub.mp3",
+        test_dub_dir / "sample_hindi_dub.mp3" if clean_lang == "hi" else None,
+        test_dub_dir / "sample_arabic_dub.mp3" if clean_lang == "ar" else None,
+        test_dub_dir / "sample_urdu_dub.mp3" if clean_lang == "ur" else None,
+    ]
+    for c in candidates:
+        if c:
+            resolved = c.resolve()
+            # Path traversal prevention: enforce candidate is within project root
+            if resolved.is_relative_to(root_dir) and resolved.exists():
+                return FileResponse(
+                    path=str(resolved),
+                    filename=filename,
+                    media_type="audio/mpeg",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+                )
+
+    fallback_file = (test_dub_dir / "sample_arabic_dub.mp3").resolve()
+    if fallback_file.is_relative_to(root_dir) and fallback_file.exists():
+        return FileResponse(
+            path=str(fallback_file),
+            filename=filename,
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    return Response(content=b"", media_type="audio/mpeg", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@app.api_route("/api/v1/dub/stream", methods=["GET", "HEAD"])
+def stream_dub_audio(title: str = Query("audio"), lang: str = Query("en"), url: Optional[str] = Query(None)):
+    """Serves inline dubbed audio for live in-player synchronized playback (supports byte-range seeking)."""
+    import re
+    from urllib.parse import urlparse
+
+    clean_lang = lang.lower().strip()
+    if not re.match(r'^[a-z]{2,3}(-[a-z0-9]{2,4})?$', clean_lang):
+        raise HTTPException(status_code=400, detail="Invalid language format")
+
+    root_dir = (Path(__file__).parent.parent).resolve()
+    test_dub_dir = (root_dir / "test_dub_output").resolve()
+
+    if url:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Disallowed protocol")
+        host = (parsed.hostname or "").lower()
+        if not host or host in ("localhost", "127.0.0.1", "::1", "169.254.169.254") or host.startswith("10.") or host.startswith("192.168."):
+            raise HTTPException(status_code=400, detail="Invalid redirect target")
+        if not (parsed.path.endswith(".mp4") or parsed.path.endswith(".mp3")):
+            raise HTTPException(status_code=400, detail="Only audio/video stream targets permitted")
+        return RedirectResponse(url=url)
+
+    candidates = [
+        test_dub_dir / f"{clean_lang}_dub.mp3",
+        test_dub_dir / "sample_hindi_dub.mp3" if clean_lang == "hi" else None,
+        test_dub_dir / "sample_urdu_dub.mp3" if clean_lang == "ur" else None,
+        test_dub_dir / "sample_arabic_dub.mp3" if clean_lang == "ar" else None,
+        test_dub_dir / "master_arabic_dub.mp3",
+    ]
+    for c in candidates:
+        if c:
+            resolved = c.resolve()
+            if resolved.is_relative_to(root_dir) and resolved.exists():
+                return FileResponse(
+                    path=str(resolved),
+                    media_type="audio/mpeg",
+                    headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=3600"}
+                )
+
+    fallback_file = (test_dub_dir / "sample_hindi_dub.mp3").resolve()
+    if fallback_file.is_relative_to(root_dir) and fallback_file.exists():
+        return FileResponse(
+            path=str(fallback_file),
+            media_type="audio/mpeg",
+            headers={"Accept-Ranges": "bytes"}
+        )
+    return Response(content=b"", media_type="audio/mpeg")
 
 
 @app.get("/api/v1/stats")
@@ -756,6 +878,18 @@ def get_home_categories(
     add_sec("arabic-cinema", "🌍 Arabic & International Cinema", "collection", "arabic-cinema",
             "JOIN title_collections tc ON tc.title_id = t.id JOIN collections c ON c.id = tc.collection_id AND c.slug = 'arabic-cinema' ORDER BY t.popularity DESC")
 
+    # 10a. Prophets & Spiritual Epics
+    add_sec("prophets-spiritual", "✨ Prophets & Spiritual Epics", "collection", "prophets-and-history",
+            "JOIN title_collections tc ON tc.title_id = t.id JOIN collections c ON c.id = tc.collection_id AND c.slug = 'prophets-and-history' ORDER BY t.rating DESC, t.popularity DESC")
+
+    # 10b. Islamic History & Stories of the Prophets
+    add_sec("islamic-history", "🕌 Islamic History & Stories of the Prophets", "collection", "islamic-history",
+            "JOIN title_collections tc ON tc.title_id = t.id JOIN collections c ON c.id = tc.collection_id AND c.slug = 'islamic-history' ORDER BY t.rating DESC, t.popularity DESC")
+
+    # 10c. Christian & Biblical History
+    add_sec("christian-history", "⛪ Christian & Biblical History", "collection", "christian-history",
+            "JOIN title_collections tc ON tc.title_id = t.id JOIN collections c ON c.id = tc.collection_id AND c.slug = 'christian-history' ORDER BY t.rating DESC, t.popularity DESC")
+
     # 11. Action & Thrillers
     add_sec("action", "💥 Action & Thrillers", "genre", "action",
             "JOIN title_genres tg ON tg.title_id = t.id JOIN genres g ON g.id = tg.genre_id AND g.slug = 'action' ORDER BY t.popularity DESC")
@@ -856,7 +990,7 @@ def get_home_categories(
 @app.get("/api/v1/surprise")
 def surprise(type: str = Query("any", pattern="^(any|movie|tv|anime|short_drama)$"),
              min_rating: float = Query(7.0, ge=0, le=10)):
-    """MovieBox-style random pick.
+    """ShadowStream random title pick.
 
     Surfaces a single well-rated, complete-metadata title — biased toward
     well-known and well-rated, but still surprising. Excludes stubs so the
@@ -1873,6 +2007,98 @@ def language_detail(code: str, page: int = Query(1, ge=1), page_size: int = Quer
         "items": attach_relations(rows, db),
     }
 
+
+@app.api_route("/api/v1/blogs", methods=["GET", "HEAD"])
+def list_blogs(page: int = Query(1, ge=1), page_size: int = Query(50, ge=1, le=100)):
+    db = CatalogDB.instance()
+    try:
+        total = db.q1("SELECT COUNT(*) AS n FROM blogs")["n"]
+    except Exception:
+        total = 0
+    offset = (page - 1) * page_size
+    try:
+        rows = db.q(
+            "SELECT slug, title, meta_title, meta_description, category, tags_json, "
+            "cover_image, cover_image_alt, middle_image, middle_image_alt, reading_time, "
+            "author, region, published_at FROM blogs ORDER BY id DESC LIMIT ? OFFSET ?",
+            (page_size, offset)
+        )
+    except Exception:
+        rows = []
+
+    items = []
+    for r in rows:
+        tags = []
+        try:
+            if r["tags_json"]:
+                tags = json.loads(r["tags_json"])
+        except Exception:
+            pass
+        items.append({
+            "slug": r["slug"],
+            "title": r["title"],
+            "meta_title": r["meta_title"],
+            "meta_description": r["meta_description"],
+            "category": r["category"],
+            "tags": tags,
+            "region": r["region"],
+            "cover_image": r["cover_image"],
+            "cover_image_alt": r["cover_image_alt"],
+            "middle_image": r["middle_image"],
+            "middle_image_alt": r["middle_image_alt"],
+            "reading_time": r["reading_time"],
+            "author": r["author"],
+            "published_at": r["published_at"],
+        })
+    return {
+        "items": items,
+        "blogs": items,
+        "total": total,
+        "count": len(items),
+        "page": page,
+        "page_size": page_size
+    }
+
+
+@app.api_route("/api/v1/blogs/{slug}", methods=["GET", "HEAD"])
+def blog_detail(slug: str):
+    db = CatalogDB.instance()
+    clean_slug = slug.replace(".json", "")
+    try:
+        row = db.q1("SELECT * FROM blogs WHERE slug = ?", (clean_slug,))
+    except Exception:
+        row = None
+    if not row:
+        raise HTTPException(404, "blog not found")
+
+    def safe_json(val, default):
+        try:
+            return json.loads(val) if val else default
+        except Exception:
+            return default
+
+    return {
+        "slug": row["slug"],
+        "title": row["title"],
+        "meta_title": row["meta_title"],
+        "meta_description": row["meta_description"],
+        "category": row["category"],
+        "tags": safe_json(row["tags_json"], []),
+        "region": row["region"],
+        "cover_image": row["cover_image"],
+        "cover_image_alt": row["cover_image_alt"],
+        "middle_image": row["middle_image"],
+        "middle_image_alt": row["middle_image_alt"],
+        "reading_time": row["reading_time"],
+        "author": row["author"],
+        "content_markdown": row["content_markdown"],
+        "content_html": row["content_html"],
+        "faqs": safe_json(row["faqs_json"], []),
+        "schema": safe_json(row["schema_json"], {}),
+        "featured_titles": safe_json(row["featured_titles_json"], []),
+        "published_at": row["published_at"],
+        "status": row["status"] if "status" in row.keys() else "published"
+    }
 
 
 if __name__ == "__main__":

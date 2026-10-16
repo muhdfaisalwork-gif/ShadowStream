@@ -22,8 +22,16 @@ export default function SearchScreen({ route, navigation }) {
         && window.location.search
         ? new URLSearchParams(window.location.search).get('q') || ''
         : '');
-    const initialQuery = route?.params?.initialQuery || urlQuery || '';
+    const initialQuery = route?.params?.initialQuery ?? route?.params?.query ?? route?.params?.q ?? urlQuery ?? '';
     const [query, setQuery] = useState(initialQuery);
+
+    useEffect(() => {
+        const nextQ = route?.params?.initialQuery ?? route?.params?.query ?? route?.params?.q;
+        if (nextQ !== undefined) {
+            setQuery(nextQ);
+        }
+    }, [route?.params?.initialQuery, route?.params?.query, route?.params?.q]);
+
     useRouteMeta('Search', { q: query });
     const [activeType, setActiveType] = useState('all');
     const [selectedGenre, setSelectedGenre] = useState(null);

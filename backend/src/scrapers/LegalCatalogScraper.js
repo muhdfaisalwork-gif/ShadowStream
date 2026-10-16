@@ -15,7 +15,7 @@ import { BaseScraper } from './BaseScraper.js';
  *
  * Every entry has a verified (or best-effort) HLS/MP4 stream and a Wikimedia
  * poster URL. Streams are ranked by quality (HLS > MP4 1080p > MP4 720p)
- * matching the multi-source ranking pattern of MovieBox-style aggregators.
+ * matching the multi-source ranking pattern of modern streaming aggregators.
  */
 export class LegalCatalogScraper extends BaseScraper {
     constructor() {

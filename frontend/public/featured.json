@@ -1,0 +1,245 @@
+{
+  "picks": [
+    {
+      "id": 9902226,
+      "slug": "-2026-69",
+      "title": "\u0414\u0443\u0431\u043b\u0435\u0440",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/69sqJaSgrTI6fxpSes8nzLO1pI9.jpg",
+      "backdrop": null,
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 9902224,
+      "slug": "different-us-2026",
+      "title": "Different Us",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/xg9jRsHfJtvtJFaLZxqvc0tqCv4.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/oWOgiQ3jsvRJESAFKa5XoKRcded.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 320909,
+      "slug": "firefly-wedding",
+      "title": "Firefly Wedding",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/954dt0dTqoUhIW0EvMFZ0KvVQmk.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/3zmB6PLnjf7rNNC2lnvinQtlJMx.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 213375,
+      "slug": "visionquest",
+      "title": "VisionQuest",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/WGyAyBPncfuu8MZhLY9RtfZPM0.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/uoXXbN2PrOxH6UKyP7kYwmGpAAP.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 140244,
+      "slug": "no-love-1-2-2026-1624828",
+      "title": "No Love 1/2",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/81Hu8Z2qLmEze1aMgtXrHNsBPie.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/uHqwVok7J0cs28J5Ve407kWm4Gr.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 137295,
+      "slug": "the-musical-2026-1579941",
+      "title": "The Musical",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/paoRPVNta4eYyPO1vsdHTK8dUYa.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/n7k5GQrIOKYNs7IWsuslyo1b0XE.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 137280,
+      "slug": "victorian-psycho-2026-1379486",
+      "title": "Victorian Psycho",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/9LHVZevgdsdbjJdkFr6bk9EwX7q.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/92FSzMpBSkMH59ZCDz9tUjIWKAS.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 132924,
+      "slug": "submarine-jim-2026",
+      "title": "Submarine Jim",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/cHN9UE0cjsDByMWk0FgaPEkHNeJ.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/agExsn0zMSgHaz5rSdV3OOsoBKl.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 128996,
+      "slug": "me-the-maggot-2026",
+      "title": "Me, The Maggot",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/9R0yLeynH8zigp8IF5q3V4pC1oz.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/2yB1kC36bDkXPb3a9QvEcW5Xbr1.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 128023,
+      "slug": "o-cometa-galileu-2026",
+      "title": "O Cometa Galileu",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/q4zJAhKzealFbZUhuOPsckQ60h6.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/FeUk14uIVmaBIWKwpSU6XEGwNj.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 127915,
+      "slug": "meu-encontro-com-jack-frost-2026",
+      "title": "Meu encontro com Jack Frost",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/xn40dDERTd7yqU9jt0JmdnmAJmh.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/d8uZicse49HYrKg3UnaZlbKs4TA.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 127894,
+      "slug": "tv-entreaberta-2026",
+      "title": "TV Entreaberta",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/lunzCoocm6PIiNnRqDJymPeFen9.jpg",
+      "backdrop": null,
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 126248,
+      "slug": "hi-i-m-allen-2026",
+      "title": "Hi, I'm Allen!",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/vddbDgPtQ89CybAnBuHilEQ9IqG.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/5u4RcKpdN4zMhbLKlJ91vzdozEZ.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 122110,
+      "slug": "kay-p-domates-2026",
+      "title": "Kay\u0131p Domates",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/vVN8iu8Bp5DrqDgCpLGounvqINl.jpg",
+      "backdrop": null,
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 122071,
+      "slug": "memories-hidden-in-pixels-2026",
+      "title": "Memories Hidden in Pixels",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/amY4q1eQKPzTOxIbLiX6rQTL8Ru.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/rBoUrzztRnaxUpJiAxHQ8L4tsRX.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 115594,
+      "slug": "unplug-2026-1720992",
+      "title": "UNPLUG",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/dp53YXQkkT7pdupJVvZdmgKJrhK.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/evjqYLYk7jHPojDqHSdqgzScWj7.jpg",
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 112911,
+      "slug": "that-one-animation-2026",
+      "title": "That One Animation",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/7ndD3n7SKpKeMN8uUs9qDTOrF2W.jpg",
+      "backdrop": null,
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 111706,
+      "slug": "babyface-2026",
+      "title": "Babyface",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/sGPPW2oGeo2y84gMYy1q8txwjae.jpg",
+      "backdrop": null,
+      "rating": 10.0,
+      "type": "movie"
+    },
+    {
+      "id": 105932,
+      "slug": "put-a-ring-on-it-cheathab-2026",
+      "title": "Put a Ring on It: Cheathab",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/t4hDOc0rWYlqmArG7E4qQQe2tZE.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/6JS68KtZ49UbVRLryEKbHc0bQwD.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 105907,
+      "slug": "roast-my-rental-2026",
+      "title": "Roast My Rental",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/zUxgUudVHr2epMzaemS58ZYh2Nl.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/5JVG9ubnP6ybCSUwTbdiBd8SkXw.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 105834,
+      "slug": "dating-alys-perez-2026-325271",
+      "title": "Dating Alys Perez",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/1BiRO1RHDRBOhv1wlHYbw6iUrU1.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/pT5sJufAi68Nwz5lKOQctiI0Ent.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 105819,
+      "slug": "how-do-we-relationship-2026-327493",
+      "title": "How Do We Relationship?",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/b7przbAbUlccoLi9cPi3NgnDSwF.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/w0LM1HrterurSRf9YEIblNB2g9a.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 105815,
+      "slug": "part-timers-2026-332943",
+      "title": "Part-Timers",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/7JAvG06DB9UMw6TXDUwuLomTgDu.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/soTC8X3htUjNxU5SjEd7IQ0NVRA.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    },
+    {
+      "id": 105810,
+      "slug": "paolo-2026-288385",
+      "title": "Paolo",
+      "year": 2026,
+      "poster": "https://image.tmdb.org/t/p/w500/4EGhg689jbAO865qWs8AznalyWl.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/mjje2ajzDEpT3wDgc28RtjIq3WD.jpg",
+      "rating": 10.0,
+      "type": "tv"
+    }
+  ],
+  "total": 24
+}

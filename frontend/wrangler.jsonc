@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "streamapp",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    { "pattern": "ssmoviestvs.site", "custom_domain": true },
+    { "pattern": "www.ssmoviestvs.site", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/downloads/*", "/downloads", "/api/*", "/api"]
+  },
+  "vars": {
+    "API_BASE_URL": "https://ssmoviestvs.site/api/v1"
+  }
+}

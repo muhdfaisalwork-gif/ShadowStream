@@ -45,14 +45,22 @@ TVDB_KEY = ENV.get("TVDB_API_KEY") or ""
 TMDB = "https://api.themoviedb.org/3"
 CONCURRENCY = 12
 
-# (path, kind, limit) — the small, fast-moving ends of the catalogue.
+# (path, kind, limit) — the fast-moving ends of the catalogue.
 FEEDS = [
+    # 1. Theatrical & Broadcast Fast Feeds
     ("movie/now_playing", "movie", 60),
     ("movie/upcoming", "movie", 60),
     ("tv/on_the_air", "tv", 60),
     ("tv/airing_today", "tv", 60),
     ("trending/movie/week", "movie", 40),
     ("trending/tv/week", "tv", 40),
+    # 2. Anime & Animations (Genre 16)
+    ("discover/tv?with_genres=16&sort_by=popularity.desc", "tv", 60),
+    ("discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc", "tv", 60),
+    ("discover/movie?with_genres=16&sort_by=popularity.desc", "movie", 40),
+    # 3. Streaming Platforms (Netflix: 8, Disney+: 337, Prime: 9, Apple TV+: 350, Max: 1899, Crunchyroll: 283)
+    ("discover/tv?with_watch_providers=8|337|9|350|1899|283&watch_region=US&sort_by=popularity.desc", "tv", 60),
+    ("discover/movie?with_watch_providers=8|337|9|350|1899&watch_region=US&sort_by=popularity.desc", "movie", 40),
 ]
 
 
@@ -91,14 +99,23 @@ def infer_status(kind: str, raw: dict) -> str:
 
 async def collect_feed(client, sem, path, kind, limit):
     out = []
+    base_path = path.split("?")[0]
+    extra_params = {}
+    if "?" in path:
+        for part in path.split("?")[1].split("&"):
+            if "=" in part:
+                k, v = part.split("=", 1)
+                extra_params[k] = v
+
     for page in (1, 2):
         if len(out) >= limit:
             break
         async with sem:
             try:
+                params = {"api_key": TMDB_KEY, "page": page, "language": "en-US", **extra_params}
                 r = await client.get(
-                    f"{TMDB}/{path}",
-                    params={"api_key": TMDB_KEY, "page": page, "language": "en-US"},
+                    f"{TMDB}/{base_path}",
+                    params=params,
                     timeout=30.0,
                 )
                 r.raise_for_status()

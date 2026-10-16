@@ -18,9 +18,72 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="ShadowStream" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Icons & Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ShadowStream" />
+    <meta property="og:url" content="https://ssmoviestvs.site/" />
+    <meta property="og:title" content="ShadowStream - Free Movies, TV Shows, Anime & Short Dramas" />
+    <meta property="og:description" content="Stream 138,000+ movies, hit series, and anime ad-free in Full HD with original audio and synchronized subtitles." />
+    <meta property="og:image" content="https://ssmoviestvs.site/icons/shadowstream-banner.png" />
+    <meta property="og:image:width" content="1387" />
+    <meta property="og:image:height" content="381" />
+    <meta property="og:image:alt" content="ShadowStream Official Streaming Platform" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ShadowStream - Free Movies & TV Shows" />
+    <meta name="twitter:description" content="Stream 138,000+ movies, hit series, and anime ad-free in Full HD." />
+    <meta name="twitter:image" content="https://ssmoviestvs.site/icons/shadowstream-banner.png" />
+
+    <!-- Structured Data (Schema.org JSON-LD for AI & Search Engines) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://ssmoviestvs.site/#website",
+          "url": "https://ssmoviestvs.site/",
+          "name": "ShadowStream",
+          "description": "Stream 138,000+ movies, hit series, anime, and short dramas ad-free in Full HD.",
+          "publisher": {
+            "@id": "https://ssmoviestvs.site/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://ssmoviestvs.site/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://ssmoviestvs.site/#organization",
+          "name": "ShadowStream",
+          "url": "https://ssmoviestvs.site/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://ssmoviestvs.site/icons/shadowstream-banner.png",
+            "width": 1387,
+            "height": 381
+          }
+        }
+      ]
+    }
+    </script>
     <style id="expo-reset">
+      :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sar: env(safe-area-inset-right, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+        --sal: env(safe-area-inset-left, 0px);
+      }
       html, body {
         height: 100%;
         width: 100%;
@@ -29,6 +92,10 @@
         overflow-x: hidden;
         background-color: #0d0d0d;
         -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
       #root {
         display: flex;
@@ -38,9 +105,18 @@
         min-width: 100%;
         flex: 1;
         flex-direction: column;
+        overflow-x: hidden;
+      }
+      /* Ensure full-bleed player without scrollbars on mobile */
+      .player-fullscreen-lock {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        overflow: hidden !important;
       }
     </style>
-    <link rel="icon" href="/favicon.ico"/>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run ShadowStream.</noscript>

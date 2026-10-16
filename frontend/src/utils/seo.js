@@ -11,7 +11,7 @@
 const DEFAULT_TITLE = 'ShadowStream - Cinematic Movie & TV Discovery Platform';
 const DEFAULT_DESCRIPTION = 'ShadowStream is a global catalog of lawfully available movies, TV series, anime, and short dramas. Browse by genre, country, language, year, and dub.';
 const SITE_NAME = 'ShadowStream';
-const CANONICAL_BASE = 'https://ls7m73ztxvfc2.space.minimax.io';
+const CANONICAL_BASE = 'https://ssmoviestvs.site';
 
 function upsertMeta(selector, attr, value) {
     if (typeof document === 'undefined') return;
@@ -80,6 +80,31 @@ function ensureBaseTags() {
  */
 export function setRouteMeta(screen, params) {
     if (typeof document === 'undefined') return;
+
+    // Support object-first invocation: useRouteMeta({ title, description, url, keywords, schema })
+    if (typeof screen === 'object' && screen !== null) {
+        ensureBaseTags();
+        const obj = screen;
+        const title = obj.title || DEFAULT_TITLE;
+        const description = obj.description || DEFAULT_DESCRIPTION;
+        const canonical = obj.url || obj.canonical || `${CANONICAL_BASE}/`;
+        document.title = title;
+        upsertMeta('meta[name="description"]', 'content', description);
+        if (obj.keywords) {
+            upsertMeta('meta[name="keywords"]', 'content', obj.keywords);
+        }
+        upsertMeta('meta[property="og:title"]', 'content', title);
+        upsertMeta('meta[property="og:description"]', 'content', description);
+        upsertMeta('meta[name="twitter:title"]', 'content', title);
+        upsertMeta('meta[name="twitter:description"]', 'content', description);
+        upsertLink('canonical', canonical);
+        upsertMeta('meta[property="og:url"]', 'content', canonical);
+        if (obj.schema) {
+            upsertJsonLd(obj.schema);
+        }
+        return;
+    }
+
     const safeParams = params || {};
     ensureBaseTags();
 
@@ -88,6 +113,32 @@ export function setRouteMeta(screen, params) {
     let canonical = `${CANONICAL_BASE}/`;
 
     switch (screen) {
+        case 'Blogs':
+            title = 'Showbiz & Entertainment Editorial Guides | ShadowStream';
+            description = 'In-depth film criticism, streaming release previews, box office analysis, and curated watch guides across Hollywood, anime, and international cinema.';
+            canonical = `${CANONICAL_BASE}/blogs`;
+            upsertJsonLd({
+                '@context': 'https://schema.org',
+                '@type': 'CollectionPage',
+                name: 'ShadowStream Editorial & Showbiz Guides',
+                url: canonical,
+                description: description,
+                isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: CANONICAL_BASE + '/' }
+            });
+            break;
+        case 'BlogDetail': {
+            const b = safeParams.blog || safeParams;
+            const bTitle = b.title || 'Editorial Guide';
+            const bDesc = b.meta_description || b.description || 'In-depth cinematic guide and streaming analysis.';
+            const bSlug = b.slug || safeParams.slug || '';
+            title = `${bTitle} | ShadowStream Showbiz`;
+            description = bDesc;
+            canonical = bSlug ? `${CANONICAL_BASE}/blog/${bSlug}` : `${CANONICAL_BASE}/blogs`;
+            if (b.schema) {
+                upsertJsonLd(b.schema);
+            }
+            break;
+        }
         case 'Home':
             title = 'ShadowStream - Discover Movies, TV, Anime & Short Dramas';
             description = 'Browse 13,000+ lawfully catalogued titles across movies, TV series, anime, and short dramas. Free exploration, no account required.';
@@ -154,15 +205,15 @@ export function setRouteMeta(screen, params) {
             canonical = `${CANONICAL_BASE}/settings`;
             break;
         case 'TitleDetail': {
-            const t = params.title || params.item?.title || 'Title';
-            const year = params.year || params.item?.year || '';
-            const type = params.type || params.item?.type || 'title';
-            const overview = params.overview || params.item?.overview || '';
-            const rating = params.rating || params.item?.rating;
-            const slug = params.slug || params.item?.slug || params.id || '';
-            const poster = params.poster || params.item?.poster || '';
-            const runtime = params.runtime || params.item?.runtime;
-            const genres = params.genres || params.item?.genres || [];
+            const t = safeParams.title || safeParams.item?.title || 'Title';
+            const year = safeParams.year || safeParams.item?.year || '';
+            const type = safeParams.type || safeParams.item?.type || 'title';
+            const overview = safeParams.overview || safeParams.item?.overview || '';
+            const rating = safeParams.rating || safeParams.item?.rating;
+            const slug = safeParams.slug || safeParams.item?.slug || safeParams.id || '';
+            const poster = safeParams.poster || safeParams.item?.poster || '';
+            const runtime = safeParams.runtime || safeParams.item?.runtime;
+            const genres = safeParams.genres || safeParams.item?.genres || [];
             const typeLabel = type === 'tv' ? 'TV Series'
                 : type === 'anime' ? 'Anime'
                 : type === 'short_drama' ? 'Short Drama'
@@ -241,8 +292,16 @@ export function setRouteMeta(screen, params) {
             }
             break;
         }
+        case 'Player': {
+            const pTitle = safeParams.title || 'Watch Stream';
+            title = `${pTitle} | ShadowStream`;
+            description = `Stream ${pTitle} in high definition on ShadowStream.`;
+            canonical = safeParams.slug ? `${CANONICAL_BASE}/play/${safeParams.slug}` : `${CANONICAL_BASE}/`;
+            break;
+        }
         default:
-            title = DEFAULT_TITLE;
+            title = safeParams.title || DEFAULT_TITLE;
+            description = safeParams.description || DEFAULT_DESCRIPTION;
             canonical = `${CANONICAL_BASE}/`;
             clearJsonLd();
     }

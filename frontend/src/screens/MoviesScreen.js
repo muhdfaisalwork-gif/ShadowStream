@@ -19,10 +19,17 @@ export default function MoviesScreen({ route, navigation }) {
     const initialFilter = route?.params?.filter || 'popular';
     const [activeTab, setActiveTab] = useState(initialFilter);
 
+    useEffect(() => {
+        if (route?.params?.filter) {
+            setActiveTab(route.params.filter);
+        }
+    }, [route?.params?.filter]);
+
     useRouteMeta('Movies');
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [selectedAudioLang, setSelectedAudioLang] = useState(null);
-    const [selectedSort, setSelectedSort] = useState('popularity');    const [selectedYearMin, setSelectedYearMin] = useState(null);
+    const [selectedSort, setSelectedSort] = useState('popularity');
+    const [selectedYearMin, setSelectedYearMin] = useState(null);
     const [movies, setMovies] = useState([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -35,7 +42,7 @@ export default function MoviesScreen({ route, navigation }) {
         { id: 'top_rated', label: '⭐ Top Rated' },
         { id: 'free_legal', label: '✨ Free Stream' },
         { id: 'action', label: '💥 Action' },
-        { id: 'scifi', label: '🚀 Sci-Fi' },
+        { id: 'science-fiction', label: '🚀 Sci-Fi' },
         { id: 'comedy', label: '😂 Comedy' },
         { id: 'horror', label: '👻 Horror' },
         { id: 'romance', label: '💕 Romance' },
@@ -97,11 +104,11 @@ export default function MoviesScreen({ route, navigation }) {
             let url = `${getApiBase()}/titles?type=movie&page=${pageNum}&page_size=24`;
 
             if (tab === 'latest') {
-                url += `&sort=newest&min_year=2020`;
+                url += `&sort=newest&year_min=2020&year_max=${new Date().getFullYear()}`;
             } else if (tab === 'top_rated') {
                 url += `&sort=rating&min_rating=7.5`;
             } else if (tab === 'free_legal') {
-                url += `&playable_only=1`;
+                url = `${getApiBase()}/titles?collection=free-content&type=movie&page=${pageNum}&page_size=24`;
             } else if (tab !== 'all' && tab !== 'popular') {
                 url += `&genre=${encodeURIComponent(tab)}&sort=${sort}`;
             } else {
@@ -182,7 +189,7 @@ export default function MoviesScreen({ route, navigation }) {
 
                 {/* Filter & Sort Bar */}
                 <View style={styles.filterBar}>
-                    {/* Audio language filter (MovieBox-style first-class) */}
+                    {/* Audio language filter (First-class multi-audio dubs) */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipsRow}>
                         {audioLanguages.map(l => {
                             const isSel = selectedAudioLang === l.code;

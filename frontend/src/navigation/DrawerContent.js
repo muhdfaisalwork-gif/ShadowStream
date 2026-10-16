@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { getApiBase } from '../utils/api';
 
@@ -59,15 +59,11 @@ export default function DrawerContent({ navigation }) {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.logoRow}>
-                    <View style={styles.logoBadge}>
-                        <Text style={styles.logoIcon}>🎬</Text>
-                    </View>
-                    <View>
-                        <Text style={styles.brandTitle}>
-                            SHADOW<Text style={{ color: COLORS.brand }}>STREAM</Text>
-                        </Text>
-                        <Text style={styles.brandSub}>CINEMATIC DISCOVERY</Text>
-                    </View>
+                    <Image
+                        source={require('../../assets/shadowstream-banner.png')}
+                        style={styles.drawerBrandBanner}
+                        resizeMode="contain"
+                    />
                 </View>
                 <View style={styles.statusPill}>
                     <Text style={styles.statusDot}>●</Text>
@@ -96,12 +92,12 @@ export default function DrawerContent({ navigation }) {
 
                 {/* ENTERTAINMENT CATALOGS */}
                 <Text style={styles.sectionHeader}>CATALOG</Text>
-                <TouchableOpacity style={styles.navRow} onPress={() => onNav('Movies')}>
+                <TouchableOpacity style={styles.navRow} onPress={() => onNav('Movies', { filter: 'popular' })}>
                     <Text style={styles.navIcon}>🎬</Text>
                     <Text style={styles.navLabel}>Movies Hub</Text>
                     <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>{stats.movie ? Math.round(stats.movie / 100) / 10 + 'K' : '…'}</Text></View>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.navRow} onPress={() => onNav('TV')}>
+                <TouchableOpacity style={styles.navRow} onPress={() => onNav('TV', { filter: 'popular' })}>
                     <Text style={styles.navIcon}>📺</Text>
                     <Text style={styles.navLabel}>TV Series</Text>
                     <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>{stats.tv ? Math.round(stats.tv / 100) / 10 + 'K' : '…'}</Text></View>
@@ -210,31 +206,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center'
     },
-    logoBadge: {
-        width: 32,
-        height: 32,
-        borderRadius: 6,
-        backgroundColor: COLORS.surfaceAlt,
-        borderWidth: 1,
-        borderColor: 'rgba(229,9,20,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 10
-    },
-    logoIcon: {
-        fontSize: 16
-    },
-    brandTitle: {
-        color: COLORS.textPrimary,
-        fontSize: 16,
-        fontWeight: '900',
-        letterSpacing: 0.8
-    },
-    brandSub: {
-        color: COLORS.textMuted,
-        fontSize: 7,
-        fontWeight: '700',
-        letterSpacing: 1
+    drawerBrandBanner: {
+        width: 140,
+        height: 38
     },
     statusPill: {
         flexDirection: 'row',

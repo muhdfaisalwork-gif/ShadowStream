@@ -19,6 +19,12 @@ export default function TVScreen({ route, navigation }) {
     const initialFilter = route?.params?.filter || 'popular';
     const [activeTab, setActiveTab] = useState(initialFilter);
 
+    useEffect(() => {
+        if (route?.params?.filter) {
+            setActiveTab(route.params.filter);
+        }
+    }, [route?.params?.filter]);
+
     useRouteMeta('TV');
     const [selectedSort, setSelectedSort] = useState('popularity');
     const [selectedYearMin, setSelectedYearMin] = useState(null);
@@ -54,6 +60,8 @@ export default function TVScreen({ route, navigation }) {
     // browsing and drama.
     const tabs = [
         { id: 'popular',    label: '\u{1F4FA} Popular' },
+        { id: 'latest',     label: '\u{1F3AC} Latest Shows' },
+        { id: 'ongoing',    label: '\u{1F4E1} Ongoing Series' },
         { id: 'trending',   label: '\u{1F525} Trending' },
         { id: 'episodes',   label: '\u{1F5C2}\uFE0F Seasons & Episodes' },
         { id: 'drama',      label: '\u{1F3AD} Dramas' },
@@ -92,7 +100,11 @@ export default function TVScreen({ route, navigation }) {
             // is_scripted=0 by classify_scripted.py and never appear here.
             let url = `${getApiBase()}/titles?type=tv&scripted=1&page=${pageNum}&page_size=24`;
 
-            if (tab === 'episodes') {
+            if (tab === 'latest') {
+                url += `&sort=newest&year_min=2020&year_max=${new Date().getFullYear()}`;
+            } else if (tab === 'ongoing') {
+                url = `${getApiBase()}/titles?collection=ongoing-tv&type=tv&page=${pageNum}&page_size=24`;
+            } else if (tab === 'episodes') {
                 // Deep episodic browsing: multi-season shows first.
                 url += `&min_seasons=2&sort=popularity`;
             } else if (tab === 'drama') {
@@ -125,7 +137,7 @@ export default function TVScreen({ route, navigation }) {
             if (res.ok) {
                 const data = await res.json();
                 const newItems = data.items || [];
-                setTotal(data.total || 0);
+                setTotal(data.total || newItems.length || 0);
                 if (append) {
                     setSeries(prev => [...prev, ...newItems]);
                 } else {
@@ -152,9 +164,16 @@ export default function TVScreen({ route, navigation }) {
         fetchSeries(activeTab, selectedSort, selectedYearMin, selectedAudioLang, nextPage, true);
     };
 
+    const headerTitle =
+        activeTab === 'episodes' ? 'Seasons & Episodes' :
+        activeTab === 'drama' ? 'Dramas' :
+        activeTab === 'latest' ? 'Latest TV Shows' :
+        activeTab === 'ongoing' ? 'Ongoing TV Series' :
+        'TV Series';
+
     return (
         <SafeAreaView style={styles.screen}>
-            <AppHeader navigation={navigation} activeRoute="TV" title={activeTab === 'episodes' ? 'Seasons & Episodes' : activeTab === 'drama' ? 'Dramas' : 'TV Series'} />
+            <AppHeader navigation={navigation} activeRoute="TV" title={headerTitle} />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.hubHero}>
@@ -352,6 +371,3 @@ const styles = StyleSheet.create({
     },
     loadMoreBtnText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700' }
 });
-
-
-

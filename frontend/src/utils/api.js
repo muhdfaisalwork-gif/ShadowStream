@@ -7,7 +7,7 @@
  *   4. PRODUCTION_API                       (deployed Cloudflare Worker catalog API)
  */
 
-export const PRODUCTION_API = 'https://streamapp-catalog.muhd-faisal-work.workers.dev/api/v1';
+export const PRODUCTION_API = 'https://ssmoviestvs.site/api/v1';
 
 function readRuntimeConfig() {
     if (typeof window === 'undefined') return null;
@@ -22,17 +22,16 @@ export function getApiBase() {
     const override = readRuntimeConfig();
     if (override) return override;
 
-    // Same-origin is only correct for local dev, where the Node backend and the
-    // Expo web server run on the same machine. Any other host (the deployed
-    // frontend's own domain) does not serve /api/v1 itself, so it must point at
-    // the deployed catalog Worker instead.
     if (typeof window !== 'undefined' && window.location) {
         const origin = window.location.origin || '';
         const host = window.location.hostname || '';
         if (host === 'localhost' || host === '127.0.0.1') {
-            return origin.includes(':8081') || origin.includes(':19006')
-                ? 'http://localhost:3000/api/v1'
-                : `${origin}/api/v1`;
+            const port = window.location.port || '';
+            return port === '3000' ? `${origin}/api/v1` : 'http://localhost:3000/api/v1';
+        }
+        // If served from ssmoviestvs.site or any production web domain, use same-origin /api/v1
+        if (origin && (origin.startsWith('http://') || origin.startsWith('https://'))) {
+            return `${origin}/api/v1`;
         }
     }
     return PRODUCTION_API;

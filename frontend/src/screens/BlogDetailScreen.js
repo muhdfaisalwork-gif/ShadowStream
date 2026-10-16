@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
-    ActivityIndicator, useWindowDimensions, SafeAreaView, Platform
+    ActivityIndicator, useWindowDimensions, SafeAreaView, Platform, Linking
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
@@ -16,6 +16,7 @@ export default function BlogDetailScreen({ route, navigation }) {
     const isTablet = width >= 768 && width < 1024;
 
     const [blog, setBlog] = useState(null);
+    const [relatedBlogs, setRelatedBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedFaq, setExpandedFaq] = useState({});
@@ -24,8 +25,67 @@ export default function BlogDetailScreen({ route, navigation }) {
         title: blog ? `${blog.title} — ShadowStream Editorial` : 'Editorial Guide — ShadowStream',
         description: blog?.meta_description || 'In-depth cinematic guide and streaming analysis.',
         keywords: blog?.tags?.join(', ') || 'streaming, cinema, movies, tv, anime',
-        url: `https://streamapp.muhd-faisal-work.workers.dev/blog/${slug}`
+        url: `https://ssmoviestvs.site/blog/${slug}`
     });
+
+    const handleLinkPress = (url) => {
+        if (!url) return;
+        try {
+            const parsed = new URL(url, 'https://ssmoviestvs.site');
+            const pathname = parsed.pathname;
+            if (pathname.startsWith('/title/')) {
+                const targetSlug = pathname.replace('/title/', '');
+                navigation.navigate('TitleDetail', { slug: targetSlug });
+                return;
+            }
+            if (pathname.startsWith('/blog/')) {
+                const targetSlug = pathname.replace('/blog/', '');
+                if (navigation.push) {
+                    navigation.push('BlogDetail', { slug: targetSlug });
+                } else {
+                    navigation.navigate('BlogDetail', { slug: targetSlug });
+                }
+                return;
+            }
+            if (pathname === '/movies') {
+                navigation.navigate('Movies');
+                return;
+            }
+            if (pathname === '/tv') {
+                navigation.navigate('TV');
+                return;
+            }
+            if (pathname.startsWith('/collection/')) {
+                const targetSlug = pathname.replace('/collection/', '');
+                navigation.navigate('CollectionDetail', { slug: targetSlug });
+                return;
+            }
+            if (pathname.startsWith('/country/')) {
+                const targetSlug = pathname.replace('/country/', '');
+                navigation.navigate('CountryDetail', { slug: targetSlug });
+                return;
+            }
+            if (pathname === '/anime') {
+                navigation.navigate('Anime');
+                return;
+            }
+            if (pathname === '/short-dramas') {
+                navigation.navigate('ShortDramas');
+                return;
+            }
+            if (pathname === '/genres') {
+                navigation.navigate('Genres');
+                return;
+            }
+            if (pathname === '/collections') {
+                navigation.navigate('Collections');
+                return;
+            }
+            Linking.openURL(url);
+        } catch (_) {
+            Linking.openURL(url);
+        }
+    };
 
     useEffect(() => {
         if (!slug) return;
@@ -50,7 +110,21 @@ export default function BlogDetailScreen({ route, navigation }) {
             }
         };
 
+        const fetchRelated = async () => {
+            try {
+                const base = getApiBase();
+                const res = await fetch(`${base}/blogs`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.items || data.blogs || []);
+                if (!cancelled) {
+                    setRelatedBlogs(list.filter(b => b.slug !== slug).slice(0, 3));
+                }
+            } catch (_) {}
+        };
+
         fetchDetail();
+        fetchRelated();
         return () => { cancelled = true; };
     }, [slug]);
 
@@ -71,6 +145,95 @@ export default function BlogDetailScreen({ route, navigation }) {
 
     const toggleFaq = (index) => {
         setExpandedFaq(prev => ({ ...prev, [index]: !prev[index] }));
+    };
+
+    const renderInlineFormatted = (text, keyPrefix) => {
+        if (!text) return null;
+        const regex = /(\*\*\[[^\]]+\]\([^)]+\)\*\*|\[\*\*[^*]+\*\*\]\([^)]+\)|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|\*[^*]+\*)/g;
+        const parts = text.split(regex);
+
+        return parts.map((part, pIdx) => {
+            if (!part) return null;
+            const uniqueKey = `${keyPrefix}-${pIdx}`;
+
+            // Bold link: **[label](url)**
+            if (part.startsWith('**[') && part.endsWith(')**')) {
+                const inner = part.slice(2, -2);
+                const m = inner.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                if (m) {
+                    const [, label, url] = m;
+                    return (
+                        <Text
+                            key={uniqueKey}
+                            accessibilityRole="link"
+                            href={url}
+                            onPress={() => handleLinkPress(url)}
+                            style={[styles.inlineLink, styles.inlineBold]}
+                        >
+                            {label}
+                        </Text>
+                    );
+                }
+            }
+
+            // Bold link: [**label**](url)
+            if (part.startsWith('[**') && part.includes('**](') && part.endsWith(')')) {
+                const m = part.match(/^\[\*\*([^*]+)\*\*\]\(([^)]+)\)$/);
+                if (m) {
+                    const [, label, url] = m;
+                    return (
+                        <Text
+                            key={uniqueKey}
+                            accessibilityRole="link"
+                            href={url}
+                            onPress={() => handleLinkPress(url)}
+                            style={[styles.inlineLink, styles.inlineBold]}
+                        >
+                            {label}
+                        </Text>
+                    );
+                }
+            }
+
+            // Standard link: [label](url)
+            if (part.startsWith('[') && part.endsWith(')')) {
+                const m = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                if (m) {
+                    const [, label, url] = m;
+                    return (
+                        <Text
+                            key={uniqueKey}
+                            accessibilityRole="link"
+                            href={url}
+                            onPress={() => handleLinkPress(url)}
+                            style={styles.inlineLink}
+                        >
+                            {label}
+                        </Text>
+                    );
+                }
+            }
+
+            // Bold: **text**
+            if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                return (
+                    <Text key={uniqueKey} style={styles.inlineBold}>
+                        {part.slice(2, -2)}
+                    </Text>
+                );
+            }
+
+            // Italic: *text*
+            if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+                return (
+                    <Text key={uniqueKey} style={styles.inlineItalic}>
+                        {part.slice(1, -1)}
+                    </Text>
+                );
+            }
+
+            return part;
+        });
     };
 
     const renderMarkdownContent = (markdown, middleImage, middleAlt) => {
@@ -108,19 +271,19 @@ export default function BlogDetailScreen({ route, navigation }) {
             if (trimmed.startsWith('### ')) {
                 elements.push(
                     <Text key={`h3-${idx}`} style={styles.contentH3}>
-                        {trimmed.replace(/^###\s+/, '')}
+                        {renderInlineFormatted(trimmed.replace(/^###\s+/, ''), `h3-${idx}`)}
                     </Text>
                 );
             } else if (trimmed.startsWith('## ')) {
                 elements.push(
                     <Text key={`h2-${idx}`} style={styles.contentH2}>
-                        {trimmed.replace(/^##\s+/, '')}
+                        {renderInlineFormatted(trimmed.replace(/^##\s+/, ''), `h2-${idx}`)}
                     </Text>
                 );
             } else if (trimmed.startsWith('# ')) {
                 elements.push(
                     <Text key={`h1-${idx}`} style={styles.contentH1}>
-                        {trimmed.replace(/^#\s+/, '')}
+                        {renderInlineFormatted(trimmed.replace(/^#\s+/, ''), `h1-${idx}`)}
                     </Text>
                 );
             } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
@@ -128,9 +291,11 @@ export default function BlogDetailScreen({ route, navigation }) {
                 elements.push(
                     <View key={`list-${idx}`} style={styles.bulletList}>
                         {lines.map((li, lIdx) => (
-                            <View key={`li-${lIdx}`} style={styles.bulletItem}>
+                            <View key={`li-${idx}-${lIdx}`} style={styles.bulletItem}>
                                 <Text style={styles.bulletDot}>•</Text>
-                                <Text style={styles.bulletText}>{li.replace(/^[-*]\s+/, '')}</Text>
+                                <Text style={styles.bulletText}>
+                                    {renderInlineFormatted(li.replace(/^[-*]\s+/, ''), `li-${idx}-${lIdx}`)}
+                                </Text>
                             </View>
                         ))}
                     </View>
@@ -138,7 +303,7 @@ export default function BlogDetailScreen({ route, navigation }) {
             } else {
                 elements.push(
                     <Text key={`p-${idx}`} style={styles.contentParagraph}>
-                        {trimmed}
+                        {renderInlineFormatted(trimmed, `p-${idx}`)}
                     </Text>
                 );
             }
@@ -233,7 +398,7 @@ export default function BlogDetailScreen({ route, navigation }) {
                         <View style={{ flex: 1 }}>
                             <Text style={styles.authorTitle}>{blog.author || 'ShadowStream Editorial & SEO Intelligence'}</Text>
                             <Text style={styles.authorSub}>
-                                Evaluated against Sultrix & Raulf International SEO Framework • 138K Catalog Index
+                                Evaluated against Global Streaming SEO Framework • 138K Catalog Index
                             </Text>
                         </View>
                         <View style={styles.seoBadge}>
@@ -329,6 +494,51 @@ export default function BlogDetailScreen({ route, navigation }) {
                                             </TouchableOpacity>
                                         );
                                     })}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Related Editorial & Showbiz Guides */}
+                        {relatedBlogs && relatedBlogs.length > 0 && (
+                            <View style={styles.relatedGuidesSection}>
+                                <Text style={styles.relatedSectionHeading}>🎬 Related Showbiz & Streaming Guides</Text>
+                                <Text style={styles.relatedSectionSub}>Explore further editorial analysis and verified watchlist picks.</Text>
+                                <View style={styles.relatedCardsGrid}>
+                                    {relatedBlogs.map((rel) => (
+                                        <TouchableOpacity
+                                            key={rel.slug}
+                                            style={styles.relatedBlogCard}
+                                            activeOpacity={0.8}
+                                            accessibilityRole="link"
+                                            href={`https://ssmoviestvs.site/blog/${rel.slug}`}
+                                            onPress={() => {
+                                                if (navigation.push) {
+                                                    navigation.push('BlogDetail', { slug: rel.slug });
+                                                } else {
+                                                    navigation.navigate('BlogDetail', { slug: rel.slug });
+                                                }
+                                            }}
+                                        >
+                                            {rel.cover_image && (
+                                                <Image
+                                                    source={{ uri: rel.cover_image }}
+                                                    style={styles.relatedBlogCover}
+                                                    resizeMode="cover"
+                                                />
+                                            )}
+                                            <View style={styles.relatedBlogContent}>
+                                                <View style={styles.relatedMetaRow}>
+                                                    <View style={styles.relatedCategoryBadge}>
+                                                        <Text style={styles.relatedCategoryText}>{rel.category?.toUpperCase() || 'SHOWBIZ'}</Text>
+                                                    </View>
+                                                    <Text style={styles.relatedReadTime}>⏱️ {rel.reading_time || '5 min'}</Text>
+                                                </View>
+                                                <Text style={styles.relatedBlogTitle} numberOfLines={2}>{rel.title}</Text>
+                                                <Text style={styles.relatedBlogDesc} numberOfLines={2}>{rel.meta_description}</Text>
+                                                <Text style={styles.relatedCtaText}>Read Guide →</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
                                 </View>
                             </View>
                         )}
@@ -751,5 +961,96 @@ const styles = StyleSheet.create({
         color: '#D8D8D8',
         fontSize: 14,
         lineHeight: 22
+    },
+    inlineLink: {
+        color: COLORS.brand,
+        fontWeight: '700',
+        textDecorationLine: 'underline',
+    },
+    inlineBold: {
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    inlineItalic: {
+        fontStyle: 'italic',
+        color: '#E0E0E0',
+    },
+    relatedGuidesSection: {
+        marginTop: 36,
+        paddingTop: 24,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    relatedSectionHeading: {
+        color: COLORS.text,
+        fontSize: 22,
+        fontWeight: '800',
+        marginBottom: 6,
+    },
+    relatedSectionSub: {
+        color: COLORS.textMuted,
+        fontSize: 13,
+        marginBottom: 18,
+    },
+    relatedCardsGrid: {
+        gap: 14,
+    },
+    relatedBlogCard: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surface,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: 'hidden',
+        alignItems: 'center',
+    },
+    relatedBlogCover: {
+        width: 110,
+        height: '100%',
+        minHeight: 110,
+    },
+    relatedBlogContent: {
+        flex: 1,
+        padding: 14,
+    },
+    relatedMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    relatedCategoryBadge: {
+        backgroundColor: COLORS.surfaceAlt,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    relatedCategoryText: {
+        color: COLORS.brand,
+        fontSize: 10,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    relatedReadTime: {
+        color: COLORS.textMuted,
+        fontSize: 11,
+    },
+    relatedBlogTitle: {
+        color: COLORS.text,
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 4,
+        lineHeight: 18,
+    },
+    relatedBlogDesc: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        lineHeight: 16,
+        marginBottom: 8,
+    },
+    relatedCtaText: {
+        color: COLORS.brand,
+        fontSize: 12,
+        fontWeight: '700',
     }
 });

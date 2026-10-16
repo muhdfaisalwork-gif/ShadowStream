@@ -1,0 +1,19 @@
+# ShadowStream (https://ssmoviestvs.site)
+
+> ShadowStream is an international cinematic streaming platform indexing over 138,000 verified movies, hit TV series, anime masterpieces, and vertical short dramas across 42 nations and 26 languages. It features built-in ad protection, multi-source stream aggregation, high-bitrate HLS playback, and editorial cultural guides.
+
+## Primary Sections & Navigation
+- [Home](https://ssmoviestvs.site/): Curated streaming catalog, trending movies, top-rated TV series, and seasonal releases.
+- [Movies Hub](https://ssmoviestvs.site/movies): Over 100,000 indexed films from Hollywood blockbusters to international award winners.
+- [TV Series](https://ssmoviestvs.site/tv): Episodic television with season/episode breakdown across drama, crime thrillers, sci-fi, and comedy.
+- [Anime Ecosystem](https://ssmoviestvs.site/anime): Shonen classics, seasonal anime releases, original Japanese vocal tracks, and multilingual subtitles.
+- [Vertical Short Dramas](https://ssmoviestvs.site/short-dramas): 1-minute episodic mobile micro-series, billionaire romances, and trending short television.
+- [Curated Collections](https://ssmoviestvs.site/collections): 85+ cinematic franchises and universe marathons (Marvel MCU, Harry Potter, Christopher Nolan, Studio Ghibli, etc.).
+- [Editorial Blogs & Guides](https://ssmoviestvs.site/blogs): E-E-A-T entertainment journalism, release previews, and film criticism.
+- [Apps & Multi-Platform](https://ssmoviestvs.site/apps): Native Android APK, Apple iOS/macOS via xtool, Windows Desktop, and Linux packages.
+
+## Key Capabilities & Architecture
+- **AdShield Privacy**: Neutralizes third-party popup ads, clickjacking, and unwanted redirects without breaking video players.
+- **Multi-Source Aggregation**: Lawful multi-mirror stream fallback ensuring continuous 100% playback reliability.
+- **REST API**: Production endpoints at `https://ssmoviestvs.site/api/v1/` for catalog search, health, metadata, and stats.
+- **Sitemap**: `https://ssmoviestvs.site/sitemap.xml`

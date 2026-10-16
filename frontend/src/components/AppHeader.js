@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Image } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { Storage } from '../utils/storage';
+import { isNoAdsActive, toggleNoAds, onNoAdsChange } from '../utils/adShield';
 
 export default function AppHeader({ navigation, activeRoute, title }) {
     const { width } = useWindowDimensions();
@@ -10,6 +11,11 @@ export default function AppHeader({ navigation, activeRoute, title }) {
     const isMobile = width < 768;
 
     const [watchlistCount, setWatchlistCount] = useState(0);
+    const [noAdsOn, setNoAdsOn] = useState(isNoAdsActive());
+
+    useEffect(() => {
+        return onNoAdsChange(setNoAdsOn);
+    }, []);
 
     useEffect(() => {
         const updateCount = () => {
@@ -63,16 +69,13 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                     style={styles.brandContainer}
                     onPress={() => navigation.navigate('Home')}
                     activeOpacity={0.8}
+                    accessibilityLabel="ShadowStream Home"
                 >
-                    <View style={styles.logoBadge}>
-                        <Text style={styles.logoIcon}>🎬</Text>
-                    </View>
-                    <View>
-                        <Text style={styles.brandTitle}>
-                            SHADOW<Text style={{ color: COLORS.brand }}>STREAM</Text>
-                        </Text>
-                        <Text style={styles.brandSub}>CINEMATIC DISCOVERY</Text>
-                    </View>
+                    <Image
+                        source={require('../../assets/shadowstream-banner.png')}
+                        style={isDesktop ? styles.brandBannerDesktop : styles.brandBannerMobile}
+                        resizeMode="contain"
+                    />
                 </TouchableOpacity>
 
                 {title && (
@@ -104,41 +107,61 @@ export default function AppHeader({ navigation, activeRoute, title }) {
 
             {/* Right Action Icons (Search, Watchlist, History) */}
             <View style={styles.rightSection}>
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => navigation.navigate('Search')}
-                    accessibilityLabel="Search"
-                >
-                    <Text style={styles.actionIcon}>🔍</Text>
-                    {isDesktop && <Text style={styles.actionBtnLabel}>Search</Text>}
-                </TouchableOpacity>
+                {isDesktop && (
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate('Search')}
+                        accessibilityLabel="Search"
+                    >
+                        <Text style={styles.actionIcon}>🔍</Text>
+                        <Text style={styles.actionBtnLabel}>Search</Text>
+                    </TouchableOpacity>
+                )}
+
+                {isDesktop && (
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate('Watchlist')}
+                        accessibilityLabel="Watchlist"
+                    >
+                        <View style={{ position: 'relative' }}>
+                            <Text style={styles.actionIcon}>🔖</Text>
+                            {watchlistCount > 0 && (
+                                <View style={styles.badgeCounter}>
+                                    <Text style={styles.badgeCounterText}>
+                                        {watchlistCount > 99 ? '99+' : watchlistCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                        <Text style={styles.actionBtnLabel}>Watchlist</Text>
+                    </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => navigation.navigate('Watchlist')}
-                    accessibilityLabel="Watchlist"
+                    style={[styles.noAdsHeaderBtn, noAdsOn ? styles.noAdsHeaderBtnOn : styles.noAdsHeaderBtnOff]}
+                    onPress={toggleNoAds}
+                    accessibilityRole="switch"
+                    accessibilityState={{ checked: noAdsOn }}
+                    accessibilityLabel={`No Ads Shield ${noAdsOn ? 'ON' : 'OFF'}`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                    <View style={{ position: 'relative' }}>
-                        <Text style={styles.actionIcon}>🔖</Text>
-                        {watchlistCount > 0 && (
-                            <View style={styles.badgeCounter}>
-                                <Text style={styles.badgeCounterText}>
-                                    {watchlistCount > 99 ? '99+' : watchlistCount}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                    {isDesktop && <Text style={styles.actionBtnLabel}>Watchlist</Text>}
+                    <Text style={styles.noAdsHeaderIcon}>🛡️</Text>
+                    <Text style={[styles.noAdsHeaderLabel, noAdsOn ? styles.noAdsHeaderLabelOn : styles.noAdsHeaderLabelOff]}>
+                        {noAdsOn ? (width < 400 ? 'No Ads' : 'No Ads: ON') : (width < 400 ? 'Ads' : 'Ads Allowed')}
+                    </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => navigation.navigate('History')}
-                    accessibilityLabel="History"
-                >
-                    <Text style={styles.actionIcon}>🕒</Text>
-                    {isDesktop && <Text style={styles.actionBtnLabel}>History</Text>}
-                </TouchableOpacity>
+                {isDesktop && (
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate('History')}
+                        accessibilityLabel="History"
+                    >
+                        <Text style={styles.actionIcon}>🕒</Text>
+                        <Text style={styles.actionBtnLabel}>History</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -171,33 +194,15 @@ const styles = StyleSheet.create({
     brandContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 24
+        marginRight: 20
     },
-    logoBadge: {
-        width: 34,
-        height: 34,
-        borderRadius: 8,
-        backgroundColor: COLORS.surfaceAlt,
-        borderWidth: 1,
-        borderColor: 'rgba(229, 9, 20, 0.4)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 10
+    brandBannerDesktop: {
+        width: 148,
+        height: 40
     },
-    logoIcon: {
-        fontSize: 18
-    },
-    brandTitle: {
-        color: COLORS.textPrimary,
-        fontSize: 18,
-        fontWeight: '900',
-        letterSpacing: 1
-    },
-    brandSub: {
-        color: COLORS.textMuted,
-        fontSize: 7.5,
-        fontWeight: '700',
-        letterSpacing: 1.2
+    brandBannerMobile: {
+        width: 120,
+        height: 32
     },
     screenTag: {
         marginLeft: 12,
@@ -275,5 +280,35 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 9,
         fontWeight: '800'
+    },
+    noAdsHeaderBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: 6,
+        borderWidth: 1,
+        gap: 5,
+    },
+    noAdsHeaderBtnOn: {
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        borderColor: 'rgba(16, 185, 129, 0.45)',
+    },
+    noAdsHeaderBtnOff: {
+        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+        borderColor: 'rgba(239, 68, 68, 0.35)',
+    },
+    noAdsHeaderIcon: {
+        fontSize: 14,
+    },
+    noAdsHeaderLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    noAdsHeaderLabelOn: {
+        color: '#34D399',
+    },
+    noAdsHeaderLabelOff: {
+        color: '#F87171',
     }
 });

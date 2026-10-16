@@ -102,6 +102,14 @@ export default function HomeScreen({ navigation }) {
         loadContinueWatching();
     }, [loadHome, loadContinueWatching]);
 
+    useEffect(() => {
+        if (!navigation?.addListener) return;
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadContinueWatching();
+        });
+        return unsubscribe;
+    }, [navigation, loadContinueWatching]);
+
     // Auto rotate hero slides every 6s
     useEffect(() => {
         if (heroSlides.length <= 1) return;
@@ -126,20 +134,78 @@ export default function HomeScreen({ navigation }) {
     };
 
     const handleSelectCategory = (cat) => {
-        if (cat.id === 'latest-movies' || cat.id === 'popular-movies') {
-            navigation.navigate('Movies', { filter: cat.id === 'latest-movies' ? 'latest' : 'popular' });
-        } else if (cat.id === 'popular-series') {
+        if (!cat) return;
+        const id = cat.id || '';
+
+        const PLATFORM_MAP = {
+            'on-max': 'max',
+            'max': 'max',
+            'on-disney-plus': 'disney-plus',
+            'disney-plus': 'disney-plus',
+            'on-netflix': 'netflix',
+            'netflix': 'netflix',
+            'on-prime-video': 'prime-video',
+            'prime-video': 'prime-video',
+            'on-hulu': 'hulu',
+            'hulu': 'hulu',
+            'on-apple-tv': 'apple-tv-plus',
+            'on-apple-tv-plus': 'apple-tv-plus',
+            'apple-tv-plus': 'apple-tv-plus',
+            'on-paramount-plus': 'paramount-plus',
+            'paramount-plus': 'paramount-plus',
+            'on-peacock': 'peacock',
+            'peacock': 'peacock',
+            'on-crunchyroll': 'crunchyroll',
+            'crunchyroll': 'crunchyroll',
+            'universal-pictures': 'universal-pictures',
+            'sony-pictures': 'sony-pictures',
+            'marvel': 'marvel',
+            'dc': 'dc',
+            'pixar': 'pixar',
+            'disney': 'disney'
+        };
+
+        if (PLATFORM_MAP[id]) {
+            const targetSlug = PLATFORM_MAP[id];
+            navigation.navigate('CollectionDetail', {
+                slug: targetSlug,
+                collection: {
+                    slug: targetSlug,
+                    name: cat.title || targetSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    kind: 'studio',
+                    cover_image: cat.items?.[0]?.backdrop || cat.items?.[0]?.poster
+                },
+                initialItems: cat.items || []
+            });
+        } else if (id === 'latest-movies' || id === 'popular-movies') {
+            navigation.navigate('Movies', { filter: id === 'latest-movies' ? 'latest' : 'popular' });
+        } else if (id === 'latest-tv') {
+            navigation.navigate('TV', { filter: 'latest' });
+        } else if (id === 'ongoing-tv') {
+            navigation.navigate('TV', { filter: 'ongoing' });
+        } else if (id === 'popular-series') {
             navigation.navigate('TV', { filter: 'popular' });
-        } else if (cat.id === 'anime') {
-            navigation.navigate('Anime');
-        } else if (cat.id === 'short-dramas') {
-            navigation.navigate('ShortDramas');
-        } else if (cat.id === 'k-drama' || cat.id === 'c-drama' || cat.id === 'pakistani-dramas' || cat.id === 'indian-cinema' || cat.id === 'arabic-cinema') {
-            navigation.navigate('Collections', { initialSlug: cat.viewAllValue || cat.id });
-        } else if (cat.id === 'action' || cat.id === 'horror' || cat.id === 'romance') {
-            navigation.navigate('Genres', { genreSlug: cat.id });
+        } else if (id === 'anime' || id === 'anime-picks') {
+            navigation.navigate('Anime', { filter: 'all' });
+        } else if (id === 'short-dramas' || id === 'hot-short-dramas') {
+            navigation.navigate('ShortDramas', { filter: 'all' });
+        } else if (id === 'latest-animation') {
+            navigation.navigate('Genres', { genreSlug: 'animation', sort: 'year' });
+        } else if (id === 'k-drama' || id === 'c-drama' || id === 'pakistani-dramas' || id === 'indian-cinema' || id === 'arabic-cinema') {
+            const targetSlug = cat.viewAllValue || id;
+            navigation.navigate('CollectionDetail', {
+                slug: targetSlug,
+                collection: { slug: targetSlug, name: cat.title || targetSlug },
+                initialItems: cat.items || []
+            });
+        } else if (['action', 'adventure', 'animation', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'history', 'horror', 'mystery', 'romance', 'science-fiction', 'thriller', 'war', 'western'].includes(id)) {
+            navigation.navigate('Genres', { genreSlug: id });
         } else {
-            navigation.navigate('Browse', { categoryId: cat.id });
+            navigation.navigate('Browse', {
+                categoryId: id,
+                categoryTitle: cat.title,
+                initialItems: cat.items || []
+            });
         }
     };
 
@@ -238,7 +304,7 @@ export default function HomeScreen({ navigation }) {
                     </View>
                 )}
 
-                {/* 🎲 Surprise Me — MovieBox-style random title picker */}
+                {/* 🎲 Surprise Me — Random title discovery picker */}
                 <View style={styles.surpriseRow}>
                     <TouchableOpacity
                         style={styles.surpriseCard}
@@ -359,7 +425,7 @@ export default function HomeScreen({ navigation }) {
                                         <TouchableOpacity
                                             key={p.id}
                                             style={styles.featuredCard}
-                                            onPress={(item) => navigation.navigate('TitleDetail', { slug: item.slug || String(item.id), item })}
+                                            onPress={() => navigation.navigate('TitleDetail', { slug: p.slug || String(p.id), item: p })}
                                             activeOpacity={0.85}
                                             accessibilityRole="button"
                                             accessibilityLabel={`Open ${p.title}`}

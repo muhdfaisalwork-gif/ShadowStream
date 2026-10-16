@@ -1,11 +1,13 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    Platform, ActivityIndicator, useWindowDimensions, ScrollView
+    Platform, ActivityIndicator, useWindowDimensions, ScrollView, Linking
 } from 'react-native';
 import Hls from 'hls.js';
 import { COLORS } from '../theme/colors';
 import { availablePlayers } from '../utils/externalPlayer';
+import { getApiBase } from '../utils/api';
+import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount, recordBlocked } from '../utils/adShield';
 
 // Common ISO 639-1 language code to readable name mapping
 const LANGUAGE_NAMES = {
@@ -33,18 +35,6 @@ const LANGUAGE_NAMES = {
     fa: 'Persian',
     pa: 'Punjabi',
 };
-
-const COMMON_DUBS = [
-    { code: 'en', label: 'English' },
-    { code: 'ja', label: 'Japanese' },
-    { code: 'hi', label: 'Hindi' },
-    { code: 'es', label: 'Spanish' },
-    { code: 'fr', label: 'French' },
-    { code: 'de', label: 'German' },
-    { code: 'ur', label: 'Urdu' },
-    { code: 'ar', label: 'Arabic' },
-    { code: 'ko', label: 'Korean' },
-];
 
 function normalizeDub(d) {
     if (!d) return null;
@@ -145,6 +135,7 @@ export default function ShadowStreamPlayer({
     const cssFullscreenRef = useRef(false);
     const autoHideTimerRef = useRef(null);
     const bingeTimerRef = useRef(null);
+    const isHoveringTopBar = useRef(false);
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -156,6 +147,62 @@ export default function ShadowStreamPlayer({
     const [playbackRate, setPlaybackRate] = useState(1);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [fullscreenNote, setFullscreenNote] = useState(null);
+    const [activeDubLang, setActiveDubLang] = useState('native'); // 'native' | lang code like 'hi', 'en', 'ar'
+    const [dubToast, setDubToast] = useState(null);
+
+    // No Ads & 3rd-Party Link Blocker State
+    const [noAdsEnabled, setNoAdsEnabled] = useState(isNoAdsActive());
+    const [blockedCount, setBlockedCount] = useState(getBlockedCount());
+    const [adBlockedToast, setAdBlockedToast] = useState(null);
+    const adToastTimerRef = useRef(null);
+
+    useEffect(() => {
+        const unsubToggle = onNoAdsChange((enabled) => {
+            setNoAdsEnabled(enabled);
+        });
+        const unsubBlocked = onAdBlocked((event) => {
+            setBlockedCount(event.count);
+            let domain = 'Ad Link';
+            try {
+                if (event.url) domain = new URL(event.url).hostname;
+            } catch (_) {}
+            setAdBlockedToast(`🛡️ Blocked 3rd-party ${event.reason || 'ad'}: ${domain}`);
+            if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+            adToastTimerRef.current = setTimeout(() => {
+                setAdBlockedToast(null);
+            }, 3000);
+        });
+        return () => {
+            unsubToggle();
+            unsubBlocked();
+            if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+        };
+    }, []);
+
+    const handleToggleNoAds = useCallback(() => {
+        const next = toggleNoAds();
+        setNoAdsEnabled(next);
+        setAdBlockedToast(next ? '🛡️ No Ads: ON — All 3rd-party links blocked' : '⚠️ No Ads: OFF — 3rd-party links allowed');
+        if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+        adToastTimerRef.current = setTimeout(() => {
+            setAdBlockedToast(null);
+        }, 2500);
+    }, []);
+
+    // Defend against iframe clickjacking popup attempts stealing focus
+    useEffect(() => {
+        if (!noAdsEnabled || typeof window === 'undefined') return;
+        const handleWindowBlur = () => {
+            if (document.activeElement && (document.activeElement.tagName === 'IFRAME' || document.activeElement === iframeRef.current)) {
+                recordBlocked(streamUrl || 'embed', 'iframe popup attempt');
+                setTimeout(() => {
+                    try { window.focus(); } catch (_) {}
+                }, 50);
+            }
+        };
+        window.addEventListener('blur', handleWindowBlur);
+        return () => window.removeEventListener('blur', handleWindowBlur);
+    }, [noAdsEnabled, streamUrl]);
 
     // Overlay & UI State
     const [controlsVisible, setControlsVisible] = useState(true);
@@ -169,8 +216,79 @@ export default function ShadowStreamPlayer({
     const [showServerMenu, setShowServerMenu] = useState(false);
     const [showLoadServerMenu, setShowLoadServerMenu] = useState(false);
     const [showPlayerMenu, setShowPlayerMenu] = useState(false);
+    const [showDownloadMenu, setShowDownloadMenu] = useState(false);
     const [playerHandoffFailed, setPlayerHandoffFailed] = useState(false);
     const playerApps = availablePlayers();
+
+    // Screen orientation & mobile landscape state
+    const [isForcedLandscape, setIsForcedLandscape] = useState(false);
+    const isPortrait = height > width;
+
+    const handleToggleRotate = useCallback(() => {
+        // 1. Native Android APK bridge
+        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.toggleOrientation === 'function') {
+            try {
+                window.ShadowStreamNative.toggleOrientation();
+                setDubToast('📱 Screen Orientation Toggled');
+                setTimeout(() => setDubToast(null), 2500);
+                return;
+            } catch (_) {}
+        }
+
+        // 2. Screen Orientation API (Android Chrome, Edge, PWA)
+        if (typeof window !== 'undefined' && window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+            try {
+                const currentType = window.screen.orientation.type || '';
+                if (currentType.includes('landscape')) {
+                    window.screen.orientation.lock('portrait').catch(() => {});
+                    setIsForcedLandscape(false);
+                    setDubToast('📱 Rotated to Portrait');
+                } else {
+                    window.screen.orientation.lock('landscape').catch(() => {});
+                    setIsForcedLandscape(true);
+                    setDubToast('📱 Rotated to Landscape');
+                }
+                setTimeout(() => setDubToast(null), 2500);
+                return;
+            } catch (_) {}
+        }
+
+        // 3. Universal CSS 90-degree Rotation (iOS Safari, iPhone PWA, Mobile browsers)
+        setIsForcedLandscape((prev) => {
+            const next = !prev;
+            setDubToast(next ? '📱 Landscape Mode (Rotated)' : '📱 Portrait Mode');
+            setTimeout(() => setDubToast(null), 2500);
+            return next;
+        });
+    }, []);
+
+    // Auto-reset forced landscape if the user physically turns device to landscape
+    useEffect(() => {
+        if (width >= height && isForcedLandscape) {
+            setIsForcedLandscape(false);
+        }
+    }, [width, height, isForcedLandscape]);
+
+    const forcedLandscapeStyle = useMemo(() => {
+        if (!isForcedLandscape) return null;
+        if (Platform.OS === 'web') {
+            return {
+                position: 'fixed',
+                top: 0,
+                left: width,
+                width: height,
+                height: width,
+                transform: [{ rotate: '90deg' }],
+                transformOrigin: 'top left',
+                zIndex: 99999,
+                maxWidth: 'none',
+                maxHeight: 'none',
+            };
+        }
+        return null;
+    }, [isForcedLandscape, width, height]);
+
+    const [adHelperDismissed, setAdHelperDismissed] = useState(false);
 
     // Embed failover.
     //
@@ -321,12 +439,6 @@ export default function ShadowStreamPlayer({
                 list.push(d);
             }
         }
-        for (const c of COMMON_DUBS) {
-            if (!seen.has(c.code)) {
-                seen.add(c.code);
-                list.push(c);
-            }
-        }
         return list;
     }, [normalizedDubs]);
 
@@ -348,18 +460,138 @@ export default function ShadowStreamPlayer({
     const selectAudioTrack = useCallback((idx) => {
         setActiveAudioIdx(idx);
         const hls = hlsRef.current;
-        if (hls && Array.isArray(hls.audioTracks) && hls.audioTracks.length) {
+        if (hls && Array.isArray(hls.audioTracks) && hls.audioTracks.length > idx) {
             hls.audioTrack = idx;
+            const track = hls.audioTracks[idx];
+            const name = track?.name || track?.lang || `Track ${idx + 1}`;
+            setDubToast(`🔊 Switched audio to ${name}`);
+            setTimeout(() => setDubToast(null), 3000);
             return;
         }
-        // Progressive MP4: only a handful of browsers expose audioTracks.
+        // Progressive MP4 or Safari native video tracks
         const video = videoRef.current;
-        if (video && video.audioTracks && video.audioTracks.length) {
+        if (video && video.audioTracks && video.audioTracks.length > idx) {
             for (let i = 0; i < video.audioTracks.length; i++) {
-                video.audioTracks[i].enabled = i === idx;
+                video.audioTracks[i].enabled = (i === idx);
             }
+            const track = video.audioTracks[idx];
+            const name = track?.label || track?.language || `Track ${idx + 1}`;
+            setDubToast(`🔊 Switched audio to ${name}`);
+            setTimeout(() => setDubToast(null), 3000);
         }
     }, []);
+
+    const handleDownloadVideo = useCallback(() => {
+        if (!streamUrl) return;
+        const cleanTitle = (title || 'StreamApp_Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const epSuffix = season && episode ? ` - S${season}E${episode}` : '';
+        const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
+
+        if (typeof window !== 'undefined') {
+            const a = document.createElement('a');
+            a.href = streamUrl;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setDubToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
+            setTimeout(() => setDubToast(null), 3500);
+        } else {
+            Linking.openURL(streamUrl);
+        }
+        setShowDownloadMenu(false);
+    }, [streamUrl, title, season, episode]);
+
+    const handleCopyStreamLink = useCallback(() => {
+        if (!streamUrl) return;
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(streamUrl);
+            setDubToast('Stream link copied! Paste into 1DM, ADM, IDM, or VLC.');
+            setTimeout(() => setDubToast(null), 3500);
+        } else if (typeof window !== 'undefined') {
+            window.prompt('Copy stream link:', streamUrl);
+        }
+        setShowDownloadMenu(false);
+    }, [streamUrl]);
+
+    const subMirrorIdx = useMemo(() => {
+        return (mirrorList || []).findIndex(m => {
+            const l = (m.label || m.provider || '').toLowerCase();
+            return l.includes('sub') && !l.includes('dub');
+        });
+    }, [mirrorList]);
+
+    const dubMirrorIdx = useMemo(() => {
+        return (mirrorList || []).findIndex(m => {
+            const l = (m.label || m.provider || '').toLowerCase();
+            return l.includes('dub');
+        });
+    }, [mirrorList]);
+
+    const hasSubAndDubMirrors = subMirrorIdx !== -1 && dubMirrorIdx !== -1;
+
+    const selectDubAudio = useCallback((dubCode) => {
+        if (!dubCode || dubCode === 'native') {
+            setActiveDubLang('native');
+            if (isDirect && availableAudioTracks.length > 0) {
+                selectAudioTrack(0);
+            }
+            setDubToast('Switched to Original Audio');
+            setTimeout(() => setDubToast(null), 3000);
+            setShowDubMenu(false);
+            return;
+        }
+
+        const cleanCode = String(dubCode).toLowerCase().trim();
+        setActiveDubLang(cleanCode);
+        const langLabel = LANGUAGE_NAMES[cleanCode] || cleanCode.toUpperCase();
+
+        // 1. Direct Mode with multiple embedded tracks: match track by language
+        if (isDirect && availableAudioTracks.length > 1) {
+            const match = availableAudioTracks.find(t => 
+                (t.lang && t.lang.toLowerCase() === cleanCode) ||
+                (t.label && t.label.toLowerCase().includes(langLabel.toLowerCase()))
+            );
+            if (match) {
+                selectAudioTrack(match.idx);
+                setDubToast(`🎙️ Audio changed to ${match.label}`);
+                setTimeout(() => setDubToast(null), 3500);
+                setShowDubMenu(false);
+                return;
+            }
+        }
+
+        // 2. Anime & Regional Sub/Dub quick switch
+        if (hasSubAndDubMirrors) {
+            if (cleanCode === 'ja') {
+                if (onSelectMirror && subMirrorIdx !== -1) {
+                    onSelectMirror(mirrorList[subMirrorIdx], subMirrorIdx);
+                    setDubToast('🇯🇵 Switched to Japanese SUB mirror');
+                    setTimeout(() => setDubToast(null), 3500);
+                    setShowDubMenu(false);
+                    return;
+                }
+            } else if (cleanCode === 'en') {
+                if (onSelectMirror && dubMirrorIdx !== -1) {
+                    onSelectMirror(mirrorList[dubMirrorIdx], dubMirrorIdx);
+                    setDubToast('🎙️ Switched to English DUB mirror');
+                    setTimeout(() => setDubToast(null), 3500);
+                    setShowDubMenu(false);
+                    return;
+                }
+            }
+        }
+
+        // 3. User feedback for single track or embed mode
+        if (isDirect) {
+            setDubToast(`This stream has single default audio (${langLabel}). Alternate releases available via Server switcher.`);
+        } else {
+            setDubToast(`ℹ️ Spoken audio is inside provider settings (⚙️ at bottom right), or switch Server (⚡).`);
+        }
+        setTimeout(() => setDubToast(null), 4000);
+        setShowDubMenu(false);
+    }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList]);
 
     const setAudioTrackList = useCallback((tracks) => {
         setAvailableAudioTracks(tracks);
@@ -388,14 +620,30 @@ export default function ShadowStreamPlayer({
     // Season rows as the API actually returns them. Episodes carry no
     // `season_number` of their own, so the season has to be resolved from the
     // row that owns them. Episodes from different titles vary, so tolerate the
-    // field being present as a fallback.
-    const drawerSeasons = Array.isArray(seasons) ? seasons.filter(s => s && s.season_number != null) : [];
+    const rawDrawerSeasons = Array.isArray(seasons) ? seasons.filter(s => s && s.season_number != null) : [];
+    const regularDrawer = rawDrawerSeasons.filter(s => s.season_number > 0).sort((a, b) => a.season_number - b.season_number);
+    const specialDrawer = rawDrawerSeasons.filter(s => s.season_number === 0);
+    const drawerSeasons = [...regularDrawer, ...specialDrawer];
     const drawerActiveSeasonRow =
-        drawerSeasons.find(s => s.season_number === activeDrawerSeason) || drawerSeasons[0] || null;
-    const drawerActiveSeasonNumber = drawerActiveSeasonRow ? drawerActiveSeasonRow.season_number : (season || 1);
+        drawerSeasons.find(s => s.season_number === activeDrawerSeason) || drawerSeasons.find(s => s.season_number > 0) || drawerSeasons[0] || null;
+    const drawerActiveSeasonNumber = drawerActiveSeasonRow ? drawerActiveSeasonRow.season_number : (season != null ? season : 1);
     const drawerEpisodes = (drawerActiveSeasonRow && Array.isArray(drawerActiveSeasonRow.episodes))
         ? drawerActiveSeasonRow.episodes.filter(ep => ep && ep.episode_number != null)
         : [];
+
+    const drawerEpOffset = useMemo(() => {
+        if (!drawerActiveSeasonRow || drawerActiveSeasonRow.season_number <= 0) return 0;
+        let offset = 0;
+        for (const s of drawerSeasons) {
+            if (s.season_number > 0 && s.season_number < drawerActiveSeasonRow.season_number) {
+                const count = (Array.isArray(s.episodes) && s.episodes.length > 0)
+                    ? s.episodes.length
+                    : (s.episode_count || 0);
+                offset += count;
+            }
+        }
+        return offset;
+    }, [drawerSeasons, drawerActiveSeasonRow]);
 
     // HLS Quality levels
     const [qualityLevels, setQualityLevels] = useState([]);
@@ -413,20 +661,47 @@ export default function ShadowStreamPlayer({
     const hasNextEp = currentEpIdx !== -1 && currentEpIdx < episodeList.length - 1;
     const nextEpObj = hasNextEp ? episodeList[currentEpIdx + 1] : null;
 
-    // Reset auto-hide timer for controls
+    // Reset auto-hide timer for controls (both direct & embed modes)
     const resetAutoHide = useCallback(() => {
         setControlsVisible(true);
         if (autoHideTimerRef.current) {
             clearTimeout(autoHideTimerRef.current);
         }
-        // Keep visible if paused or modal open
-        if (!isPlaying || showSpeedMenu || showQualityMenu || showSubtitleMenu || showServerMenu || showEpisodeDrawer) {
+        // Do not auto-hide if a menu is open or if user is hovering over top bar or if paused in direct mode
+        const anyMenuOpen = showSpeedMenu || showQualityMenu || showSubtitleMenu || showDubMenu ||
+            showServerMenu || showLoadServerMenu || showPlayerMenu || showDownloadMenu || showEpisodeDrawer;
+        if (isHoveringTopBar.current || anyMenuOpen || (isDirect && !isPlaying)) {
             return;
         }
         autoHideTimerRef.current = setTimeout(() => {
             setControlsVisible(false);
-        }, 3000);
-    }, [isPlaying, showSpeedMenu, showQualityMenu, showSubtitleMenu, showServerMenu, showEpisodeDrawer]);
+        }, 3500);
+    }, [
+        isDirect, isPlaying, showSpeedMenu, showQualityMenu, showSubtitleMenu,
+        showDubMenu, showServerMenu, showLoadServerMenu, showPlayerMenu,
+        showDownloadMenu, showEpisodeDrawer
+    ]);
+
+    // Initial timer on stream load / change
+    useEffect(() => {
+        resetAutoHide();
+    }, [resetAutoHide, streamUrl]);
+
+    // Global desktop cursor movement and mobile touch activity listener
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+        const handleActivity = () => {
+            resetAutoHide();
+        };
+        window.addEventListener('mousemove', handleActivity, { passive: true });
+        window.addEventListener('touchstart', handleActivity, { passive: true });
+        window.addEventListener('keydown', handleActivity, { passive: true });
+        return () => {
+            window.removeEventListener('mousemove', handleActivity);
+            window.removeEventListener('touchstart', handleActivity);
+            window.removeEventListener('keydown', handleActivity);
+        };
+    }, [resetAutoHide]);
 
     // Handle Play / Pause
     const togglePlay = useCallback(() => {
@@ -468,10 +743,10 @@ export default function ShadowStreamPlayer({
     // Toggle Mute
     const toggleMute = useCallback(() => {
         if (!videoRef.current) return;
-        const nextMute = !videoRef.current.muted;
+        const nextMute = !isMuted;
         videoRef.current.muted = nextMute;
         setIsMuted(nextMute);
-    }, []);
+    }, [isMuted]);
 
     // Set Playback Speed
     const handleSetRate = useCallback((rate) => {
@@ -807,15 +1082,29 @@ export default function ShadowStreamPlayer({
                 setQualityLevels(levels);
                 video.play().catch(() => {});
 
-                // Alternate audio tracks ship in the manifest, so they only
-                // exist once MANIFEST_PARSED has fired. This is the one and only
-                // place in this player where a genuine audio choice is real.
-                const audioTracks = (data.audioTracks || []).map((t, i) => ({
-                    idx: i,
-                    label: t.name || t.lang || t.groupId || `Track ${i + 1}`,
-                    lang: t.lang || '',
-                }));
-                setAudioTrackList(audioTracks);
+                // Alternate audio tracks ship in the manifest or populate via AUDIO_TRACKS_UPDATED
+                const syncAudioTracks = (tracksList) => {
+                    const list = (tracksList && tracksList.length > 0) ? tracksList : (hls.audioTracks || []);
+                    if (Array.isArray(list) && list.length > 0) {
+                        const audioTracks = list.map((t, i) => {
+                            const code = (t.lang || '').toLowerCase().trim();
+                            const langName = LANGUAGE_NAMES[code] || t.name || t.groupId || `Track ${i + 1}`;
+                            const label = t.name && !t.name.includes(langName) ? `${t.name} (${langName})` : langName;
+                            return {
+                                idx: i,
+                                label,
+                                lang: code,
+                            };
+                        });
+                        setAudioTrackList(audioTracks);
+                    }
+                };
+
+                syncAudioTracks(data.audioTracks);
+
+                hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (ev, trackData) => {
+                    syncAudioTracks(trackData?.audioTracks);
+                });
             });
 
             hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (event, data) => {
@@ -849,13 +1138,48 @@ export default function ShadowStreamPlayer({
             video.src = streamUrl;
             video.load();
             video.play().catch(() => {});
+
+            if (video.audioTracks) {
+                const syncNativeAudioTracks = () => {
+                    const tracks = video.audioTracks;
+                    if (tracks && tracks.length > 0) {
+                        const list = [];
+                        for (let i = 0; i < tracks.length; i++) {
+                            const t = tracks[i];
+                            const code = (t.language || '').toLowerCase().trim();
+                            const langName = LANGUAGE_NAMES[code] || t.label || `Track ${i + 1}`;
+                            const label = t.label && !t.label.includes(langName) ? `${t.label} (${langName})` : langName;
+                            list.push({
+                                idx: i,
+                                label,
+                                lang: code,
+                                enabled: t.enabled,
+                            });
+                            if (t.enabled) setActiveAudioIdx(i);
+                        }
+                        setAudioTrackList(list);
+                    }
+                };
+                syncNativeAudioTracks();
+                video.audioTracks.addEventListener('addtrack', syncNativeAudioTracks);
+                video.audioTracks.addEventListener('removetrack', syncNativeAudioTracks);
+                video.audioTracks.addEventListener('change', syncNativeAudioTracks);
+            }
         }
 
         // HTML5 Video Event Listeners
-        const onPlay = () => setIsPlaying(true);
-        const onPause = () => setIsPlaying(false);
-        const onWaiting = () => setIsBuffering(true);
-        const onPlaying = () => setIsBuffering(false);
+        const onPlay = () => {
+            setIsPlaying(true);
+        };
+        const onPause = () => {
+            setIsPlaying(false);
+        };
+        const onWaiting = () => {
+            setIsBuffering(true);
+        };
+        const onPlaying = () => {
+            setIsBuffering(false);
+        };
         const onTimeUpdate = () => {
             setCurrentTime(video.currentTime);
             if (video.buffered.length > 0) {
@@ -945,7 +1269,12 @@ export default function ShadowStreamPlayer({
     return (
         <View
             ref={containerRef}
-            style={[styles.container, isFullscreen && styles.containerFullscreen]}
+            style={[
+                styles.container,
+                isFullscreen && styles.containerFullscreen,
+                isForcedLandscape && forcedLandscapeStyle,
+                !controlsVisible && styles.cursorHidden
+            ]}
             onMouseMove={resetAutoHide}
             onTouchStart={resetAutoHide}
             onLayout={(e) => {
@@ -984,8 +1313,7 @@ export default function ShadowStreamPlayer({
                 </div>
             ) : (
                 /* Embed Mode: the provider decodes, we keep the chrome.
-                   The iframe is intentionally NOT sandboxed — providers refuse
-                   to play inside one. Popup defence lives in adShield.js. */
+                   When No Ads is active, iframe is sandboxed without allow-popups and without allow-top-navigation */
                 <View style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                     <iframe
                         key={streamUrl}
@@ -999,42 +1327,12 @@ export default function ShadowStreamPlayer({
                             height: '100%',
                             border: 'none',
                             backgroundColor: '#000000',
-                            // Crop / stretch for embed mode.
-                            //
-                            // Anchored to the BOTTOM in both modes, because the
-                            // provider renders its own control bar — play/pause,
-                            // CC, settings — at the bottom of the frame, and a
-                            // centred origin scaled the iframe past the
-                            // overflow:hidden wrapper. Measured: 48px of the
-                            // frame's bottom was being clipped away in Stretch
-                            // and 48px in Crop, taking the control bar with it.
-                            //
-                            // A bottom anchor never introduces a gap; it only
-                            // moves any excess (crop or letterbox) to the top,
-                            // which our own title bar already sits over. The top
-                            // is also the safer edge to lose — burnt-in subtitles
-                            // live at the bottom.
                             transform: embedTransform ? embedTransform.transform : 'none',
                             transformOrigin: viewMode === 'fit' ? 'center center' : 'center bottom',
                         }}
                         allowFullScreen
                         referrerPolicy="origin"
-                        /*
-                         * No sandbox attribute, deliberately.
-                         *
-                         * A strict sandbox made every provider render
-                         * "Please Disable Sandbox" instead of the player, and
-                         * widening it (allow-popups, allow-presentation, ...)
-                         * did not help: vidlink rejects the *presence* of the attribute, not
-                         * its contents. It was never much of a defence anyway —
-                         * allow-scripts plus allow-same-origin lets a framed
-                         * page strip its own sandbox.
-                         *
-                         * Popup and popunder abuse is handled one level up by
-                         * src/utils/adShield.js, which owns the global
-                         * window.open override and allow-lists only
-                         * first-party origins.
-                         */
+                        sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-downloads" : undefined}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     />
                 </View>
@@ -1065,7 +1363,7 @@ export default function ShadowStreamPlayer({
                                         onPress={() => setActiveDrawerSeason(s.season_number)}
                                     >
                                         <Text style={[styles.drawerSeasonTabText, active && styles.drawerSeasonTabTextActive]}>
-                                            {s.season_number === 0 ? 'Specials' : `Season ${s.season_number}`}
+                                            {s.season_number === 0 ? (s.name || 'Specials') : (s.name && !/^Season\s+\d+$/i.test(s.name) ? `${s.name} (S${s.season_number})` : (s.name || `Season ${s.season_number}`))}
                                             {Array.isArray(s.episodes) && s.episodes.length > 0
                                                 ? `  (${s.episodes.length})`
                                                 : ''}
@@ -1086,6 +1384,7 @@ export default function ShadowStreamPlayer({
                         {drawerEpisodes.map(ep => {
                             const epSeason = ep.season_number != null ? ep.season_number : drawerActiveSeasonNumber;
                             const isCurrent = epSeason === season && ep.episode_number === episode;
+                            const epAbsNum = (drawerActiveSeasonRow?.season_number > 0 && drawerEpOffset > 0) ? (drawerEpOffset + ep.episode_number) : null;
                             return (
                                 <TouchableOpacity
                                     key={`${epSeason}-${ep.episode_number}`}
@@ -1098,11 +1397,11 @@ export default function ShadowStreamPlayer({
                                     }}
                                 >
                                     <View style={styles.drawerEpBadge}>
-                                        <Text style={styles.drawerEpBadgeText}>EP {ep.episode_number}</Text>
+                                        <Text style={styles.drawerEpBadgeText}>EP {ep.episode_number}{epAbsNum ? ` (#${epAbsNum})` : ''}</Text>
                                     </View>
                                     <View style={{ flex: 1, paddingLeft: 10 }}>
                                         <Text style={[styles.drawerEpName, isCurrent && { color: COLORS.brand }]} numberOfLines={1}>
-                                            {ep.name || `Episode ${ep.episode_number}`}
+                                            {ep.name || ep.title || `Episode ${ep.episode_number}`}
                                         </Text>
                                         {ep.overview ? (
                                             <Text style={styles.drawerEpOverview} numberOfLines={2}>
@@ -1118,14 +1417,31 @@ export default function ShadowStreamPlayer({
                 </View>
             )}
 
+            {/* Minimized Trigger & Mini-Pill Bar (Visible when controls are minimized) */}
+            {!controlsVisible && (
+                <View style={styles.topTriggerZone} pointerEvents="box-none">
+                    <TouchableOpacity
+                        style={styles.minimizedPill}
+                        onPress={resetAutoHide}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Show all player controls"
+                    >
+                        <Text style={styles.minimizedPillText}>‹ Back · ⌄ Controls</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             {/* Shared Top Bar — mounted in BOTH direct and embed mode so the
                 server switcher and episode drawer are always reachable. */}
             <View
                 style={[
                     styles.topControlBar,
-                    isDirect && (controlsVisible ? styles.controlsOverlayVisible : styles.controlsOverlayHidden)
+                    controlsVisible ? styles.topControlBarVisible : styles.topControlBarHidden
                 ]}
-                pointerEvents="box-none"
+                onMouseEnter={() => { isHoveringTopBar.current = true; resetAutoHide(); }}
+                onMouseLeave={() => { isHoveringTopBar.current = false; resetAutoHide(); }}
+                pointerEvents={controlsVisible ? 'auto' : 'none'}
             >
                 <TouchableOpacity style={styles.backBtn} onPress={onBack}>
                     <Text style={styles.backBtnText}>‹ Back</Text>
@@ -1136,6 +1452,30 @@ export default function ShadowStreamPlayer({
                     {season ? (
                         <Text style={styles.episodeBadge}>S{season}:E{episode}</Text>
                     ) : null}
+                    <TouchableOpacity
+                        style={[
+                            styles.noAdsToggleBtn,
+                            noAdsEnabled ? styles.noAdsToggleBtnOn : styles.noAdsToggleBtnOff
+                        ]}
+                        onPress={handleToggleNoAds}
+                        activeOpacity={0.7}
+                        accessibilityRole="switch"
+                        accessibilityState={{ checked: noAdsEnabled }}
+                        accessibilityLabel={`Toggle No Ads protection, currently ${noAdsEnabled ? 'ON' : 'OFF'}`}
+                    >
+                        <Text style={styles.noAdsToggleIcon}>🛡️</Text>
+                        <Text style={[
+                            styles.noAdsToggleText,
+                            noAdsEnabled ? styles.noAdsToggleTextOn : styles.noAdsToggleTextOff
+                        ]}>
+                            {noAdsEnabled ? 'No Ads: ON' : 'No Ads: OFF'}
+                        </Text>
+                        {blockedCount > 0 && noAdsEnabled && (
+                            <View style={styles.blockedBadge}>
+                                <Text style={styles.blockedBadgeText}>{blockedCount}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.topRightControls}>
@@ -1150,6 +1490,15 @@ export default function ShadowStreamPlayer({
                         accessibilityLabel="Toggle fullscreen"
                     >
                         <Text style={styles.iconBtnText}>{isFullscreen ? '⛷' : '⛶'}</Text>
+                    </TouchableOpacity>
+
+                    {/* Mobile Screen Rotate Button */}
+                    <TouchableOpacity
+                        style={[styles.pillButton, (isForcedLandscape || !isPortrait) && styles.pillButtonActive]}
+                        onPress={handleToggleRotate}
+                        accessibilityLabel="Rotate screen orientation"
+                    >
+                        <Text style={styles.pillButtonText}>🔄 Rotate</Text>
                     </TouchableOpacity>
 
                     {/* Crop / stretch — cycles Fit → Crop → Stretch */}
@@ -1232,24 +1581,87 @@ export default function ShadowStreamPlayer({
                         list of languages it cannot act on. */}
                     <View style={{ position: 'relative' }}>
                         <TouchableOpacity
-                            style={styles.pillButton}
+                            style={[
+                                styles.pillButton,
+                                (hasSubAndDubMirrors || (isDirect && availableAudioTracks.length > 1)) && styles.pillButtonActive
+                            ]}
                             onPress={() => setShowDubMenu(!showDubMenu)}
                         >
                             <Text style={styles.pillButtonText}>
-                                🌐 Audio{availableAudioTracks.length > 1 ? ` (${availableAudioTracks.length})` : ''}
+                                {hasSubAndDubMirrors
+                                    ? (activeMirrorIdx === dubMirrorIdx ? '🎙️ DUB' : '🇯🇵 SUB')
+                                    : (isDirect && availableAudioTracks.length > 1
+                                        ? `🌐 Audio (${availableAudioTracks.length})`
+                                        : '🌐 Audio')}
                             </Text>
                         </TouchableOpacity>
                         {showDubMenu && (
                             <View style={[styles.popupMenu, styles.audioPopupMenu]}>
-                                <Text style={styles.popupMenuHeader}>Audio</Text>
-                                <ScrollView style={{ maxHeight: 260 }}>
-                                    {availableAudioTracks.length > 1 ? (
+                                <Text style={styles.popupMenuHeader}>Audio & Dubbing</Text>
+                                <ScrollView style={{ maxHeight: 380 }}>
+                                    {/* Active Audio State Box */}
+                                    <View style={styles.audioActiveBox}>
+                                        <Text style={styles.audioActiveLabel}>CURRENT AUDIO SOURCE</Text>
+                                        <Text style={styles.audioActiveValue}>
+                                            {hasSubAndDubMirrors
+                                                ? (activeMirrorIdx === dubMirrorIdx ? '🎙️ English Dubbed Audio' : '🇯🇵 Original Japanese (Subtitled)')
+                                                : (isDirect && availableAudioTracks.length > 1
+                                                    ? (availableAudioTracks[activeAudioIdx]?.label || 'Original Audio')
+                                                    : `Default Stream (${sourceName || 'Provider'})`)}
+                                        </Text>
+                                    </View>
+
+                                    {/* Sub / Dub Quick Switcher (Anime & Series) */}
+                                    {hasSubAndDubMirrors && (
                                         <>
+                                            <Text style={styles.popupMenuSubheader}>Anime & Regional Switcher</Text>
+                                            <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 4, marginVertical: 4 }}>
+                                                <TouchableOpacity
+                                                    style={[styles.subDubPill, activeMirrorIdx === subMirrorIdx && styles.subDubPillActive]}
+                                                    onPress={() => {
+                                                        if (onSelectMirror) onSelectMirror(mirrorList[subMirrorIdx], subMirrorIdx);
+                                                        setDubToast('🇯🇵 Switched to Japanese SUB');
+                                                        setTimeout(() => setDubToast(null), 3000);
+                                                        setShowDubMenu(false);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.subDubPillText, activeMirrorIdx === subMirrorIdx && styles.subDubPillTextActive]}>
+                                                        🇯🇵 SUB (Original)
+                                                    </Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.subDubPill, activeMirrorIdx === dubMirrorIdx && styles.subDubPillActive]}
+                                                    onPress={() => {
+                                                        if (onSelectMirror) onSelectMirror(mirrorList[dubMirrorIdx], dubMirrorIdx);
+                                                        setDubToast('🎙️ Switched to English DUB');
+                                                        setTimeout(() => setDubToast(null), 3000);
+                                                        setShowDubMenu(false);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.subDubPillText, activeMirrorIdx === dubMirrorIdx && styles.subDubPillTextActive]}>
+                                                        🎙️ DUB (Dubbed)
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                            <Text style={styles.popupMenuHint}>
+                                                One-click toggle between original Japanese with subtitles and English dubbed voice.
+                                            </Text>
+                                            <View style={styles.popupMenuDivider} />
+                                        </>
+                                    )}
+
+                                    {/* Native Embedded Audio Tracks in HLS/Direct */}
+                                    {isDirect && availableAudioTracks.length > 1 && (
+                                        <>
+                                            <Text style={styles.popupMenuSubheader}>Stream Audio Tracks</Text>
                                             {availableAudioTracks.map(t => (
                                                 <TouchableOpacity
                                                     key={t.idx}
                                                     style={[styles.popupMenuItem, activeAudioIdx === t.idx && styles.popupMenuItemActive]}
-                                                    onPress={() => selectAudioTrack(t.idx)}
+                                                    onPress={() => {
+                                                        selectAudioTrack(t.idx);
+                                                        setShowDubMenu(false);
+                                                    }}
                                                 >
                                                     <Text style={[styles.popupMenuText, activeAudioIdx === t.idx && styles.popupMenuTextActive]}>
                                                         {activeAudioIdx === t.idx ? '▶ ' : ''}{t.label}
@@ -1257,35 +1669,59 @@ export default function ShadowStreamPlayer({
                                                 </TouchableOpacity>
                                             ))}
                                             <View style={styles.popupMenuDivider} />
-                                            <Text style={styles.popupMenuHint}>
-                                                Switching restarts audio on some browsers. Playback position is kept.
-                                            </Text>
                                         </>
-                                    ) : (
+                                    )}
+
+                                    {/* Production Spoken Language Information */}
+                                    {availableDubs.length > 0 && (
                                         <>
+                                            <Text style={styles.popupMenuSubheader}>Production Spoken Language</Text>
+                                            <View style={styles.audioChipRow}>
+                                                {availableDubs.slice(0, 6).map(d => (
+                                                    <View
+                                                        key={d.code}
+                                                        style={styles.audioChip}
+                                                    >
+                                                        <Text style={styles.audioChipText}>
+                                                            🗣️ {d.label}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
                                             <Text style={styles.popupMenuHint}>
-                                                {isDirect
-                                                    ? 'This stream carries a single audio track, so there is nothing to switch between.'
-                                                    : 'This server streams one audio track. The language is baked into the file, so no dub can be selected here.'}
+                                                Original language recorded for this title.
                                             </Text>
                                             <View style={styles.popupMenuDivider} />
-                                            {normalizedDubs.length > 0 && (
-                                                <>
-                                                    <Text style={styles.popupMenuSubheader}>Languages recorded for this title</Text>
-                                                    {normalizedDubs.map(d => (
-                                                        <Text key={d.code} style={styles.popupMenuHint}>
-                                                            • {d.label}
-                                                        </Text>
-                                                    ))}
-                                                    <View style={styles.popupMenuDivider} />
-                                                </>
-                                            )}
-                                            <Text style={styles.popupMenuHint}>
-                                                These are catalogue facts, not playback options. Subtitles are separate — use
-                                                the CC button in the player, or pick a different stream from ⚡ Server
-                                                which may carry a different audio track.
-                                            </Text>
                                         </>
+                                    )}
+
+                                    {/* Direct Mode Single Audio Track Guidance */}
+                                    {isDirect && availableAudioTracks.length <= 1 && (
+                                        <View style={styles.embedAudioInfoBox}>
+                                            <Text style={styles.embedAudioInfoTitle}>🔊 Single Master Audio Track</Text>
+                                            <Text style={styles.embedAudioInfoText}>
+                                                This direct stream carries a single default audio track. For alternate dubbed versions or localized releases, switch to another server using the ⚡ Server button.
+                                            </Text>
+                                        </View>
+                                    )}
+
+                                    {/* Provider Embed Stream Notice & Guide */}
+                                    {!isDirect && (
+                                        <View style={styles.embedAudioInfoBox}>
+                                            <Text style={styles.embedAudioInfoTitle}>🎛️ Provider Audio Controls</Text>
+                                            <Text style={styles.embedAudioInfoText}>
+                                                Loaded via {sourceName || 'external server'}. The provider stream includes embedded audio settings inside its player.
+                                            </Text>
+                                            <Text style={styles.embedAudioTip}>
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚙️ In-Player Settings:</Text> Click the ⚙️ Gear icon in the bottom-right corner of the video player to switch audio languages and subtitles.
+                                            </Text>
+                                            <Text style={styles.embedAudioTip}>
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚡ Server Switcher:</Text> Tap ⚡ Server in the top bar to try other servers that may offer localized releases.
+                                            </Text>
+                                            <Text style={styles.embedAudioTip}>
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⏏️ External Players:</Text> Tap ⬇ Download → Copy Stream Link to play in VLC or MX Player with full multi-audio channel control.
+                                            </Text>
+                                        </View>
                                     )}
                                 </ScrollView>
                             </View>
@@ -1328,6 +1764,43 @@ export default function ShadowStreamPlayer({
                         </View>
                     ) : null}
 
+                    {/* Offline Media Download Menu */}
+                    {streamUrl ? (
+                        <View style={{ position: 'relative' }}>
+                            <TouchableOpacity
+                                style={styles.pillButton}
+                                onPress={() => setShowDownloadMenu(!showDownloadMenu)}
+                                accessibilityLabel="Download video or audio for offline watching"
+                            >
+                                <Text style={styles.pillButtonText}>⬇ Download</Text>
+                            </TouchableOpacity>
+                            {showDownloadMenu && (
+                                <View style={[styles.popupMenu, { minWidth: 260 }]}>
+                                    <Text style={styles.popupMenuHeader}>Offline Download</Text>
+                                    <TouchableOpacity
+                                        style={styles.popupMenuItem}
+                                        onPress={handleDownloadVideo}
+                                    >
+                                        <Text style={styles.popupMenuText}>⬇ Download Video File (MP4)</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.popupMenuItem}
+                                        onPress={handleCopyStreamLink}
+                                    >
+                                        <Text style={styles.popupMenuText}>📋 Copy Stream Link (1DM, ADM, IDM)</Text>
+                                    </TouchableOpacity>
+                                    <View style={styles.popupMenuDivider} />
+                                    <TouchableOpacity
+                                        style={styles.popupMenuItem}
+                                        onPress={() => setShowDownloadMenu(false)}
+                                    >
+                                        <Text style={[styles.popupMenuText, { color: COLORS.textMuted }]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+                    ) : null}
+
                     {/* Episodes Drawer */}
                     {seasons.length > 0 && (
                         <TouchableOpacity
@@ -1347,7 +1820,61 @@ export default function ShadowStreamPlayer({
                         <Text style={styles.fullscreenNote}>{fullscreenNote}</Text>
                     </View>
                 ) : null}
+                {dubToast ? (
+                    <View style={styles.fullscreenNoteWrap} pointerEvents="none">
+                        <Text style={[styles.fullscreenNote, { backgroundColor: 'rgba(20, 20, 28, 0.95)', borderColor: COLORS.brand, borderWidth: 1 }]}>
+                            {dubToast}
+                        </Text>
+                    </View>
+                ) : null}
+                {adBlockedToast ? (
+                    <View style={styles.fullscreenNoteWrap} pointerEvents="none">
+                        <Text style={[styles.fullscreenNote, { backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: noAdsEnabled ? '#10B981' : '#EF4444', borderWidth: 1, shadowColor: noAdsEnabled ? '#10B981' : '#EF4444', shadowOpacity: 0.4, shadowRadius: 6 }]}>
+                            {adBlockedToast}
+                        </Text>
+                    </View>
+                ) : null}
             </View>
+
+            {/* AdShield Sandbox Helper Line — allows user to bypass sandbox if embed stalls, then toggle back on */}
+            {!isDirect && !adHelperDismissed && (
+                <View
+                    style={[
+                        styles.adShieldHelperBar,
+                        !noAdsEnabled && styles.adShieldHelperBarOff
+                    ]}
+                    pointerEvents="box-none"
+                >
+                    <View style={styles.adShieldHelperLeft}>
+                        <Text style={styles.adShieldHelperText}>
+                            {noAdsEnabled
+                                ? "⚠️ Video stuck or can't play? Turn off AdShield (🛡️) → start video → turn back on."
+                                : "🛡️ Video started? Turn AdShield back ON to block popups & ads."}
+                        </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <TouchableOpacity
+                            style={[
+                                styles.adShieldHelperBtn,
+                                !noAdsEnabled && styles.adShieldHelperBtnOn
+                            ]}
+                            onPress={handleToggleNoAds}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.adShieldHelperBtnText}>
+                                {noAdsEnabled ? 'Turn Off AdShield' : 'Turn AdShield ON'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.adShieldHelperDismissBtn}
+                            onPress={() => setAdHelperDismissed(true)}
+                            accessibilityLabel="Dismiss notice"
+                        >
+                            <Text style={styles.adShieldHelperDismissText}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
 
             {/* Loading line — sits directly under the title bar so a slow provider is
                 never a silent black rectangle. It carries the switcher with it,
@@ -1837,14 +2364,57 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 30,
-        backgroundColor: 'rgba(10, 10, 14, 0.85)',
+        zIndex: 35,
+        backgroundColor: 'rgba(10, 10, 14, 0.88)',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 12,
         paddingTop: 12,
         paddingBottom: 8,
+        transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease',
+    },
+    topControlBarVisible: {
+        transform: [{ translateY: 0 }],
+        opacity: 1,
+    },
+    topControlBarHidden: {
+        transform: [{ translateY: -70 }],
+        opacity: 0,
+    },
+    topTriggerZone: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 52,
+        zIndex: 34,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingTop: 8,
+    },
+    minimizedPill: {
+        backgroundColor: 'rgba(15, 16, 23, 0.78)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.22)',
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        backdropFilter: 'blur(8px)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+        elevation: 6,
+    },
+    minimizedPillText: {
+        color: 'rgba(255, 255, 255, 0.95)',
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 0.4,
+    },
+    cursorHidden: {
+        cursor: 'none',
     },
     backBtn: {
         paddingHorizontal: 14,
@@ -1889,6 +2459,50 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '800',
     },
+    noAdsToggleBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 5,
+        alignSelf: 'center',
+        borderWidth: 1,
+        gap: 4,
+    },
+    noAdsToggleBtnOn: {
+        backgroundColor: 'rgba(16, 185, 129, 0.22)',
+        borderColor: '#10B981',
+    },
+    noAdsToggleBtnOff: {
+        backgroundColor: 'rgba(239, 68, 68, 0.18)',
+        borderColor: 'rgba(239, 68, 68, 0.5)',
+    },
+    noAdsToggleIcon: {
+        fontSize: 10,
+    },
+    noAdsToggleText: {
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 0.3,
+    },
+    noAdsToggleTextOn: {
+        color: '#34D399',
+    },
+    noAdsToggleTextOff: {
+        color: '#FCA5A5',
+    },
+    blockedBadge: {
+        backgroundColor: '#10B981',
+        borderRadius: 8,
+        paddingHorizontal: 5,
+        paddingVertical: 1,
+        marginLeft: 2,
+    },
+    blockedBadgeText: {
+        color: '#000000',
+        fontSize: 9,
+        fontWeight: '900',
+    },
     fullscreenNoteWrap: {
         position: 'absolute',
         top: 64,
@@ -1925,10 +2539,6 @@ const styles = StyleSheet.create({
         flexShrink: 0,
     },
     pillButtonActive: {
-        backgroundColor: 'rgba(255, 255, 255, 0.18)',
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-    },
-    pillButtonActive: {
         borderColor: COLORS.brand,
         backgroundColor: 'rgba(229, 9, 20, 0.25)',
     },
@@ -1951,8 +2561,50 @@ const styles = StyleSheet.create({
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
     },
     audioPopupMenu: {
-        width: 250,
-        maxHeight: 340,
+        width: 270,
+        maxHeight: 380,
+    },
+    audioActiveBox: {
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        borderRadius: 6,
+        padding: 8,
+        marginVertical: 4,
+        borderLeftWidth: 3,
+        borderLeftColor: COLORS.brand,
+    },
+    audioActiveLabel: {
+        color: '#8A8A98',
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    audioActiveValue: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+        marginTop: 2,
+    },
+    subDubPill: {
+        flex: 1,
+        paddingVertical: 6,
+        borderRadius: 4,
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    subDubPillActive: {
+        backgroundColor: 'rgba(229, 9, 20, 0.25)',
+        borderColor: COLORS.brand,
+    },
+    subDubPillText: {
+        color: '#CCCCCC',
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    subDubPillTextActive: {
+        color: '#FFFFFF',
+        fontWeight: '800',
     },
     popupMenuSubheader: {
         color: '#8A8A98',
@@ -1963,6 +2615,58 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingTop: 8,
         paddingBottom: 3,
+    },
+    dubAudioDownloadItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        marginVertical: 3,
+    },
+    dubAudioDownloadItemLabel: {
+        color: '#E0E0E0',
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    dubAudioDownloadBadge: {
+        color: '#60A5FA',
+        fontSize: 10,
+        fontWeight: '700',
+        backgroundColor: 'rgba(59, 130, 246, 0.18)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 3,
+    },
+    audioChipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        paddingHorizontal: 4,
+        marginVertical: 4,
+    },
+    audioChip: {
+        paddingVertical: 5,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+    },
+    audioChipActive: {
+        backgroundColor: 'rgba(229, 9, 20, 0.25)',
+        borderColor: COLORS.brand,
+    },
+    audioChipText: {
+        color: '#CCCCCC',
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    audioChipTextActive: {
+        color: '#FFFFFF',
+        fontWeight: '800',
     },
     popupMenuDivider: {
         height: 1,
@@ -1976,6 +2680,32 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         lineHeight: 14,
+    },
+    embedAudioInfoBox: {
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderRadius: 6,
+        padding: 10,
+        marginVertical: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    embedAudioInfoTitle: {
+        color: '#F59E0B',
+        fontSize: 11,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    embedAudioInfoText: {
+        color: '#CCCCCC',
+        fontSize: 11,
+        lineHeight: 16,
+        marginBottom: 6,
+    },
+    embedAudioTip: {
+        color: '#9CA3AF',
+        fontSize: 10,
+        lineHeight: 15,
+        marginTop: 4,
     },
     popupMenuHeader: {
         color: COLORS.textMuted,
@@ -2282,5 +3012,65 @@ const styles = StyleSheet.create({
         color: COLORS.textSecondary,
         fontSize: 11,
         fontWeight: '600',
+    },
+    adShieldHelperBar: {
+        position: 'absolute',
+        top: 56,
+        left: 12,
+        right: 12,
+        zIndex: 45,
+        backgroundColor: 'rgba(15, 23, 42, 0.94)',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(234, 179, 8, 0.5)',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    adShieldHelperBarOff: {
+        borderColor: 'rgba(16, 185, 129, 0.5)',
+        backgroundColor: 'rgba(6, 78, 59, 0.94)',
+    },
+    adShieldHelperLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        minWidth: 200,
+        gap: 6,
+    },
+    adShieldHelperText: {
+        color: '#F9FAFB',
+        fontSize: 12,
+        fontWeight: '600',
+        lineHeight: 16,
+    },
+    adShieldHelperBtn: {
+        backgroundColor: '#EAB308',
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    adShieldHelperBtnOn: {
+        backgroundColor: '#10B981',
+    },
+    adShieldHelperBtnText: {
+        color: '#000000',
+        fontSize: 11,
+        fontWeight: '800',
+    },
+    adShieldHelperDismissBtn: {
+        padding: 4,
+        marginLeft: 4,
+    },
+    adShieldHelperDismissText: {
+        color: '#9CA3AF',
+        fontSize: 14,
+        fontWeight: '700',
     },
 });

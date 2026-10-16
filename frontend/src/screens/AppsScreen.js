@@ -6,11 +6,18 @@ import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
 import MobileTabBar from '../components/MobileTabBar';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { getApiBase } from '../utils/api';
 
-// Where the desktop launcher binaries are hosted. Same domain as the deployed
-// app so the player keeps the URL it was launched with. Update if you move
-// the artifacts to a different CDN.
-const RELEASE_BASE = 'https://streamapp-catalog.muhd-faisal-work.workers.dev/downloads';
+export function getReleaseBase() {
+    const api = getApiBase();
+    if (api && (api.includes('localhost') || api.includes('127.0.0.1'))) {
+        return api.replace(/\/api\/v1\/?$/, '') + '/downloads';
+    }
+    return 'https://ssmoviestvs.site/downloads';
+}
+
+// Where the desktop launcher binaries are hosted.
+const RELEASE_BASE = 'https://ssmoviestvs.site/downloads';
 
 // 2.4.1 / current live build identifier.
 const BUILD_VERSION = '2.4.1';
@@ -21,12 +28,23 @@ const APPS = [
         platform: 'Android (APK)',
         icon: '📱',
         arch: 'ARM64 & x86_64 (Phones, Tablets & Android TV)',
-        size: '~400 KB',
+        size: '2.42 MB',
         fileName: 'ShadowStream.apk',
         url: `${RELEASE_BASE}/ShadowStream.apk`,
         status: 'ready',
-        notes: 'Installable Android APK with hardware acceleration, fullscreen player, and Android TV support.',
+        notes: 'Installable Android APK with crisp new brand icon, offline UI bundling, hardware acceleration, Picture-in-Picture (PiP), and Android TV support.',
         recommended: true,
+    },
+    {
+        id: 'apple-xtool',
+        platform: 'Apple iOS & macOS (xtool / SwiftPM)',
+        icon: '🍏',
+        arch: 'iOS 16+ (iPhone/iPad) & macOS 13+ (Universal)',
+        size: 'Native Swift App',
+        fileName: 'ShadowStream-xtool',
+        url: 'https://github.com/xtool-org/xtool',
+        status: 'ready',
+        notes: 'Native Swift/SwiftUI application built with xtool (Xcode-free SwiftPM CLI) featuring PiP, safe-area gestures, and hardware video playback.',
     },
     {
         id: 'windows',
@@ -90,7 +108,7 @@ const APPS = [
         arch: 'Any modern browser',
         size: '0 MB',
         fileName: 'ShadowStream Web (this site)',
-        url: 'https://streamapp.muhd-faisal-work.workers.dev',
+        url: 'https://ssmoviestvs.site',
         status: 'ready',
         notes: 'No install required. Tap "Install" in your browser address bar to add as a desktop app.',
     },
@@ -129,11 +147,23 @@ export default function AppsScreen({ navigation }) {
             }
             return;
         }
+        if (app.url && !app.url.includes('/downloads/') && (app.url.startsWith('http://') || app.url.startsWith('https://'))) {
+            if (typeof window !== 'undefined') {
+                window.open(app.url, '_blank');
+            } else {
+                Linking.openURL(app.url);
+            }
+            return;
+        }
+        const targetUrl = (app.fileName && !app.url?.startsWith('http'))
+            ? `${getReleaseBase()}/${app.fileName}`
+            : (app.url || `${getReleaseBase()}/${app.fileName}`);
+
         try {
             if (Platform.OS === 'web' && typeof document !== 'undefined') {
                 // Direct file download trigger for browsers
                 const a = document.createElement('a');
-                a.href = app.url;
+                a.href = targetUrl;
                 a.setAttribute('download', app.fileName || '');
                 a.style.display = 'none';
                 document.body.appendChild(a);
@@ -143,9 +173,9 @@ export default function AppsScreen({ navigation }) {
                 }, 1000);
                 return;
             }
-            const supported = await Linking.canOpenURL(app.url);
+            const supported = await Linking.canOpenURL(targetUrl);
             if (supported) {
-                await Linking.openURL(app.url);
+                await Linking.openURL(targetUrl);
             }
         } catch (e) {
             Alert.alert('Download failed', String(e?.message || e));
@@ -191,7 +221,8 @@ export default function AppsScreen({ navigation }) {
                             <Text style={styles.downloadBtnText}>
                                 {app.status === 'broken' ? 'Unavailable' :
                                  app.id === 'web' ? 'Open Web App →' :
-                                 `Download ${app.fileName.endsWith('.apk') ? 'APK' : app.fileName.endsWith('.exe') ? 'Installer' : 'App'} →`}
+                                 app.id === 'apple-xtool' ? 'View Guide on GitHub →' :
+                                 `Download ${app.fileName?.endsWith('.apk') ? 'APK' : app.fileName?.endsWith('.exe') ? 'Installer' : 'App'} →`}
                             </Text>
                         </TouchableOpacity>
                     </View>

@@ -10,19 +10,27 @@ import Poster from '../components/Poster';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
-export default function CollectionsScreen({ navigation }) {
+export default function CollectionsScreen({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
     const numCols = width >= 1200 ? 3 : width >= 768 ? 2 : 1;
 
     useRouteMeta('Collections');
 
-    const [activeTab, setActiveTab] = useState('all');
+    const [activeTab, setActiveTab] = useState(route?.params?.tab || 'all');
     const [collections, setCollections] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        if (route?.params?.tab) {
+            setActiveTab(route.params.tab);
+        }
+    }, [route?.params?.tab]);
+
     const tabs = [
-        { id: 'all', label: '📦 All 68 Collections' },
+        { id: 'all', label: '📦 All Collections' },
+        { id: 'studios', label: '🏢 Studios & Networks' },
+        { id: 'spiritual', label: '✨ Spiritual & Prophets' },
         { id: 'franchises', label: '🎬 Major Franchises' },
         { id: 'animation', label: '✨ Studio & Animation' },
         { id: 'regional', label: '🌍 Regional Cinema' },
@@ -47,11 +55,19 @@ export default function CollectionsScreen({ navigation }) {
     }, []);
 
     const filteredCollections = collections.filter(c => {
+        if (!c || (c.title_count === 0 && c.count === 0)) return false;
         if (activeTab === 'all') return true;
         const kind = (c.kind || c.type || '').toLowerCase();
-        if (activeTab === 'franchises') return kind === 'franchise';
-        if (activeTab === 'animation') return kind === 'studio' || c.slug.includes('ghibli') || c.slug.includes('pixar') || c.slug.includes('anime') || c.slug.includes('disney');
-        if (activeTab === 'regional') return kind === 'regional' || kind === 'region' || c.slug.includes('drama') || c.slug.includes('cinema') || c.slug.includes('bollywood') || c.slug.includes('dizi');
+        const slug = (c.slug || '').toLowerCase();
+        if (activeTab === 'studios') {
+            return kind === 'studio' || slug.includes('netflix') || slug.includes('disney') || slug.includes('max') || slug.includes('prime-video') || slug.includes('hulu') || slug.includes('apple-tv') || slug.includes('crunchyroll') || slug.includes('paramount') || slug.includes('peacock') || slug.includes('universal') || slug.includes('sony') || slug.includes('pixar') || slug.includes('warner') || slug.includes('marvel') || slug.includes('dc');
+        }
+        if (activeTab === 'spiritual') {
+            return slug.includes('prophet') || slug.includes('islamic') || slug.includes('christian') || slug.includes('spiritual');
+        }
+        if (activeTab === 'franchises') return kind === 'franchise' || slug.includes('paramount') || slug.includes('universal') || slug.includes('sony');
+        if (activeTab === 'animation') return kind === 'studio' || slug.includes('ghibli') || slug.includes('pixar') || slug.includes('anime') || slug.includes('disney') || slug.includes('crunchyroll');
+        if (activeTab === 'regional') return kind === 'regional' || kind === 'region' || slug.includes('drama') || slug.includes('cinema') || slug.includes('bollywood') || slug.includes('dizi') || slug.includes('indian') || slug.includes('african') || slug.includes('asian');
         if (activeTab === 'thematic') return kind === 'thematic' || kind === 'curated' || kind === 'genre' || kind === 'editorial';
         return true;
     });
@@ -64,7 +80,7 @@ export default function CollectionsScreen({ navigation }) {
                 <View style={styles.hubHero}>
                     <Text style={styles.hubTitle}>📦 Collections & Franchises</Text>
                     <Text style={styles.hubSub}>
-                        68 hand-curated cinematic universes, iconic film franchises, auteur director retrospectives, and regional television sagas.
+                        Hand-curated cinematic universes, spiritual & prophetic epics, iconic film franchises, auteur retrospectives, and regional television sagas.
                     </Text>
                 </View>
 

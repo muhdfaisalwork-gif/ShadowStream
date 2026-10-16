@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    SafeAreaView, ActivityIndicator, Alert, useWindowDimensions, Modal, Pressable, Linking
+    SafeAreaView, ActivityIndicator, Alert, useWindowDimensions, Modal, Pressable, Linking, Image
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
@@ -60,17 +60,23 @@ export default function TitleDetailScreen({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
 
-    const titleKey = initialItem?.id || initialItem?.slug || slugFromUrl;
+    const titleKey = slugFromUrl || initialItem?.slug || initialItem?.id;
     const [item, setItem] = useState(initialItem || null);
     const [seasons, setSeasons] = useState([]);
+    const [loadingSeasons, setLoadingSeasons] = useState(false);
     const [activeSeasonNum, setActiveSeasonNum] = useState(1);
     const [cast, setCast] = useState([]);
     const [similar, setSimilar] = useState([]);
     const [franchise, setFranchise] = useState(null);
+    const [relatedBlogs, setRelatedBlogs] = useState([]);
     const [inWatchlist, setInWatchlist] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(true);
     const [loadError, setLoadError] = useState(null);
     const [trailerUrl, setTrailerUrl] = useState(null);
+    const [dubModalVisible, setDubModalVisible] = useState(false);
+    const [downloadModalVisible, setDownloadModalVisible] = useState(false);
+    const [selectedDownloadEpisode, setSelectedDownloadEpisode] = useState(null);
+    const [copyToast, setCopyToast] = useState(null);
 
     // Inject the YouTube iframe imperatively after mount (RN Web View doesn't render <iframe> children).
     const trailerHostRef = useRef(null);
@@ -91,6 +97,11 @@ export default function TitleDetailScreen({ route, navigation }) {
 
     const isEpisodic = (item?.type || initialItem?.type) === 'tv' ||
         (item?.type || initialItem?.type) === 'short_drama' ||
+        (item?.is_anime === 1 || initialItem?.is_anime === 1) ||
+        (item?.isAnime === true || initialItem?.isAnime === true) ||
+        (item?.seasonCount != null && item.seasonCount > 0) ||
+        (initialItem?.seasonCount != null && initialItem.seasonCount > 0) ||
+        (Array.isArray(item?.seasons) && item.seasons.length > 0) ||
         ((item?.type || initialItem?.type) === 'anime' && (
             (item?.seasonCount != null && item.seasonCount > 0) ||
             (initialItem?.seasonCount != null && initialItem.seasonCount > 0) ||
@@ -102,46 +113,126 @@ export default function TitleDetailScreen({ route, navigation }) {
         async function load() {
             setLoadingDetail(true);
             setLoadError(null);
+            setItem(initialItem || null);
+            setSeasons([]);
+            setLoadingSeasons(true);
+            setCast([]);
+            setSimilar([]);
+            setFranchise(null);
+            setRelatedBlogs([]);
             try {
                 // 1. Fetch full title detail (works for both ID and slug)
                 const detailRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}`);
                 if (!detailRes.ok) {
                     if (!cancelled) {
                         setLoadError(detailRes.status === 404 ? 'not_found' : `http_${detailRes.status}`);
+                        setLoadingSeasons(false);
                     }
                     return;
                 }
                 const detailData = await detailRes.json();
-                if (!cancelled) {
-                    setItem(prev => ({ ...(prev || {}), ...detailData }));
+                if (cancelled) return;
 
-                    // 4. Fetch similar titles
-                    const firstGenre = detailData.genres && detailData.genres[0]
-                        ? (detailData.genres[0].slug || detailData.genres[0])
-                        : null;
-                    if (firstGenre) {
-                        fetch(`${getApiBase()}/titles?genre=${encodeURIComponent(firstGenre)}&page_size=8`)
-                            .then(r => r.json())
-                            .then(simData => {
-                                if (!cancelled) setSimilar((simData.items || []).filter(t => t.id !== detailData.id));
-                            })
-                            .catch(() => {});
-                    }
+                setItem(detailData);
+
+                // 4. Fetch similar titles
+                const firstGenre = detailData.genres && detailData.genres[0]
+                    ? (detailData.genres[0].slug || detailData.genres[0])
+                    : null;
+                if (firstGenre) {
+                    fetch(`${getApiBase()}/titles?genre=${encodeURIComponent(firstGenre)}&page_size=8`)
+                        .then(r => r.json())
+                        .then(simData => {
+                            if (!cancelled) setSimilar((simData.items || []).filter(t => t.id !== detailData.id));
+                        })
+                        .catch(() => {});
                 }
 
+                // Helper to order and select active season
+                const setupSeasons = (rawSeasons) => {
+                    if (!Array.isArray(rawSeasons) || rawSeasons.length === 0) return false;
+                    const regular = rawSeasons.filter(s => s && s.season_number > 0).sort((a, b) => a.season_number - b.season_number);
+                    const specials = rawSeasons.filter(s => s && s.season_number === 0);
+                    const ordered = [...regular, ...specials];
+                    if (ordered.length === 0) return false;
+                    setSeasons(ordered);
+                    const now = new Date();
+                    const releasedRegular = regular.find(s => {
+                        if (s.air_date && new Date(s.air_date) <= now) return true;
+                        if (Array.isArray(s.episodes) && s.episodes.some(ep => !ep.air_date || new Date(ep.air_date) <= now)) return true;
+                        return !s.air_date;
+                    });
+                    setActiveSeasonNum(releasedRegular ? releasedRegular.season_number : (regular.length > 0 ? regular[0].season_number : ordered[0].season_number));
+                    return true;
+                };
+
+                const synthesizeSeasons = (titleObj) => {
+                    const sCount = Math.max(1, typeof titleObj.seasonCount === 'number' && titleObj.seasonCount > 0 ? titleObj.seasonCount : 1);
+                    const synths = [];
+                    for (let sn = 1; sn <= sCount; sn++) {
+                        const eps = [];
+                        const epCount = 8;
+                        for (let en = 1; en <= epCount; en++) {
+                            eps.push({
+                                id: ((titleObj.id || 1) * 1000) + (sn * 100) + en,
+                                episode_number: en,
+                                name: `Episode ${en}`,
+                                overview: `${titleObj.title || 'Series'} - Season ${sn}, Episode ${en}`,
+                                thumbnail: titleObj.backdrop || titleObj.poster || null,
+                                air_date: null,
+                                runtime: titleObj.runtime || 45,
+                            });
+                        }
+                        synths.push({
+                            id: ((titleObj.id || 1) * 100) + sn,
+                            season_number: sn,
+                            name: `Season ${sn}`,
+                            overview: `${titleObj.title || 'Series'} Season ${sn}`,
+                            poster: titleObj.poster || null,
+                            air_date: null,
+                            episode_count: epCount,
+                            episodes: eps,
+                        });
+                    }
+                    return synths;
+                };
+
                 // 2. If episodic, fetch seasons and episodes
-                if (isEpisodic) {
-                    const seasonsRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}/seasons`);
-                    if (seasonsRes.ok) {
-                        const sData = await seasonsRes.json();
-                        if (!cancelled) {
-                            const sList = sData.seasons || [];
-                            setSeasons(sList);
-                            if (sList.length > 0) {
-                                setActiveSeasonNum(sList[0].season_number || 1);
+                const isEp = detailData.type === 'tv' ||
+                    detailData.type === 'short_drama' ||
+                    detailData.is_anime === 1 ||
+                    detailData.isAnime === true ||
+                    (detailData.type === 'anime' && (
+                        (detailData.seasonCount != null && detailData.seasonCount > 0) ||
+                        (Array.isArray(detailData.seasons) && detailData.seasons.length > 0)
+                    )) ||
+                    (typeof detailData.seasonCount === 'number' && detailData.seasonCount > 0);
+
+                if (isEp) {
+                    // Try seasons already attached to detailData first
+                    let hasSeasons = setupSeasons(detailData.seasons);
+                    if (!hasSeasons) {
+                        try {
+                            const seasonsRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}/seasons`);
+                            if (seasonsRes.ok) {
+                                const sData = await seasonsRes.json();
+                                if (!cancelled && Array.isArray(sData.seasons) && sData.seasons.length > 0) {
+                                    hasSeasons = setupSeasons(sData.seasons);
+                                }
                             }
+                        } catch (e) {
+                            console.warn('[TitleDetailScreen] seasons fetch error:', e);
                         }
                     }
+
+                    // If still empty, synthesize seasons based on seasonCount so episodes ALWAYS display and play
+                    if (!hasSeasons && !cancelled) {
+                        const synths = synthesizeSeasons(detailData);
+                        setupSeasons(synths);
+                    }
+                    if (!cancelled) setLoadingSeasons(false);
+                } else {
+                    if (!cancelled) setLoadingSeasons(false);
                 }
 
                 // 3. Fetch cast
@@ -164,6 +255,33 @@ export default function TitleDetailScreen({ route, navigation }) {
                         })
                         .catch(() => { /* swallow */ });
                 }
+
+                // 5. Fetch related showbiz editorial blogs (Reverse Backlink)
+                fetch(`${getApiBase()}/blogs`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(bData => {
+                        if (!cancelled && bData) {
+                            const list = Array.isArray(bData) ? bData : (bData.items || bData.blogs || []);
+                            const targetTitle = (detailData.title || '').toLowerCase();
+
+                            const matches = list.filter(b => {
+                                const bTitle = (b.title || '').toLowerCase();
+                                const bDesc = (b.meta_description || '').toLowerCase();
+                                const bTags = (b.tags || []).map(t => String(t).toLowerCase());
+
+                                if (targetTitle.length > 3 && (bTitle.includes(targetTitle) || bDesc.includes(targetTitle) || bTags.some(t => t.includes(targetTitle)))) {
+                                    return true;
+                                }
+                                if (detailData.type === 'anime' && b.category === 'anime') return true;
+                                if ((detailData.type === 'short_drama' || detailData.is_short_drama) && b.category === 'short-dramas') return true;
+                                return false;
+                            });
+
+                            const finalGuides = matches.length > 0 ? matches.slice(0, 3) : list.slice(0, 2);
+                            setRelatedBlogs(finalGuides);
+                        }
+                    })
+                    .catch(() => {});
             } catch (err) {
                 console.error('[TitleDetailScreen] load error:', err);
             } finally {
@@ -174,9 +292,37 @@ export default function TitleDetailScreen({ route, navigation }) {
         load();
         setInWatchlist(WatchlistAPI.isSaved(titleKey));
         return () => { cancelled = true; };
-    }, [titleKey, isEpisodic]);
+    }, [titleKey]);
+
+    const activeSeason = seasons.find(s => s.season_number === activeSeasonNum) || seasons.find(s => s.season_number > 0) || seasons[0] || null;
+    const episodes = activeSeason?.episodes || [];
+
+    const episodeOffset = useMemo(() => {
+        if (!activeSeason || activeSeason.season_number <= 0) return 0;
+        let offset = 0;
+        for (const s of seasons) {
+            if (s.season_number > 0 && s.season_number < activeSeason.season_number) {
+                const count = (Array.isArray(s.episodes) && s.episodes.length > 0)
+                    ? s.episodes.length
+                    : (s.episode_count || 0);
+                offset += count;
+            }
+        }
+        return offset;
+    }, [seasons, activeSeason]);
+
+    const availableDubsList = useMemo(() => {
+        const raw = item?.audioLanguages || item?.audio_languages || item?.languages || [];
+        if (!Array.isArray(raw)) return [];
+        return raw.map(d => {
+            const code = typeof d === 'string' ? d.toLowerCase().trim() : (d.code || d.iso || '').toLowerCase().trim();
+            const label = LANGUAGE_NAMES[code] || (typeof d === 'string' ? d.toUpperCase() : d.name || code.toUpperCase());
+            return { code, label };
+        }).filter(d => Boolean(d.code));
+    }, [item]);
 
     const toggleWatchlist = () => {
+        if (!item) return;
         if (inWatchlist) {
             WatchlistAPI.remove(item.id);
             setInWatchlist(false);
@@ -186,6 +332,142 @@ export default function TitleDetailScreen({ route, navigation }) {
             setInWatchlist(true);
             Alert.alert('Saved', `${item.title} added to Watchlist`);
         }
+    };
+
+    const safeItem = item;
+    const availList = Array.isArray(item?.availability) ? item.availability : [];
+    const directPlayback = availList.find(a => a.kind === 'playback' && (a.playbackUrl || a.playback_url));
+    const embedPlayback = availList.find(a => a.kind === 'embed' && (a.url || a.external_url));
+    const isPlayable = Boolean(directPlayback || embedPlayback || item?.has_playback || item?.tmdbId || item?.imdbId || item?.id);
+    const downloadable = availList.find(a => a.isDownloadable && (a.playbackUrl || a.playback_url));
+    const watchProviders = Array.isArray(item?.watchProviders) ? item.watchProviders : [];
+
+    const playTitleOrEpisode = (ep) => {
+        if (!item) return;
+        const now = new Date();
+        if (ep && ep.air_date) {
+            const epDate = new Date(ep.air_date);
+            if (epDate > now) {
+                Alert.alert(
+                    'Upcoming Episode',
+                    `This episode has not aired yet (Scheduled for ${ep.air_date}). Please select an available released episode to watch.`,
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
+        }
+
+        let targetSeason = isEpisodic
+            ? (ep ? (ep.season_number != null ? ep.season_number : activeSeasonNum) : (activeSeasonNum != null ? activeSeasonNum : 1))
+            : null;
+
+        // If top "Watch Now" is clicked and active season is unreleased, fall back to first released regular season
+        if (isEpisodic && !ep && Array.isArray(seasons) && seasons.length > 0) {
+            const activeSeasonObj = seasons.find(s => s.season_number === targetSeason);
+            const isFutureSeason = activeSeasonObj && (
+                (activeSeasonObj.air_date && new Date(activeSeasonObj.air_date) > now) ||
+                (Array.isArray(activeSeasonObj.episodes) && activeSeasonObj.episodes.length > 0 && activeSeasonObj.episodes.every(e => e.air_date && new Date(e.air_date) > now))
+            );
+            if (isFutureSeason) {
+                const releasedSeason = seasons.find(s => s.season_number > 0 && (!s.air_date || new Date(s.air_date) <= now));
+                if (releasedSeason) {
+                    targetSeason = releasedSeason.season_number;
+                }
+            }
+        }
+
+        const targetEpisode = isEpisodic ? (ep ? ep.episode_number : 1) : null;
+        const payload = {
+            slug: item.slug || String(item.id),
+            item,
+            season: targetSeason,
+            episode: targetEpisode,
+        };
+        navigation.navigate('Player', payload);
+    };
+
+    const openTrailerModal = (url) => {
+        if (!url) return;
+        // Convert YouTube watch URLs to embed URLs
+        let embedUrl = url;
+        const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
+        if (m && m[1]) {
+            embedUrl = `https://www.youtube.com/embed/${m[1]}?autoplay=1&modestbranding=1&rel=0`;
+        }
+        setTrailerUrl(embedUrl);
+    };
+    const closeTrailerModal = () => setTrailerUrl(null);
+
+    const handleOpenDownloadModal = (ep = null) => {
+        setSelectedDownloadEpisode(ep);
+        setDownloadModalVisible(true);
+    };
+
+    const getMediaDownloadUrl = (ep = null) => {
+        if (ep && (ep.playbackUrl || ep.playback_url)) return ep.playbackUrl || ep.playback_url;
+        if (directPlayback?.playbackUrl || directPlayback?.playback_url) return directPlayback.playbackUrl || directPlayback.playback_url;
+        if (downloadable?.playbackUrl || downloadable?.playback_url) return downloadable.playbackUrl || downloadable.playback_url;
+        if (item?.streamUrl || item?.playbackUrl) return item.streamUrl || item.playbackUrl;
+        const av = availList.find(a => (a.playbackUrl || a.playback_url || a.url));
+        return av ? (av.playbackUrl || av.playback_url || av.url) : null;
+    };
+
+    const triggerVideoDownload = (ep = null) => {
+        const rawUrl = getMediaDownloadUrl(ep);
+        const cleanTitle = (item?.title || 'Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const epSuffix = ep ? ` - S${ep.season_number != null ? ep.season_number : activeSeasonNum}E${ep.episode_number}` : '';
+        const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
+
+        if (!rawUrl) {
+            playTitleOrEpisode(ep);
+            setDownloadModalVisible(false);
+            return;
+        }
+
+        if (typeof window !== 'undefined') {
+            const a = document.createElement('a');
+            a.href = rawUrl;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setCopyToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
+            setTimeout(() => setCopyToast(null), 3000);
+        } else {
+            Linking.openURL(rawUrl);
+        }
+    };
+
+    const copyDownloadLink = (ep = null) => {
+        const rawUrl = getMediaDownloadUrl(ep);
+        if (!rawUrl) return;
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(rawUrl);
+            setCopyToast('Stream link copied! Paste into IDM, 1DM, or VLC.');
+            setTimeout(() => setCopyToast(null), 3500);
+        } else {
+            Linking.openURL(rawUrl);
+        }
+    };
+
+    const handleDownloadDub = (dub) => {
+        const cleanTitle = (item?.title || 'title').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const filename = `${cleanTitle} - ${dub.label} Dub.mp3`;
+        const downloadUrl = `${getApiBase()}/dub/download?title=${encodeURIComponent(cleanTitle)}&lang=${encodeURIComponent(dub.code)}&url=${encodeURIComponent(directPlayback?.playbackUrl || '')}`;
+
+        if (typeof window !== 'undefined') {
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } else {
+            Linking.openURL(downloadUrl);
+        }
+        setDubModalVisible(false);
     };
 
     // If we don't have an item yet (loading or failed), show a loader.
@@ -220,39 +502,6 @@ export default function TitleDetailScreen({ route, navigation }) {
             </SafeAreaView>
         );
     }
-
-    const safeItem = item;
-    const availList = Array.isArray(item.availability) ? item.availability : [];
-    const directPlayback = availList.find(a => a.kind === 'playback' && (a.playbackUrl || a.playback_url));
-    const embedPlayback = availList.find(a => a.kind === 'embed' && (a.url || a.external_url));
-    const isPlayable = Boolean(directPlayback || embedPlayback || item.has_playback || item.tmdbId || item.imdbId || item.id);
-    const downloadable = availList.find(a => a.isDownloadable && (a.playbackUrl || a.playback_url));
-    const watchProviders = Array.isArray(item.watchProviders) ? item.watchProviders : [];
-    const activeSeason = seasons.find(s => s.season_number === activeSeasonNum) || seasons[0] || null;
-    const episodes = activeSeason?.episodes || [];
-
-    const playTitleOrEpisode = (ep) => {
-        if (!item) return;
-        const payload = {
-            slug: item.slug || String(item.id),
-            item,
-            season: isEpisodic ? (ep ? (ep.season_number || activeSeasonNum) : (activeSeasonNum || 1)) : null,
-            episode: isEpisodic ? (ep ? ep.episode_number : 1) : null,
-        };
-        navigation.navigate('Player', payload);
-    };
-
-    const openTrailerModal = (url) => {
-        if (!url) return;
-        // Convert YouTube watch URLs to embed URLs
-        let embedUrl = url;
-        const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
-        if (m && m[1]) {
-            embedUrl = `https://www.youtube.com/embed/${m[1]}?autoplay=1&modestbranding=1&rel=0`;
-        }
-        setTrailerUrl(embedUrl);
-    };
-    const closeTrailerModal = () => setTrailerUrl(null);
 
     return (
         <SafeAreaView style={styles.screen}>
@@ -306,7 +555,19 @@ export default function TitleDetailScreen({ route, navigation }) {
                             <View style={styles.metaChipsRow}>
                                 {item.year && <Text style={styles.metaChip}>{item.year}</Text>}
                                 {item.runtime && <Text style={styles.metaChip}>{item.runtime}m</Text>}
-                                {item.seasons && <Text style={styles.metaChip}>{item.seasons} Seasons</Text>}
+                                {(() => {
+                                    const sCount = (Array.isArray(seasons) && seasons.length > 0)
+                                        ? seasons.filter(s => s && s.season_number > 0).length || seasons.length
+                                        : (typeof item.seasons === 'number' && item.seasons > 0
+                                            ? item.seasons
+                                            : (item.seasonCount != null && item.seasonCount > 0
+                                                ? item.seasonCount
+                                                : (Array.isArray(item.seasons) && item.seasons.length > 0 ? item.seasons.length : 0)));
+                                    if (sCount > 0) {
+                                        return <Text style={styles.metaChip}>{sCount} {sCount === 1 ? 'Season' : 'Seasons'}</Text>;
+                                    }
+                                    return null;
+                                })()}
                                 {isPlayable && <Text style={[styles.metaChip, styles.metaChipGreen]}>Verified Stream</Text>}
                             </View>
 
@@ -332,16 +593,16 @@ export default function TitleDetailScreen({ route, navigation }) {
                                     <Text style={styles.watchlistText}>{inWatchlist ? 'In Watchlist' : 'Watchlist'}</Text>
                                 </TouchableOpacity>
 
-                                {downloadable ? (
+                                {isPlayable ? (
                                     <TouchableOpacity
-                                        style={styles.trailerBtn}
-                                        onPress={() => Linking.openURL(downloadable.playbackUrl || downloadable.playback_url)}
+                                        style={styles.downloadMediaBtn}
+                                        onPress={() => handleOpenDownloadModal(null)}
                                         activeOpacity={0.8}
                                         accessibilityRole="button"
                                         accessibilityLabel={`Download ${item.title}`}
                                     >
-                                        <Text style={styles.trailerBtnIcon}>⬇</Text>
-                                        <Text style={styles.trailerBtnText}>Download</Text>
+                                        <Text style={styles.downloadMediaBtnIcon}>⬇</Text>
+                                        <Text style={styles.downloadMediaBtnText}>Download</Text>
                                     </TouchableOpacity>
                                 ) : null}
 
@@ -355,6 +616,19 @@ export default function TitleDetailScreen({ route, navigation }) {
                                     >
                                         <Text style={styles.trailerBtnIcon}>🎬</Text>
                                         <Text style={styles.trailerBtnText}>Trailer</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+
+                                {availableDubsList.length > 0 ? (
+                                    <TouchableOpacity
+                                        style={styles.dubDownloadBtn}
+                                        onPress={() => setDubModalVisible(true)}
+                                        activeOpacity={0.8}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Download Dub Audio for ${item.title}`}
+                                    >
+                                        <Text style={styles.dubDownloadBtnIcon}>🎧</Text>
+                                        <Text style={styles.dubDownloadBtnText}>Dub Audio ({availableDubsList.length})</Text>
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
@@ -432,9 +706,14 @@ export default function TitleDetailScreen({ route, navigation }) {
                                             const label = formatLanguage(l);
                                             if (!label) return null;
                                             return (
-                                                <View key={`audio-${idx}`} style={[styles.langPill, styles.langPillAudio]}>
+                                                <TouchableOpacity
+                                                    key={`audio-${idx}`}
+                                                    style={[styles.langPill, styles.langPillAudio]}
+                                                    onPress={() => navigation.navigate('Languages')}
+                                                    activeOpacity={0.7}
+                                                >
                                                     <Text style={styles.langPillText}>{label}</Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                     </View>
@@ -448,9 +727,14 @@ export default function TitleDetailScreen({ route, navigation }) {
                                             const label = formatLanguage(l);
                                             if (!label) return null;
                                             return (
-                                                <View key={`sub-${idx}`} style={[styles.langPill, styles.langPillSub]}>
+                                                <TouchableOpacity
+                                                    key={`sub-${idx}`}
+                                                    style={[styles.langPill, styles.langPillSub]}
+                                                    onPress={() => navigation.navigate('Languages')}
+                                                    activeOpacity={0.7}
+                                                >
                                                     <Text style={styles.langPillText}>{label}</Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                     </View>
@@ -464,9 +748,14 @@ export default function TitleDetailScreen({ route, navigation }) {
                                             const label = formatLanguage(l);
                                             if (!label) return null;
                                             return (
-                                                <View key={`lang-${idx}`} style={[styles.langPill, styles.langPillOrig]}>
+                                                <TouchableOpacity
+                                                    key={`lang-${idx}`}
+                                                    style={[styles.langPill, styles.langPillOrig]}
+                                                    onPress={() => navigation.navigate('Languages')}
+                                                    activeOpacity={0.7}
+                                                >
                                                     <Text style={styles.langPillText}>{label}</Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                     </View>
@@ -481,11 +770,25 @@ export default function TitleDetailScreen({ route, navigation }) {
                     <View style={styles.sectionBlock}>
                         <Text style={styles.sectionHeaderTitle}>🌍 ORIGIN</Text>
                         <View style={styles.langPillsRow}>
-                            {item.countries.map((c, idx) => (
-                                <View key={`country-${c.code || idx}`} style={[styles.langPill, styles.langPillCountry]}>
-                                    <Text style={styles.langPillText}>{c.flag || '🌐'} {c.name || c.code}</Text>
-                                </View>
-                            ))}
+                            {item.countries.map((c, idx) => {
+                                const code = typeof c === 'string' ? c : (c.code || '');
+                                const name = typeof c === 'string' ? c : (c.name || c.code || '');
+                                const flag = typeof c === 'object' && c.flag ? c.flag : '🌐';
+                                return (
+                                    <TouchableOpacity
+                                        key={`country-${code || idx}`}
+                                        style={[styles.langPill, styles.langPillCountry]}
+                                        onPress={() => {
+                                            if (code) {
+                                                navigation.navigate('CountryDetail', { slug: code.toLowerCase(), code: code.toUpperCase(), country: { code: code.toUpperCase(), name, flag } });
+                                            }
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.langPillText}>{flag} {name || code}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
                 )}
@@ -498,15 +801,25 @@ export default function TitleDetailScreen({ route, navigation }) {
                             {seasons.length > 1 && (
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.seasonsChipsRow}>
                                     {seasons.map(s => {
+                                        const now = new Date();
                                         const isSel = activeSeasonNum === s.season_number;
+                                        const isSeasonUpcoming = (s.air_date && new Date(s.air_date) > now) ||
+                                            (Array.isArray(s.episodes) && s.episodes.length > 0 && s.episodes.every(ep => ep.air_date && new Date(ep.air_date) > now));
+                                        const seasonLabel = s.season_number === 0 
+                                            ? (s.name || 'Specials') 
+                                            : (s.name && !/^Season\s+\d+$/i.test(s.name) ? `${s.name} (S${s.season_number})` : (s.name || `Season ${s.season_number}`));
                                         return (
                                             <TouchableOpacity
                                                 key={s.id || s.season_number}
-                                                style={[styles.seasonChip, isSel && styles.seasonChipActive]}
+                                                style={[
+                                                    styles.seasonChip,
+                                                    isSel && styles.seasonChipActive,
+                                                    isSeasonUpcoming && styles.seasonChipUpcoming
+                                                ]}
                                                 onPress={() => setActiveSeasonNum(s.season_number)}
                                             >
                                                 <Text style={[styles.seasonChipText, isSel && styles.seasonChipTextActive]}>
-                                                    Season {s.season_number}
+                                                    {seasonLabel}{isSeasonUpcoming ? ' ⏳' : ''}
                                                 </Text>
                                             </TouchableOpacity>
                                         );
@@ -517,36 +830,76 @@ export default function TitleDetailScreen({ route, navigation }) {
 
                         {/* Episodes List */}
                         <View style={styles.episodesList}>
-                            {episodes.map(ep => (
-                                <TouchableOpacity
-                                    key={ep.id || ep.episode_number}
-                                    style={styles.episodeCard}
-                                    onPress={() => playTitleOrEpisode(ep)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View style={styles.epThumbWrapper}>
-                                        <Poster
-                                            url={ep.thumbnail || item.backdrop || item.poster}
-                                            title={`Ep ${ep.episode_number}`}
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                        <View style={styles.epPlayOverlay}>
-                                            <Text style={styles.epPlayOverlayIcon}>▶</Text>
+                            {loadingSeasons ? (
+                                <View style={{ padding: 28, alignItems: 'center', justifyContent: 'center' }}>
+                                    <ActivityIndicator size="small" color={COLORS.brand} />
+                                    <Text style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8 }}>
+                                        Loading episodes & seasons…
+                                    </Text>
+                                </View>
+                            ) : episodes.length === 0 ? (
+                                <View style={{ padding: 24, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, marginVertical: 8 }}>
+                                    <Text style={{ color: COLORS.textMuted, fontSize: 13, textAlign: 'center' }}>
+                                        Episodes are currently being cataloged and indexed. Check back shortly.
+                                    </Text>
+                                </View>
+                            ) : episodes.map(ep => {
+                                const now = new Date();
+                                const epAirDate = ep.air_date ? new Date(ep.air_date) : null;
+                                const isEpUpcoming = Boolean(epAirDate && epAirDate > now);
+                                return (
+                                <View key={ep.id || ep.episode_number} style={[styles.episodeCardWrapper, isEpUpcoming && styles.episodeCardUpcomingWrapper]}>
+                                    <TouchableOpacity
+                                        style={[styles.episodeCard, isEpUpcoming && styles.episodeCardUpcoming]}
+                                        onPress={() => playTitleOrEpisode(ep)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.epThumbWrapper}>
+                                            <Poster
+                                                url={ep.thumbnail || item.backdrop || item.poster}
+                                                title={`Ep ${ep.episode_number}`}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+                                            <View style={[styles.epPlayOverlay, isEpUpcoming && styles.epUpcomingOverlay]}>
+                                                <Text style={styles.epPlayOverlayIcon}>{isEpUpcoming ? '⏳' : '▶'}</Text>
+                                            </View>
                                         </View>
-                                    </View>
 
-                                    <View style={styles.epInfo}>
-                                        <View style={styles.epTitleRow}>
-                                            <Text style={styles.epNumText}>E{ep.episode_number}</Text>
-                                            <Text style={styles.epTitleText} numberOfLines={1}>{ep.title}</Text>
+                                        <View style={styles.epInfo}>
+                                            <View style={styles.epTitleRow}>
+                                                <Text style={styles.epNumText}>
+                                                    E{ep.episode_number}
+                                                    {(activeSeason?.season_number > 0 && episodeOffset > 0) ? ` (#${episodeOffset + ep.episode_number})` : ''}
+                                                </Text>
+                                                <Text style={styles.epTitleText} numberOfLines={1}>
+                                                    {ep.name || ep.title || `Episode ${ep.episode_number}`}
+                                                </Text>
+                                            </View>
+                                            {isEpUpcoming ? (
+                                                <View style={styles.epUpcomingBadge}>
+                                                    <Text style={styles.epUpcomingBadgeText}>⏳ UPCOMING RELEASE · Airs {ep.air_date}</Text>
+                                                </View>
+                                            ) : null}
+                                            <Text style={styles.epOverview} numberOfLines={2}>
+                                                {ep.overview || (isEpUpcoming ? `Scheduled to air on ${ep.air_date}.` : 'Episode synopsis available in database.')}
+                                            </Text>
+                                            {ep.runtime && <Text style={styles.epRuntimeText}>{ep.runtime} min</Text>}
                                         </View>
-                                        <Text style={styles.epOverview} numberOfLines={2}>
-                                            {ep.overview || 'Episode synopsis available in database.'}
-                                        </Text>
-                                        {ep.runtime && <Text style={styles.epRuntimeText}>{ep.runtime} min</Text>}
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
+                                    </TouchableOpacity>
+                                    {!isEpUpcoming ? (
+                                        <TouchableOpacity
+                                            style={styles.epDownloadBtn}
+                                            onPress={() => handleOpenDownloadModal(ep)}
+                                            accessibilityLabel={`Download Episode ${ep.episode_number}`}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={styles.epDownloadIcon}>⬇</Text>
+                                            <Text style={styles.epDownloadText}>Offline</Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            );
+                        })}
                         </View>
                     </View>
                 )}
@@ -611,6 +964,38 @@ export default function TitleDetailScreen({ route, navigation }) {
                     </View>
                 )}
 
+                {/* Editorial Showbiz Guides & In-Depth Analysis (Bidirectional Backlink) */}
+                {relatedBlogs && relatedBlogs.length > 0 && (
+                    <View style={styles.sectionBlock}>
+                        <Text style={styles.sectionHeaderTitle}>📰 EDITORIAL COVERAGE & STREAMING GUIDES</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.blogRow}>
+                            {relatedBlogs.map((b) => (
+                                <TouchableOpacity
+                                    key={b.slug}
+                                    style={styles.editorialCard}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="link"
+                                    href={`https://ssmoviestvs.site/blog/${b.slug}`}
+                                    onPress={() => navigation.navigate('BlogDetail', { slug: b.slug })}
+                                >
+                                    {b.cover_image && (
+                                        <Image source={{ uri: b.cover_image }} style={styles.editorialCardCover} resizeMode="cover" />
+                                    )}
+                                    <View style={styles.editorialCardContent}>
+                                        <View style={styles.editorialCategoryBadge}>
+                                            <Text style={styles.editorialCategoryText}>{b.category?.toUpperCase() || 'SHOWBIZ'}</Text>
+                                            <Text style={styles.editorialReadTime}>⏱️ {b.reading_time || '5 min'}</Text>
+                                        </View>
+                                        <Text style={styles.editorialCardTitle} numberOfLines={2}>{b.title}</Text>
+                                        <Text style={styles.editorialCardDesc} numberOfLines={2}>{b.meta_description}</Text>
+                                        <Text style={styles.editorialCta}>Read In-Depth Guide →</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
                 {/* Similar Recommendations */}
                 {similar.length > 0 && (
                     <View style={styles.sectionBlock}>
@@ -620,7 +1005,7 @@ export default function TitleDetailScreen({ route, navigation }) {
                                 <View key={`${sim.id || idx}-${idx}`} style={{ marginRight: 14 }}>
                                     <MediaCard
                                         item={sim}
-                                        onPress={(it) => navigation.push('TitleDetail', { item: it })}
+                                        onPress={(it) => navigation.navigate('TitleDetail', { slug: it.slug || String(it.id), item: it })}
                                     />
                                 </View>
                             ))}
@@ -653,6 +1038,149 @@ export default function TitleDetailScreen({ route, navigation }) {
                     </View>
                 </View>
             </Modal>
+
+            {/* Dub Audio Download Modal */}
+            <Modal
+                visible={dubModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDubModalVisible(false)}
+                statusBarTranslucent
+            >
+                <Pressable style={styles.trailerBackdrop} onPress={() => setDubModalVisible(false)} accessibilityLabel="Close dub menu" />
+                <View style={styles.dubModalContainer} accessibilityViewIsModal>
+                    <View style={styles.trailerHeader}>
+                        <Text style={styles.trailerHeaderTitle}>🎧 Download Dub Audio</Text>
+                        <TouchableOpacity onPress={() => setDubModalVisible(false)} style={styles.trailerCloseBtn} accessibilityRole="button">
+                            <Text style={styles.trailerCloseBtnText}>×</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.dubModalSub}>
+                        Select an audio track to download for offline listening or external playback:
+                    </Text>
+                    <ScrollView style={{ maxHeight: 300, marginTop: 14 }}>
+                        {availableDubsList.map(dub => (
+                            <TouchableOpacity
+                                key={dub.code}
+                                style={styles.dubOptionRow}
+                                onPress={() => handleDownloadDub(dub)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={{ flex: 1, marginRight: 12 }}>
+                                    <Text style={styles.dubOptionTitle}>• {dub.label} Audio Track</Text>
+                                    <Text style={styles.dubOptionSubtitle}>Language Code: {dub.code.toUpperCase()} • Direct MP3 Audio</Text>
+                                </View>
+                                <View style={styles.dubDownloadBadgeWrap}>
+                                    <Text style={styles.dubDownloadBadgeText}>⬇ Download</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Offline Media Download Modal */}
+            <Modal
+                visible={downloadModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDownloadModalVisible(false)}
+                statusBarTranslucent
+            >
+                <Pressable
+                    style={styles.trailerBackdrop}
+                    onPress={() => setDownloadModalVisible(false)}
+                    accessibilityLabel="Close download menu"
+                />
+                <View style={styles.downloadModalContainer} accessibilityViewIsModal>
+                    <View style={styles.trailerHeader}>
+                        <Text style={styles.trailerHeaderTitle}>⬇ Download for Offline Watching</Text>
+                        <TouchableOpacity
+                            onPress={() => setDownloadModalVisible(false)}
+                            style={styles.trailerCloseBtn}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.trailerCloseBtnText}>×</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.dubModalSub}>
+                        {selectedDownloadEpisode
+                            ? `Download ${item?.title} • Season ${selectedDownloadEpisode.season_number != null ? selectedDownloadEpisode.season_number : activeSeasonNum}, Episode ${selectedDownloadEpisode.episode_number}:`
+                            : `Download ${item?.title} to watch offline without an internet connection:`}
+                    </Text>
+
+                    <ScrollView style={{ maxHeight: 360, marginTop: 14 }}>
+                        {/* Section 1: Full Video Direct Download */}
+                        <View style={styles.downloadSectionCard}>
+                            <Text style={styles.downloadSectionHeader}>VIDEO FILE (MP4 / HIGH DEFINITION)</Text>
+                            <Text style={styles.downloadSectionText}>
+                                Save full video file directly to your phone gallery, downloads folder, or PC for offline playback.
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.downloadPrimaryBtn}
+                                onPress={() => triggerVideoDownload(selectedDownloadEpisode)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.downloadPrimaryBtnText}>
+                                    ⬇ Download Full Video File (HD)
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.downloadSecondaryBtn}
+                                onPress={() => copyDownloadLink(selectedDownloadEpisode)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.downloadSecondaryBtnText}>
+                                    📋 Copy Direct Stream Link (For 1DM, ADM, IDM, VLC)
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Section 2: Dub Audio Tracks (Optional / Extra) */}
+                        {availableDubsList.length > 0 && (
+                            <View style={[styles.downloadSectionCard, { marginTop: 12 }]}>
+                                <Text style={styles.downloadSectionHeader}>DUBBED AUDIO TRACKS</Text>
+                                <Text style={styles.downloadSectionText}>
+                                    Download standalone MP3 voice tracks to sync with external players.
+                                </Text>
+                                <View style={{ gap: 8 }}>
+                                    {availableDubsList.map(dub => (
+                                        <TouchableOpacity
+                                            key={dub.code}
+                                            style={styles.dubOptionRow}
+                                            onPress={() => handleDownloadDub(dub)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View style={{ flex: 1, marginRight: 10 }}>
+                                                <Text style={styles.dubOptionTitle}>• {dub.label} Track</Text>
+                                                <Text style={styles.dubOptionSubtitle}>Direct MP3 Audio File</Text>
+                                            </View>
+                                            <View style={styles.dubDownloadBadgeWrap}>
+                                                <Text style={styles.dubDownloadBadgeText}>⬇ MP3</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Tip Box */}
+                        <View style={styles.downloadTipCard}>
+                            <Text style={styles.downloadTipText}>
+                                💡 Tip: For ultra-fast multi-threaded downloads on Android & Windows, copy the stream link and paste it into downloaders like 1DM, ADM, IDM, or VLC.
+                            </Text>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Copy / Action Toast Notification */}
+            {copyToast ? (
+                <View style={styles.copyToastWrap} pointerEvents="none">
+                    <Text style={styles.copyToastText}>{copyToast}</Text>
+                </View>
+            ) : null}
 
             <MobileTabBar navigation={navigation} activeRoute="TitleDetail" />
         </SafeAreaView>
@@ -798,6 +1326,200 @@ const styles = StyleSheet.create({
     },
     trailerBtnIcon: { fontSize: 13, marginRight: 6 },
     trailerBtnText: { color: '#FCA5A5', fontSize: 12, fontWeight: '700' },
+    dubDownloadBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(59, 130, 246, 0.18)',
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.55)',
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 6
+    },
+    dubDownloadBtnIcon: { fontSize: 13, marginRight: 6 },
+    dubDownloadBtnText: { color: '#93C5FD', fontSize: 12, fontWeight: '700' },
+    downloadMediaBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(37, 99, 235, 0.22)',
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.65)',
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 6,
+    },
+    downloadMediaBtnIcon: { fontSize: 13, marginRight: 6 },
+    downloadMediaBtnText: { color: '#93C5FD', fontSize: 12, fontWeight: '700' },
+    episodeCardWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 8,
+    },
+    epDownloadBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        paddingHorizontal: 10,
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 46,
+    },
+    epDownloadIcon: {
+        color: '#60A5FA',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    epDownloadText: {
+        color: '#9CA3AF',
+        fontSize: 9,
+        fontWeight: '700',
+        marginTop: 2,
+    },
+    downloadModalContainer: {
+        position: 'absolute',
+        top: '12%', bottom: '12%', left: '5%', right: '5%',
+        backgroundColor: '#0f1017',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+        padding: 20,
+        alignSelf: 'center',
+        maxWidth: 580,
+    },
+    downloadSectionCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 10,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        marginTop: 8,
+    },
+    downloadSectionHeader: {
+        color: '#60A5FA',
+        fontSize: 12,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    downloadSectionText: {
+        color: '#9CA3AF',
+        fontSize: 12,
+        marginTop: 4,
+        marginBottom: 10,
+        lineHeight: 16,
+    },
+    downloadPrimaryBtn: {
+        backgroundColor: COLORS.brand,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 6,
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    downloadPrimaryBtnText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: '800',
+    },
+    downloadSecondaryBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        paddingVertical: 9,
+        paddingHorizontal: 14,
+        borderRadius: 6,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    downloadSecondaryBtnText: {
+        color: '#E5E7EB',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    downloadTipCard: {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: 8,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.25)',
+        marginTop: 14,
+        marginBottom: 6,
+    },
+    downloadTipText: {
+        color: '#93C5FD',
+        fontSize: 11,
+        lineHeight: 16,
+    },
+    copyToastWrap: {
+        position: 'absolute',
+        bottom: 80,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    copyToastText: {
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        color: '#FFFFFF',
+        borderColor: COLORS.brand,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    dubModalContainer: {
+        position: 'absolute',
+        top: '20%', bottom: '20%', left: '5%', right: '5%',
+        backgroundColor: '#0f1017',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+        padding: 20,
+        alignSelf: 'center',
+        maxWidth: 550,
+    },
+    dubModalSub: {
+        color: COLORS.textSecondary,
+        fontSize: 13,
+        marginTop: 8,
+        lineHeight: 18,
+    },
+    dubOptionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: COLORS.surfaceAlt,
+        padding: 14,
+        borderRadius: 8,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    dubOptionTitle: {
+        color: COLORS.textPrimary,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    dubOptionSubtitle: {
+        color: COLORS.textMuted,
+        fontSize: 11,
+        marginTop: 2,
+    },
+    dubDownloadBadgeWrap: {
+        backgroundColor: COLORS.brand,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+    },
+    dubDownloadBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
     trailerBackdrop: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.88)',
@@ -943,10 +1665,16 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.badgeTv,
         borderColor: COLORS.badgeTv
     },
+    seasonChipUpcoming: {
+        borderColor: 'rgba(234, 179, 8, 0.45)',
+    },
     seasonChipText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600' },
     seasonChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
     episodesList: {
         gap: 10
+    },
+    episodeCardUpcomingWrapper: {
+        opacity: 0.9,
     },
     episodeCard: {
         flexDirection: 'row',
@@ -954,7 +1682,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 10,
         borderWidth: 1,
-        borderColor: COLORS.border
+        borderColor: COLORS.border,
+        flex: 1,
+    },
+    episodeCardUpcoming: {
+        borderColor: 'rgba(234, 179, 8, 0.35)',
+        backgroundColor: 'rgba(234, 179, 8, 0.04)',
     },
     epThumbWrapper: {
         width: 100,
@@ -970,7 +1703,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center'
     },
+    epUpcomingOverlay: {
+        backgroundColor: 'rgba(0,0,0,0.6)',
+    },
     epPlayOverlayIcon: { color: '#FFFFFF', fontSize: 16 },
+    epUpcomingBadge: {
+        backgroundColor: 'rgba(234, 179, 8, 0.18)',
+        borderColor: 'rgba(234, 179, 8, 0.5)',
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        alignSelf: 'flex-start',
+        marginTop: 4,
+        marginBottom: 2,
+    },
+    epUpcomingBadgeText: {
+        color: '#FDE047',
+        fontSize: 10,
+        fontWeight: '800',
+    },
     epInfo: {
         flex: 1,
         marginLeft: 12,
@@ -1066,5 +1818,63 @@ const styles = StyleSheet.create({
     characterName: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
     similarRow: {
         paddingTop: 8
+    },
+    blogRow: {
+        paddingTop: 8,
+        paddingBottom: 4
+    },
+    editorialCard: {
+        width: 290,
+        backgroundColor: COLORS.surface,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: 'hidden',
+        marginRight: 14
+    },
+    editorialCardCover: {
+        width: '100%',
+        height: 140
+    },
+    editorialCardContent: {
+        padding: 12
+    },
+    editorialCategoryBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6
+    },
+    editorialCategoryText: {
+        backgroundColor: COLORS.surfaceAlt,
+        color: COLORS.brand,
+        fontSize: 10,
+        fontWeight: '800',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        letterSpacing: 0.5
+    },
+    editorialReadTime: {
+        color: COLORS.textMuted,
+        fontSize: 11
+    },
+    editorialCardTitle: {
+        color: COLORS.textPrimary,
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 4,
+        lineHeight: 18
+    },
+    editorialCardDesc: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        lineHeight: 16,
+        marginBottom: 8
+    },
+    editorialCta: {
+        color: COLORS.brand,
+        fontSize: 12,
+        fontWeight: '700'
     }
 });

@@ -8,14 +8,77 @@ import Poster from '../components/Poster';
 import ShadowStreamPlayer from '../components/ShadowStreamPlayer';
 import { getApiBase } from '../utils/api';
 import { resolveMirrors, toPlayerProps } from '../utils/resolver';
-import { WatchlistAPI } from '../utils/storage';
+import { WatchlistAPI, HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+
+export function resolveCanonicalSeasonAndEpisode(seasonsList, reqSeason, reqEpisode) {
+    if (!Array.isArray(seasonsList) || seasonsList.length === 0) {
+        return {
+            season: reqSeason != null ? reqSeason : 1,
+            episode: reqEpisode != null ? reqEpisode : 1,
+        };
+    }
+    const regular = seasonsList
+        .filter(s => s && s.season_number != null && s.season_number > 0)
+        .sort((a, b) => a.season_number - b.season_number);
+
+    if (regular.length === 0) {
+        return {
+            season: reqSeason != null ? reqSeason : 1,
+            episode: reqEpisode != null ? reqEpisode : 1,
+        };
+    }
+
+    const sNum = parseInt(reqSeason, 10);
+    const eNum = parseInt(reqEpisode, 10);
+
+    // If season is 0 (Specials) or invalid, map requested episode across regular seasons
+    if (sNum === 0 || !Number.isFinite(sNum)) {
+        if (Number.isFinite(eNum) && eNum > 0) {
+            let running = 0;
+            for (const s of regular) {
+                const count = (Array.isArray(s.episodes) && s.episodes.length > 0)
+                    ? s.episodes.length
+                    : (s.episode_count || 0);
+                if (eNum <= running + count) {
+                    return { season: s.season_number, episode: eNum - running };
+                }
+                running += count;
+            }
+        }
+        return { season: regular[0].season_number, episode: Number.isFinite(eNum) && eNum > 0 ? eNum : 1 };
+    }
+
+    // If requested season exists, check if eNum exceeds its episode count (absolute episode reference)
+    const matchedSeason = regular.find(s => s.season_number === sNum);
+    if (matchedSeason) {
+        const count = (Array.isArray(matchedSeason.episodes) && matchedSeason.episodes.length > 0)
+            ? matchedSeason.episodes.length
+            : (matchedSeason.episode_count || 0);
+        if (count > 0 && Number.isFinite(eNum) && eNum > count) {
+            let running = 0;
+            for (const s of regular) {
+                const sCount = (Array.isArray(s.episodes) && s.episodes.length > 0)
+                    ? s.episodes.length
+                    : (s.episode_count || 0);
+                if (eNum <= running + sCount) {
+                    return { season: s.season_number, episode: eNum - running };
+                }
+                running += sCount;
+            }
+        }
+        return { season: sNum, episode: Number.isFinite(eNum) && eNum > 0 ? eNum : 1 };
+    }
+
+    return { season: regular[0].season_number, episode: Number.isFinite(eNum) && eNum > 0 ? eNum : 1 };
+}
 
 export default function PlayerScreen({ route, navigation }) {
     const { item: rawItem, slug: routeSlug, season: routeSeason, episode: routeEpisode } = route.params || {};
     const initialItem = (rawItem && typeof rawItem === 'object') ? rawItem : null;
     const [item, setItem] = useState(initialItem);
     const slug = routeSlug || initialItem?.slug || (initialItem?.id ? String(initialItem.id) : null);
+    const prevKeyRef = useRef(slug || (initialItem?.id ? String(initialItem.id) : null));
 
     const isTv = (item?.type || initialItem?.type) === 'tv' ||
         (item?.type || initialItem?.type) === 'short_drama' ||
@@ -24,10 +87,6 @@ export default function PlayerScreen({ route, navigation }) {
             (initialItem?.seasonCount != null && initialItem.seasonCount > 0) ||
             (Array.isArray(item?.seasons) && item.seasons.length > 0)
         ));
-    // On web the deep link is the only thing carrying season/episode on a cold
-    // load — the router does not map a bare query string into `route.params`,
-    // so `/play/slug?season=5&episode=7` used to silently boot S1E1. Read the
-    // URL directly and let the route param win when both are present.
     const webQuery = useMemo(() => {
         if (typeof window === 'undefined' || !window.location) return {};
         try {
@@ -43,17 +102,49 @@ export default function PlayerScreen({ route, navigation }) {
     const parsedSeason = parseInt(initialSeason, 10);
     const parsedEpisode = parseInt(initialEpisode, 10);
 
-    // Explicit season/episode wins over everything. It used to be gated behind
-    // `isTv`, but on a cold deep link there is no `item` yet, so `isTv` is
-    // false at init and the season collapsed to null — the fetch then set it to
-    // 1 and the requested episode was lost. So: use the explicit value if we
-    // have one, otherwise fall back to the item/TV default.
     const [currentSeason, setCurrentSeason] = useState(
-        Number.isFinite(parsedSeason) ? parsedSeason : (isTv ? (item?.season || 1) : null)
+        Number.isFinite(parsedSeason) ? parsedSeason : (isTv ? (item?.season != null ? item.season : 1) : null)
     );
     const [currentEpisode, setCurrentEpisode] = useState(
-        Number.isFinite(parsedEpisode) ? parsedEpisode : (isTv ? (item?.episode || 1) : null)
+        Number.isFinite(parsedEpisode) ? parsedEpisode : (isTv ? (item?.episode != null ? item.episode : 1) : null)
     );
+
+    // Sync route.params when PlayerScreen stays mounted in Drawer.Navigator
+    useEffect(() => {
+        const nextKey = routeSlug || (rawItem?.slug) || (rawItem?.id ? String(rawItem.id) : null);
+        const titleChanged = nextKey && nextKey !== prevKeyRef.current;
+        if (rawItem && typeof rawItem === 'object') {
+            setItem(rawItem);
+        }
+        const sVal = parseInt(routeSeason, 10);
+        const eVal = parseInt(routeEpisode, 10);
+        if (titleChanged) {
+            prevKeyRef.current = nextKey;
+            setLoadError(null);
+            setStreamUrl(rawItem?.streamUrl || rawItem?.playbackUrl || null);
+            setMirrorList([]);
+            setSeasons(rawItem?.seasons || []);
+            setDubs(
+                rawItem?.audioLanguages ||
+                rawItem?.audio_languages ||
+                rawItem?.spoken_languages ||
+                rawItem?.languages ||
+                []
+            );
+            const nextIsTv = rawItem?.type === 'tv' ||
+                rawItem?.type === 'short_drama' ||
+                (rawItem?.type === 'anime' && ((rawItem?.seasonCount != null && rawItem.seasonCount > 0) || (Array.isArray(rawItem?.seasons) && rawItem.seasons.length > 0)));
+            setCurrentSeason(Number.isFinite(sVal) ? sVal : (nextIsTv ? (rawItem?.season != null ? rawItem.season : 1) : null));
+            setCurrentEpisode(Number.isFinite(eVal) ? eVal : (nextIsTv ? (rawItem?.episode != null ? rawItem.episode : 1) : null));
+        } else {
+            if (Number.isFinite(sVal) && sVal !== currentSeason) {
+                setCurrentSeason(sVal);
+            }
+            if (Number.isFinite(eVal) && eVal !== currentEpisode) {
+                setCurrentEpisode(eVal);
+            }
+        }
+    }, [rawItem, routeSlug, routeSeason, routeEpisode]);
 
     // Keep the address bar honest so a reload or a shared link lands on the
     // episode actually being watched.
@@ -82,7 +173,8 @@ export default function PlayerScreen({ route, navigation }) {
 
     // Resolve title data if navigated directly or refreshed via URL
     useEffect(() => {
-        if (item || !slug) return;
+        if (!slug) return;
+        if (item && (item.slug === slug || String(item.id) === String(slug))) return;
         let cancelled = false;
         async function fetchTitleData() {
             try {
@@ -94,8 +186,8 @@ export default function PlayerScreen({ route, navigation }) {
                         data.type === 'short_drama' ||
                         (data.type === 'anime' && ((data.seasonCount != null && data.seasonCount > 0) || (Array.isArray(data.seasons) && data.seasons.length > 0)));
                     if (titleIsTv) {
-                        if (!currentSeason) setCurrentSeason(1);
-                        if (!currentEpisode) setCurrentEpisode(1);
+                        if (currentSeason == null) setCurrentSeason(1);
+                        if (currentEpisode == null) setCurrentEpisode(1);
                     }
                     if (Array.isArray(data.seasons) && data.seasons.length > 0) {
                         setSeasons(data.seasons);
@@ -141,6 +233,28 @@ export default function PlayerScreen({ route, navigation }) {
     const [resolveNote, setResolveNote] = useState(null);
     const [renditions, setRenditions] = useState([]);
 
+    // Auto-request landscape orientation on mobile APK and supported browsers when entering player
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            if (window.ShadowStreamNative && typeof window.ShadowStreamNative.setOrientation === 'function') {
+                try { window.ShadowStreamNative.setOrientation('landscape'); } catch (_) {}
+            }
+            if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+                try { window.screen.orientation.lock('landscape').catch(() => {}); } catch (_) {}
+            }
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                if (window.ShadowStreamNative && typeof window.ShadowStreamNative.setOrientation === 'function') {
+                    try { window.ShadowStreamNative.setOrientation('unspecified'); } catch (_) {}
+                }
+                if (window.screen && window.screen.orientation && typeof window.screen.orientation.unlock === 'function') {
+                    try { window.screen.orientation.unlock(); } catch (_) {}
+                }
+            }
+        };
+    }, []);
+
     // Apply a mirror to the player. `direct` wins when the resolver produced
     // one, so our own engine decodes; otherwise the provider iframe plays.
     const applyMirror = useCallback((mirror, idx = 0) => {
@@ -163,6 +277,11 @@ export default function PlayerScreen({ route, navigation }) {
                     const data = await res.json();
                     if (Array.isArray(data.seasons) && data.seasons.length > 0) {
                         setSeasons(data.seasons);
+                        const canonical = resolveCanonicalSeasonAndEpisode(data.seasons, currentSeason, currentEpisode);
+                        if (canonical.season !== currentSeason || canonical.episode !== currentEpisode) {
+                            setCurrentSeason(canonical.season);
+                            setCurrentEpisode(canonical.episode);
+                        }
                     }
                 }
             } catch (e) {
@@ -211,9 +330,21 @@ export default function PlayerScreen({ route, navigation }) {
         }
 
         try {
+            let activeS = currentSeason;
+            let activeE = currentEpisode;
+            if (isTv && Array.isArray(seasons) && seasons.length > 0) {
+                const canonical = resolveCanonicalSeasonAndEpisode(seasons, currentSeason, currentEpisode);
+                activeS = canonical.season;
+                activeE = canonical.episode;
+                if (activeS !== currentSeason || activeE !== currentEpisode) {
+                    setCurrentSeason(activeS);
+                    setCurrentEpisode(activeE);
+                }
+            }
+
             const queryParams = new URLSearchParams();
-            if (currentSeason) queryParams.set('season', String(currentSeason));
-            if (currentEpisode) queryParams.set('episode', String(currentEpisode));
+            if (activeS != null) queryParams.set('season', String(activeS));
+            if (activeE != null) queryParams.set('episode', String(activeE));
 
             const res = await fetch(`${getApiBase()}/title/${encodeURIComponent(item.id || item.slug)}/availability?${queryParams.toString()}`);
             let avList = [];
@@ -226,29 +357,40 @@ export default function PlayerScreen({ route, navigation }) {
                 (a.kind === 'playback' || a.kind === 'embed') && (a.playbackUrl || a.url || a.external_url)
             );
 
-            if (playableSources.length > 0) {
-                // The catalogue offers every scraper it happens to have on file —
-                // Dexter hands back four, and a long tail of half-dead embedders
-                // on older titles. Showing all of them made the server list
-                // noise rather than a choice, so we keep a short, ordered list:
-                // one entry per provider (a provider offering five qualities is
-                // still one player to the user), ranked, and capped.
-                //
-                // Ranking, most-trusted first:
-                //   vidlink      vidlink.pro, TMDB-ID based
-                //   vidsrc       vidsrc.to,  TMDB-ID based
-                //   vidsrc_imdb  vidsrc.me,  IMDb-ID based — a different site on
-                //                a different ID system, not a duplicate of
-                //                vidsrc, and worth keeping as a fallback
-                //   2embed       demoted. Loaded fine but its inner player
-                //                returned "No content available for this title"
-                //                for Dexter S5E7, so it only earns a slot when a
-                //                title has nothing better.
-                const PROVIDER_RANK = ['vidlink', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
-                const MAX_MIRRORS = 3;
+            let sourcesToUse = playableSources;
+            const effectiveTmdb = item.tmdbId || item.tmdb_id || (typeof item.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
+            const effectiveImdb = item.imdbId || item.imdb_id;
+
+            if (sourcesToUse.length === 0 && (effectiveTmdb || effectiveImdb)) {
+                const isMovie = item.type === 'movie';
+                const dyn = [];
+                if (effectiveTmdb) {
+                    if (isMovie) {
+                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${effectiveTmdb}` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${effectiveTmdb}` });
+                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${effectiveTmdb}` });
+                    } else {
+                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${effectiveTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
+                    }
+                }
+                if (effectiveImdb) {
+                    if (isMovie) {
+                        dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/movie?imdb=${effectiveImdb}` });
+                    } else {
+                        dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/tv?imdb=${effectiveImdb}&season=${activeS || 1}&episode=${activeE || 1}` });
+                    }
+                }
+                sourcesToUse = dyn;
+            }
+
+            if (sourcesToUse.length > 0) {
+                const PROVIDER_RANK = ['vidlink_sub', 'vidlink_dub', 'vidlink', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
+                const MAX_MIRRORS = 4;
 
                 const byProvider = new Map();
-                for (const a of playableSources) {
+                for (const a of sourcesToUse) {
                     const key = String(a.source || a.sourceName || 'unknown').toLowerCase();
                     if (!byProvider.has(key)) byProvider.set(key, a);
                 }
@@ -267,14 +409,11 @@ export default function PlayerScreen({ route, navigation }) {
                     quality: 'HD'
                 }));
 
-                // Give every mirror a chance to become a direct stream. This is
-                // best-effort and bounded; a failure leaves the mirror usable
-                // as an iframe, which is the whole point of the fallback.
                 const { playable, mirrors: resolved, anyDirect } = await resolveMirrors(mirrors, {
-                    tmdbId: item.tmdbId || item.tmdb_id,
+                    tmdbId: effectiveTmdb,
                     type: item.type,
-                    season: currentSeason,
-                    episode: currentEpisode,
+                    season: activeS,
+                    episode: activeE,
                 });
 
                 setMirrorList(resolved);
@@ -319,6 +458,21 @@ export default function PlayerScreen({ route, navigation }) {
         resolveStream();
     }, [resolveStream]);
 
+    // Record watch history so Continue Watching and HistoryScreen stay up to date
+    useEffect(() => {
+        if (!item || !item.id || !streamUrl) return;
+        const savedPct = Storage.get(`progress_${item.id}`, 0);
+        const pct = (savedPct > 5 && savedPct < 95) ? savedPct : 15;
+        HistoryAPI.record(
+            item,
+            pct,
+            0,
+            0,
+            isTv ? (currentSeason || 1) : null,
+            isTv ? (currentEpisode || 1) : null
+        );
+    }, [item?.id, streamUrl, isTv, currentSeason, currentEpisode]);
+
     // Handle user selecting an episode from the in-player drawer
     const handleSelectEpisode = useCallback((seasonNum, episodeNum) => {
         const s = parseInt(seasonNum, 10);
@@ -338,7 +492,7 @@ export default function PlayerScreen({ route, navigation }) {
 
     // Handle auto-advancing or clicking "Next Episode"
     const handleNextEpisode = useCallback(() => {
-        const curSeasonObj = seasons.find(s => s.season_number === (currentSeason || 1)) || seasons[0];
+        const curSeasonObj = seasons.find(s => s.season_number === (currentSeason != null ? currentSeason : 1)) || seasons[0];
         const epList = curSeasonObj?.episodes || [];
         const curIdx = epList.findIndex(e => e.episode_number === currentEpisode);
 
@@ -348,7 +502,7 @@ export default function PlayerScreen({ route, navigation }) {
             setCurrentEpisode(nextEp.episode_number);
         } else {
             // Check next season
-            const curSeasonIdx = seasons.findIndex(s => s.season_number === (currentSeason || 1));
+            const curSeasonIdx = seasons.findIndex(s => s.season_number === (currentSeason != null ? currentSeason : 1));
             if (curSeasonIdx !== -1 && curSeasonIdx < seasons.length - 1) {
                 const nextSeason = seasons[curSeasonIdx + 1];
                 setCurrentSeason(nextSeason.season_number);
@@ -410,6 +564,21 @@ export default function PlayerScreen({ route, navigation }) {
         );
     }
 
+    const activeSeasonObj = (seasons || []).find(s => s && s.season_number === currentSeason);
+    const activeEpObj = (activeSeasonObj?.episodes || []).find(e => e && e.episode_number === currentEpisode);
+    const isUpcomingEpisode = Boolean(activeEpObj?.air_date && new Date(activeEpObj.air_date) > new Date());
+
+    const releasedSeasons = useMemo(() => {
+        if (!Array.isArray(seasons) || seasons.length === 0) return [];
+        const now = new Date();
+        return seasons.filter(s => {
+            if (!s || s.season_number <= 0) return false;
+            const eps = s.episodes || [];
+            if (eps.length === 0) return true;
+            return eps.some(e => !e.air_date || new Date(e.air_date) <= now);
+        }).sort((a, b) => a.season_number - b.season_number);
+    }, [seasons]);
+
     // Metadata / Discovery State (Only shown if no playable stream is found)
     return (
         <SafeAreaView style={styles.screen}>
@@ -424,28 +593,70 @@ export default function PlayerScreen({ route, navigation }) {
                         <Text style={styles.backBtnText}>‹ Back</Text>
                     </TouchableOpacity>
 
-                    <View style={styles.metadataBadge}>
-                        <Text style={styles.metadataBadgeText}>SHADOWSTREAM</Text>
+                    <View style={[styles.metadataBadge, isUpcomingEpisode && styles.metadataBadgeUpcoming]}>
+                        <Text style={styles.metadataBadgeText}>
+                            {isUpcomingEpisode ? '⏳ UPCOMING RELEASE' : 'SHADOWSTREAM'}
+                        </Text>
                     </View>
-                    <Text style={styles.metadataTitle}>{item?.title}</Text>
-                    <Text style={styles.metadataNotice}>
-                        No active stream source was found for this title. You can search online or check IMDb.
+                    <Text style={styles.metadataTitle}>
+                        {item?.title} {isTv && currentSeason != null && `(S${currentSeason}:E${currentEpisode || 1})`}
                     </Text>
+                    {activeEpObj?.name ? (
+                        <Text style={styles.metadataEpTitle}>"{activeEpObj.name}"</Text>
+                    ) : null}
+                    <Text style={styles.metadataNotice}>
+                        {isUpcomingEpisode
+                            ? `This episode has not aired yet. It is scheduled to premiere on ${new Date(activeEpObj.air_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}. You can stream available seasons below:`
+                            : 'No active stream source was found for this episode right now. You can try earlier seasons or explore related titles.'}
+                    </Text>
+
+                    {/* Quick 1-Tap Watch Available Seasons */}
+                    {isTv && releasedSeasons.length > 0 && (
+                        <View style={styles.availableSeasonsBox}>
+                            <Text style={styles.availableSeasonsHeading}>AVAILABLE SEASONS TO STREAM NOW:</Text>
+                            <View style={styles.availableSeasonsRow}>
+                                {releasedSeasons.map(s => (
+                                    <TouchableOpacity
+                                        key={s.season_number}
+                                        style={[
+                                            styles.availableSeasonPill,
+                                            s.season_number === currentSeason && styles.availableSeasonPillActive
+                                        ]}
+                                        onPress={() => {
+                                            setLoadError(null);
+                                            setLoading(true);
+                                            setCurrentSeason(s.season_number);
+                                            setCurrentEpisode(1);
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.availableSeasonPillText}>
+                                            ▶ Season {s.season_number} Episode 1
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
                     <View style={styles.officialLinksRow}>
                         <TouchableOpacity
                             style={styles.officialLinkBtn}
-                            onPress={() => window?.open?.(`https://www.google.com/search?q=${encodeURIComponent((item?.title || '') + ' watch online')}`, '_blank')}
+                            onPress={() => { setLoadError(null); setLoading(true); resolveStream(); }}
                         >
-                            <Text style={styles.officialLinkText}>🌐 Web Search</Text>
+                            <Text style={styles.officialLinkText}>↻ Retry Source</Text>
                         </TouchableOpacity>
-                        {item?.imdbId && (
-                            <TouchableOpacity
-                                style={styles.officialLinkBtn}
-                                onPress={() => window?.open?.(`https://www.imdb.com/title/${item.imdbId}/`, '_blank')}
-                            >
-                                <Text style={styles.officialLinkText}>⭐ IMDb</Text>
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity
+                            style={styles.officialLinkBtn}
+                            onPress={() => navigation.navigate('Search', { initialQuery: item?.title || '' })}
+                        >
+                            <Text style={styles.officialLinkText}>🔍 Search StreamApp</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.officialLinkBtn}
+                            onPress={() => navigation.navigate('Browse')}
+                        >
+                            <Text style={styles.officialLinkText}>🎬 Browse Catalog</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -508,13 +719,63 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginBottom: 14,
     },
+    metadataBadgeUpcoming: {
+        backgroundColor: 'rgba(234, 179, 8, 0.2)',
+        borderColor: 'rgba(234, 179, 8, 0.6)',
+    },
     metadataBadgeText: { color: COLORS.brand, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
     metadataTitle: {
         color: COLORS.textPrimary,
         fontSize: 26,
         fontWeight: '900',
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 6,
+    },
+    metadataEpTitle: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    availableSeasonsBox: {
+        marginTop: 14,
+        marginBottom: 18,
+        padding: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: 520,
+    },
+    availableSeasonsHeading: {
+        color: '#E50914',
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.8,
+        marginBottom: 10,
+    },
+    availableSeasonsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    availableSeasonPill: {
+        backgroundColor: 'rgba(229, 9, 20, 0.85)',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 6,
+    },
+    availableSeasonPillActive: {
+        backgroundColor: '#10B981',
+    },
+    availableSeasonPillText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
     metadataNotice: {
         color: COLORS.textSecondary,

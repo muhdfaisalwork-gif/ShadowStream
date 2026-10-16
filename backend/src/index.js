@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import router from './api/routes.js';
 import catalogRouter from './api/catalog.routes.js';
@@ -11,9 +12,49 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const isDev = process.env.NODE_ENV !== 'production';
 
-app.use(cors({ origin: CORS_ORIGIN }));
+// Security: Disable Express fingerprinting
+app.disable('x-powered-by');
+
+// Security: Helmet headers with tailored Content Security Policy
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+            mediaSrc: ["'self'", "blob:", "data:", "https:", "http:"],
+            connectSrc: ["'self'", "https:", "http:", "ws:", "wss:"],
+            frameSrc: ["'self'", "https:", "http:"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+            frameAncestors: ["'self'"], // Block clickjacking via 3rd-party iframe embeds
+        },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// Security: Controlled CORS configuration
+const rawCors = process.env.CORS_ORIGIN || '*';
+const allowedOrigins = rawCors === '*' ? '*' : rawCors.split(',').map(o => o.trim());
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins === '*') return callback(null, true);
+        if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) return callback(null, true);
+        if (isDev && (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))) return callback(null, true);
+        return callback(new Error('CORS request blocked by security policy'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Admin-Token'],
+    maxAge: 86400,
+}));
+
 app.use(express.json({ limit: '1mb' }));
 
 // Catalog proxy routes (multi-facet discovery: genres, countries, languages, etc.)
@@ -55,10 +96,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, '../../frontend/dist');
 
-// Serve static frontend web build
+// Serve static frontend web build with dotfiles protection
 if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+        dotfiles: 'ignore', // Never serve hidden files (.env, .git, etc.)
+        etag: true,
+        maxAge: '1d',
+    }));
 }
+
+// Serve native apps & downloads from downloads directory
+const downloadsPath = path.resolve(__dirname, '../../downloads');
+if (fs.existsSync(downloadsPath)) {
+    app.use('/downloads', express.static(downloadsPath, {
+        dotfiles: 'ignore',
+        etag: true,
+    }));
+}
+// Serve Windows native installer from packaging if requested
+app.get('/downloads/ShadowStream-Setup-x64.exe', (req, res, next) => {
+    const winExe = path.resolve(__dirname, '../../packaging/windows/ShadowStream-Setup-x64.exe');
+    if (fs.existsSync(winExe)) {
+        return res.sendFile(winExe);
+    }
+    next();
+});
 
 // Fallback SPA routing for web client (non-API GET requests)
 app.use((req, res, next) => {
@@ -86,10 +148,13 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Not Found', path: req.originalUrl });
 });
 
-// Error handler
+// Error handler (sanitizes error details in production)
 app.use((err, req, res, _next) => {
     console.error('[backend] Unhandled error:', err);
-    res.status(500).json({ error: 'Internal server error', detail: err.message });
+    res.status(500).json({
+        error: 'Internal server error',
+        ...(isDev ? { detail: err.message } : {})
+    });
 });
 
 app.listen(PORT, () => {

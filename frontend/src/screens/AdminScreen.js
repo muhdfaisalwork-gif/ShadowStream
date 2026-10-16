@@ -1,21 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { useRouteMeta } from '../utils/useRouteMeta';
-
-function getAdminBase() {
-    if (typeof window === 'undefined') return '';
-    const cfg = window.__STREAMING_CONFIG__;
-    if (cfg && cfg.apiBase) {
-        return cfg.apiBase.replace(/\/api\/v1\/?$/, '/internal/admin/v1');
-    }
-    const origin = window.location?.origin || '';
-    if (origin.includes(':3000') || origin.includes(':7801')) return origin + '/internal/admin/v1';
-    return '/internal/admin/v1';
-}
+import { getApiBase } from '../utils/api';
+import AppHeader from '../components/AppHeader';
+import MobileTabBar from '../components/MobileTabBar';
 
 async function fetchJson(path) {
-    const r = await fetch(getAdminBase() + path);
+    const r = await fetch(`${getApiBase()}/admin${path}`);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
 }
@@ -46,7 +38,7 @@ function Section({ title, children, action, actionLabel }) {
     );
 }
 
-export default function AdminScreen() {
+export default function AdminScreen({ navigation }) {
     useRouteMeta('Admin');
     const [stats, setStats] = useState(null);
     const [duplicates, setDuplicates] = useState(null);
@@ -73,90 +65,88 @@ export default function AdminScreen() {
 
     useEffect(() => { reload(); }, [reload]);
 
-    if (loading && !stats) {
-        return (
-            <View style={styles.center} accessible accessibilityRole="alert">
-                <ActivityIndicator size="large" color={COLORS.brand} />
-                <Text style={styles.loadingText}>Loading admin data…</Text>
-            </View>
-        );
-    }
-
-    if (error) {
-        return (
-            <View style={styles.center} accessible accessibilityRole="alert">
-                <Text style={styles.errorText}>Failed to load admin data</Text>
-                <Text style={styles.errorDetail}>{error}</Text>
-                <TouchableOpacity onPress={reload} style={styles.retryBtn} accessibilityRole="button">
-                    <Text style={styles.retryBtnText}>Retry</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <Section title="Catalog stats" action={reload} actionLabel="Refresh">
-                <View style={styles.statGrid}>
-                    <Stat label="Total indexed" value={(stats.indexed || 0).toLocaleString()} />
-                    <Stat label="Complete" value={(stats.complete || 0).toLocaleString()} hint="poster + backdrop + overview + rating" />
-                    <Stat label="Partial" value={(stats.partial || 0).toLocaleString()} hint="2 of 3 main fields" />
-                    <Stat label="Stub" value={(stats.stub || 0).toLocaleString()} hint="needs enrichment" />
-                    <Stat label="With rating" value={(stats.with_rating || 0).toLocaleString()} />
-                    <Stat label="With overview" value={(stats.with_overview || 0).toLocaleString()} />
-                    <Stat label="With poster" value={(stats.with_poster || 0).toLocaleString()} />
-                    <Stat label="With backdrop" value={(stats.with_backdrop || 0).toLocaleString()} />
+        <SafeAreaView style={styles.container}>
+            <AppHeader navigation={navigation} activeRoute="Admin" title="Admin Dashboard" />
+            {loading && !stats ? (
+                <View style={styles.center} accessible accessibilityRole="alert">
+                    <ActivityIndicator size="large" color={COLORS.brand} />
+                    <Text style={styles.loadingText}>Loading admin data…</Text>
                 </View>
-                {Array.isArray(stats.by_type) && stats.by_type.length > 0 ? (
-                    <View style={styles.byTypeRow}>
-                        {stats.by_type.map(t => (
-                            <View key={t.type} style={styles.byTypeChip}>
-                                <Text style={styles.byTypeText}>{t.type}: {t.n.toLocaleString()}</Text>
-                            </View>
-                        ))}
-                    </View>
-                ) : null}
-            </Section>
-
-            <Section title={`Duplicate titles (${duplicates.count || 0} groups)`}>
-                {(duplicates.duplicates || []).length === 0 ? (
-                    <Text style={styles.empty}>No duplicate title groups detected.</Text>
-                ) : (
-                    duplicates.duplicates.map(d => (
-                        <View key={d.canonical_title + d.year} style={styles.dupCard}>
-                            <Text style={styles.dupTitle}>{d.canonical_title} ({d.year || '?'})</Text>
-                            <Text style={styles.dupMeta}>×{d.n} ids: {d.ids}</Text>
-                            <Text style={styles.dupSlugs}>slugs: {d.slugs}</Text>
+            ) : error ? (
+                <View style={styles.center} accessible accessibilityRole="alert">
+                    <Text style={styles.errorText}>Failed to load admin data</Text>
+                    <Text style={styles.errorDetail}>{error}</Text>
+                    <TouchableOpacity onPress={reload} style={styles.retryBtn} accessibilityRole="button">
+                        <Text style={styles.retryBtnText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                    <Section title="Catalog stats" action={reload} actionLabel="Refresh">
+                        <View style={styles.statGrid}>
+                            <Stat label="Total indexed" value={(stats.indexed || 0).toLocaleString()} />
+                            <Stat label="Complete" value={(stats.complete || 0).toLocaleString()} hint="poster + backdrop + overview + rating" />
+                            <Stat label="Partial" value={(stats.partial || 0).toLocaleString()} hint="2 of 3 main fields" />
+                            <Stat label="Stub" value={(stats.stub || 0).toLocaleString()} hint="needs enrichment" />
+                            <Stat label="With rating" value={(stats.with_rating || 0).toLocaleString()} />
+                            <Stat label="With overview" value={(stats.with_overview || 0).toLocaleString()} />
+                            <Stat label="With poster" value={(stats.with_poster || 0).toLocaleString()} />
+                            <Stat label="With backdrop" value={(stats.with_backdrop || 0).toLocaleString()} />
                         </View>
-                    ))
-                )}
-            </Section>
-
-            <Section title="Source health">
-                {(sources.sources || []).map(s => {
-                    const available = s.available || 0;
-                    const total = s.availability_records || 0;
-                    return (
-                        <View key={s.slug} style={styles.sourceCard}>
-                            <View style={styles.sourceHeader}>
-                                <Text style={styles.sourceName}>{s.name}</Text>
-                                <Text style={[styles.sourceBadge, s.is_legal ? styles.legal : styles.illegal]}>
-                                    {s.is_legal ? '✓ Legal' : '✗ Illegal'}
-                                </Text>
+                        {Array.isArray(stats.by_type) && stats.by_type.length > 0 ? (
+                            <View style={styles.byTypeRow}>
+                                {stats.by_type.map(t => (
+                                    <View key={t.type} style={styles.byTypeChip}>
+                                        <Text style={styles.byTypeText}>{t.type}: {t.n.toLocaleString()}</Text>
+                                    </View>
+                                ))}
                             </View>
-                            <Text style={styles.sourceMeta}>
-                                {s.type} · {available.toLocaleString()} / {total.toLocaleString()} available
-                            </Text>
-                            {s.last_checked ? (
-                                <Text style={styles.sourceMeta}>
-                                    Last checked: {new Date(s.last_checked * 1000).toISOString().slice(0, 19).replace('T', ' ')}
-                                </Text>
-                            ) : null}
-                        </View>
-                    );
-                })}
-            </Section>
-        </ScrollView>
+                        ) : null}
+                    </Section>
+
+                    <Section title={`Duplicate titles (${duplicates.count || 0} groups)`}>
+                        {(duplicates.duplicates || []).length === 0 ? (
+                            <Text style={styles.empty}>No duplicate title groups detected.</Text>
+                        ) : (
+                            duplicates.duplicates.map(d => (
+                                <View key={d.canonical_title + d.year} style={styles.dupCard}>
+                                    <Text style={styles.dupTitle}>{d.canonical_title} ({d.year || '?'})</Text>
+                                    <Text style={styles.dupMeta}>×{d.n} ids: {d.ids}</Text>
+                                    <Text style={styles.dupSlugs}>slugs: {d.slugs}</Text>
+                                </View>
+                            ))
+                        )}
+                    </Section>
+
+                    <Section title="Source health">
+                        {(sources.sources || []).map(s => {
+                            const available = s.available || 0;
+                            const total = s.availability_records || 0;
+                            return (
+                                <View key={s.slug} style={styles.sourceCard}>
+                                    <View style={styles.sourceHeader}>
+                                        <Text style={styles.sourceName}>{s.name}</Text>
+                                        <Text style={[styles.sourceBadge, s.is_legal ? styles.legal : styles.illegal]}>
+                                            {s.is_legal ? '✓ Legal' : '✗ Illegal'}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.sourceMeta}>
+                                        {s.type} · {available.toLocaleString()} / {total.toLocaleString()} available
+                                    </Text>
+                                    {s.last_checked ? (
+                                        <Text style={styles.sourceMeta}>
+                                            Last checked: {new Date(s.last_checked * 1000).toISOString().slice(0, 19).replace('T', ' ')}
+                                        </Text>
+                                    ) : null}
+                                </View>
+                            );
+                        })}
+                    </Section>
+                </ScrollView>
+            )}
+            <MobileTabBar navigation={navigation} activeRoute="Admin" />
+        </SafeAreaView>
     );
 }
 

@@ -1,0 +1,143 @@
+(*Important* : * without changing or ruining anything existing*)
+
+I want you to add latest release movies, On going TV series and Animation of all countries.
+Plus I want you to add movies, TV Series and animation of Last 40 years. along with that I want all coming soon avaliable so any one can watch. and I want add only content of all countries that include movies, TV series and anime's/animations that fall in these. and I want dub in different langugaes especally in two languages hindi and english.
+Scripted fictional series
+Scripted series based on real events, true stories, or history
+
+then the best top-level term is:
+
+Scripted Series
+
+Then divide it into:
+
+Fictional
+Based on True Story
+Historical
+Biographical
+Historical Fiction
+
+So your catalog could simply have:
+
+Series Type
+
+🎬 Fictional
+📖 True Story
+🏛️ Historical
+👤 Biographical
+
+
+by using the TMDB, TVDB and MDBlist api keys and these
+
+I want you to increase to at least 200K you have this: and you have api keys after that live test. 
+
+
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/apple_tv.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/discovery_plus.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/disney_plus.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/max.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/hulu.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/netflix.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/paramount_plus.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/peacock.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/streaming_services/prime_video.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/trending.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/action.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/adventure.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/comedy.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/crime.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/documentary.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/drama.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/fantasy.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/historical.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/horror.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/musical.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/mystery.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/romance.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/sci-fi.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/thriller.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/genres/war.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/avatar.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/back_to_the_future.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/dune.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/fast_and_furious.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/harry_potter.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/hunger_games.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/indiana_jones.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/james_bond.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/john_wick.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/jurassic_park.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/lord_of_the_rings.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/marvel.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/matrix.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/mission_impossible.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/monsterverse.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/pirates_of_the_caribbean.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/rambo.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/rocky.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/star_trek.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/star_wars.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/transformers.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/collections/x_men.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/dc_studios.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/dreamworks_pictures.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/lionsgate.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/marvel_studios.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/universal_pictures.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/walt_disney_pictures.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/studios/warner_bros_pictures.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/blue_sky_animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/dreamworks_animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/illumination.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/pixar.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/sony_pictures_animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/walt_disney_animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/animation_studios/warner_bros_animation.png
+https://gitlab.com/DuckKota/omni-images/-/raw/main/decades/1980.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/decades/1990.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/decades/2000.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/decades/2010.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/decades/2020.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/adam_sandler.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/arnold_schwarzenegger.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/christian_bale.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/clint_eastwood.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/denzel_washington.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/dwayne_johnson.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/harrison_ford.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/jackie_chan.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/jason_statham.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/matt_damon.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/morgan_freeman.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/nicolas_cage.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/robert_downey_jr.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/robin_williams.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/ryan_reynolds.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/samuel_l_jackson.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/sylvester_stallone.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/actors/tom_cruise.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/alfred_hitchcock.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/brian_de_palma.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/christopher_nolan.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/david_fincher.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/denis_villeneuve.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/john_carpenter.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/martin_scorsese.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/paul_thomas_anderson.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/stanley_kubrick.jpg
+https://gitlab.com/DuckKota/omni-images/-/raw/main/directors/steven_speilberg.jpg
+
+
+
+you can clone or use it for scrapping or merge it with current scrapper https://github.com/sherlock-project/sherlock.git
+
+and for the refereance you can look into these :
+
+https://movieboxhd.net/ https://qmovies.co/
+
+and if you want data or links you can use these if you think it is usefull
+
+https://thepiratebay.org/index.html https://www.tpbproxypirate.com/ https://www13.yts-official.to/ https://ytstv.bz/ https://ww1.ytstv.hair/trending
+
+after everything done deploy and link with domain.

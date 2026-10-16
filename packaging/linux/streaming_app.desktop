@@ -1,14 +1,14 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=StreamApp
-GenericName=Legal Media Player & Streaming App
-Comment=High-performance legal streaming platform with licensed and public domain media
-Exec=streaming_app %u
-Icon=streaming_app
+Name=ShadowStream
+GenericName=ShadowStream Media Player & Streaming App
+Comment=High-performance streaming platform with movies, TV shows, and live channels
+Exec=shadowstream %u
+Icon=shadowstream
 Terminal=false
 Categories=AudioVideo;Video;Player;
 MimeType=video/mp4;video/webm;application/vnd.apple.mpegurl;application/dash+xml;
 StartupNotify=true
-StartupWMClass=streaming_app
-Keywords=video;stream;movies;documentary;open;source;
+StartupWMClass=shadowstream
+Keywords=video;stream;movies;tv;series;shadowstream;

@@ -1,0 +1,40 @@
+name = "streamapp-backend"
+main = "src/index.js"
+compatibility_date = "2026-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NODE_ENV = "production"
+PORT = "3000"
+CORS_ORIGIN = "*"
+DB_PATH = "./streaming_app.db"
+SCRAPY_FEED_PATH = "../scraper/output/scraped_catalog.json"
+
+# API Keys (set via Cloudflare dashboard or secrets)
+# TMDB_API_KEY = ""
+# TMDB_ACCESS_TOKEN = ""
+# TVDB_API_KEY = ""
+# MDBLIST_API_KEY = ""
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+# D1 Database binding (if using Cloudflare D1)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "streamapp-catalog"
+# database_id = ""
+
+# KV Namespace for caching (optional)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = ""
+
+# R2 Bucket for media assets (optional)
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "streamapp-media"

@@ -1,0 +1,51 @@
+# xtool build configuration for ShadowStream
+# Project repository: https://github.com/xtool-org/xtool
+
+name: ShadowStream
+bundle_identifier: com.streamapp.app
+version: 1.0.0
+build_number: 1
+
+targets:
+  - name: ShadowStream
+    type: application
+    platform: ios
+    deployment_target: "16.0"
+    icon: Resources/AppIcon.png
+    info_plist:
+      CFBundleDisplayName: ShadowStream
+      CFBundleName: ShadowStream
+      CFBundleIdentifier: com.streamapp.app
+      CFBundleShortVersionString: "1.0.0"
+      CFBundleVersion: "1"
+      LSRequiresIPhoneOS: true
+      UIRequiresFullScreen: true
+      UIBackgroundModes:
+        - audio
+      NSAppTransportSecurity:
+        NSAllowsArbitraryLoads: false
+      UISupportedInterfaceOrientations:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+      UISupportedInterfaceOrientations~ipad:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationPortraitUpsideDown
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+      UIViewControllerBasedStatusBarAppearance: false
+      UIStatusBarStyle: UIStatusBarStyleLightContent
+
+  - name: ShadowStream-macOS
+    type: application
+    platform: macos
+    deployment_target: "13.0"
+    icon: Resources/AppIcon.png
+    info_plist:
+      CFBundleDisplayName: ShadowStream
+      CFBundleName: ShadowStream
+      CFBundleIdentifier: com.streamapp.mac
+      CFBundleShortVersionString: "1.0.0"
+      CFBundleVersion: "1"
+      NSAppTransportSecurity:
+        NSAllowsArbitraryLoads: false

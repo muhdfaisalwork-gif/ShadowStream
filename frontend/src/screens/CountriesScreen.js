@@ -6,6 +6,7 @@ import {
 import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
 import MobileTabBar from '../components/MobileTabBar';
+import MediaCard from '../components/MediaCard';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
@@ -18,6 +19,8 @@ export default function CountriesScreen({ navigation }) {
     const [activeRegion, setActiveRegion] = useState('all');
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [regionTitles, setRegionTitles] = useState([]);
+    const [loadingRegionTitles, setLoadingRegionTitles] = useState(false);
 
     const regions = [
         { id: 'all', label: '🌍 All 42 Nations' },
@@ -26,16 +29,18 @@ export default function CountriesScreen({ navigation }) {
         { id: 'middle_east', label: '🕌 Middle East' },
         { id: 'americas', label: '🗽 The Americas' },
         { id: 'europe', label: '🏰 Europe' },
-        { id: 'africa', label: '🦁 Africa' }
+        { id: 'africa', label: '🦁 Africa' },
+        { id: 'oceania', label: '🦘 Oceania' }
     ];
 
     const REGION_MAP = {
         south_asia: ['PK', 'IN', 'BD'],
-        east_asia: ['KR', 'CN', 'JP', 'TW', 'HK'],
-        middle_east: ['TR', 'EG', 'SA', 'AE', 'IR', 'LB'],
+        east_asia: ['KR', 'CN', 'JP', 'TW', 'HK', 'ID', 'TH', 'MY', 'PH'],
+        middle_east: ['TR', 'EG', 'SA', 'AE', 'IR', 'LB', 'MA', 'IQ', 'SY'],
         americas: ['US', 'CA', 'MX', 'BR', 'AR', 'CO'],
-        europe: ['GB', 'FR', 'DE', 'ES', 'IT', 'SE', 'NO', 'DK', 'NL'],
-        africa: ['NG', 'ZA', 'GH', 'KE']
+        europe: ['GB', 'FR', 'DE', 'ES', 'IT', 'SE', 'NO', 'DK', 'NL', 'PL', 'RU'],
+        africa: ['NG', 'ZA', 'GH', 'KE', 'CI'],
+        oceania: ['AU']
     };
 
     useEffect(() => {
@@ -55,7 +60,29 @@ export default function CountriesScreen({ navigation }) {
         return () => { cancelled = true; };
     }, []);
 
+    useEffect(() => {
+        if (activeRegion === 'all') {
+            setRegionTitles([]);
+            return;
+        }
+        let cancelled = false;
+        setLoadingRegionTitles(true);
+        fetch(`${getApiBase()}/titles?region=${activeRegion}&page=1&page_size=16`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+                if (!cancelled && d && Array.isArray(d.items)) {
+                    setRegionTitles(d.items);
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (!cancelled) setLoadingRegionTitles(false);
+            });
+        return () => { cancelled = true; };
+    }, [activeRegion]);
+
     const filteredCountries = countries.filter(c => {
+        if (!c || !c.code || c.code === 'XX') return false;
         if (activeRegion === 'all') return true;
         const validCodes = REGION_MAP[activeRegion] || [];
         return validCodes.includes(c.code);
@@ -113,6 +140,33 @@ export default function CountriesScreen({ navigation }) {
                                 <Text style={styles.arrowIcon}>›</Text>
                             </TouchableOpacity>
                         ))}
+                    </View>
+                )}
+
+                {/* Regional Title Feed (When filtered by region) */}
+                {activeRegion !== 'all' && (
+                    <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
+                        <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 4 }}>
+                            Featured {regions.find(r => r.id === activeRegion)?.label || ''} Titles
+                        </Text>
+                        <Text style={{ color: COLORS.textMuted, fontSize: 12, marginBottom: 16 }}>
+                            Top-rated productions streaming across this region
+                        </Text>
+                        {loadingRegionTitles ? (
+                            <ActivityIndicator size="small" color={COLORS.brand} style={{ marginVertical: 24 }} />
+                        ) : regionTitles.length > 0 ? (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                                {regionTitles.map(t => (
+                                    <View key={t.id} style={{ width: `${100 / numCols - 2}%`, marginBottom: 16 }}>
+                                        <MediaCard item={t} navigation={navigation} />
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text style={{ color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginVertical: 16 }}>
+                                No specific titles found for this regional filter.
+                            </Text>
+                        )}
                     </View>
                 )}
 

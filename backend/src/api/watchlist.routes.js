@@ -38,7 +38,9 @@ function getDb() {
 }
 
 function getUserId(req) {
-    return req.query.user_id || req.body?.user_id || req.body?.userId || req.headers['x-user-id'] || 'anonymous';
+    const raw = req.headers['x-user-id'] || req.query.user_id || req.body?.user_id || req.body?.userId || 'anonymous';
+    const trimmed = String(raw).trim().slice(0, 64);
+    return /^[a-zA-Z0-9_\-]+$/.test(trimmed) ? trimmed : 'anonymous';
 }
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
 import { COLORS } from '../theme/colors';
 
 export default function MobileTabBar({ navigation, activeRoute }) {
@@ -41,20 +41,24 @@ export default function MobileTabBar({ navigation, activeRoute }) {
 
 const styles = StyleSheet.create({
     tabBar: {
-        height: 56,
-        backgroundColor: COLORS.surface,
+        minHeight: 58,
+        paddingBottom: Platform.OS === 'web' ? 'max(6px, env(safe-area-inset-bottom, 6px))' : 6,
+        paddingTop: 4,
+        backgroundColor: 'rgba(18, 18, 22, 0.96)',
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
-        zIndex: 100
+        zIndex: 100,
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.4)',
     },
     tabItem: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 4
+        paddingVertical: 4,
+        minHeight: 48,
     },
     tabIcon: {
         fontSize: 18,

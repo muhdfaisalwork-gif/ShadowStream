@@ -1,0 +1,15 @@
+name = "streamapp-catalog"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# R2 bucket binding for the catalog snapshots
+[[r2_buckets]]
+binding = "CATALOG"
+bucket_name = "streamapp-catalog"
+preview_bucket_name = "streamapp-catalog"
+
+# R2 bucket binding for app releases and desktop installers
+[[r2_buckets]]
+binding = "RELEASES"
+bucket_name = "streamapp-releases"
+preview_bucket_name = "streamapp-releases"

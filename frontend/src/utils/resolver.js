@@ -60,8 +60,8 @@ export async function resolveMirror({ tmdbId, type, season, episode, provider, m
     const params = new URLSearchParams();
     params.set('tmdbId', String(tmdbId));
     if (type) params.set('type', type);
-    if (season) params.set('season', String(season));
-    if (episode) params.set('episode', String(episode));
+    if (season != null) params.set('season', String(season));
+    if (episode != null) params.set('episode', String(episode));
     if (provider) params.set('provider', provider);
     if (mirrorUrl) params.set('mirror', mirrorUrl);
 

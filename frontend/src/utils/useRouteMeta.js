@@ -14,9 +14,15 @@ import { setRouteMeta } from './seo';
 export function useRouteMeta(screen, params) {
     const paramsRef = useRef(params || {});
     paramsRef.current = params || {};
+    const screenRef = useRef(screen);
+    screenRef.current = screen;
+
+    const depKey = typeof screen === 'string'
+        ? `${screen}:${params?.id || params?.slug || params?.item?.id || params?.item?.slug || ''}`
+        : `${screen?.title || ''}:${screen?.url || ''}:${screen?.description || ''}`;
 
     useEffect(() => {
-        // Snapshot at mount / screen change to avoid stale-closure surprises.
-        setRouteMeta(screen, paramsRef.current);
-    }, [screen]);
+        setRouteMeta(screenRef.current, paramsRef.current);
+    }, [depKey]);
 }
+

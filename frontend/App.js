@@ -13,10 +13,9 @@ import { watchInstallPrompt } from './src/utils/pwa';
 const linking = {
     prefixes: [
         'https://ssmoviestvs.site',
-        'https://streamapp.muhd-faisal-work.workers.dev',
-        'https://frontend.muhd-faisal-work.workers.dev',
-        'https://obrm4w0row88o.space.minimax.io',
-        'http://localhost'
+        'https://www.ssmoviestvs.site',
+        'http://localhost',
+        'http://localhost:8081'
     ],
     config: {
         screens: {
@@ -87,6 +86,8 @@ import AppsScreen from './src/screens/AppsScreen';
 import AdminScreen from './src/screens/AdminScreen';
 import BlogsScreen from './src/screens/BlogsScreen';
 import BlogDetailScreen from './src/screens/BlogDetailScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import UpdateBanner from './src/components/UpdateBanner';
 
 // Custom drawer navigation content
 import DrawerContent from './src/navigation/DrawerContent';
@@ -109,54 +110,57 @@ export default function App() {
     }, []);
 
     return (
-        <NavigationContainer linking={linking}>
+        <ErrorBoundary>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
-            <Drawer.Navigator
-                initialRouteName="Home"
-                screenOptions={({ route }) => {
-                    const isPlayer = route.name === 'Player';
-                    return {
-                        headerShown: false,
-                        drawerType: isPlayer ? 'front' : (isDesktop ? 'permanent' : 'front'),
-                        drawerStyle: isPlayer
-                            ? { display: 'none', width: 0 }
-                            : {
-                                backgroundColor: COLORS.surface,
-                                borderRightColor: COLORS.border,
-                                borderRightWidth: 1,
-                                width: isDesktop ? 240 : 280
+            <UpdateBanner />
+            <NavigationContainer linking={linking}>
+                <Drawer.Navigator
+                    initialRouteName="Home"
+                    screenOptions={({ route }) => {
+                        const isPlayer = route.name === 'Player';
+                        return {
+                            headerShown: false,
+                            drawerType: isPlayer ? 'front' : (isDesktop ? 'permanent' : 'front'),
+                            drawerStyle: isPlayer
+                                ? { display: 'none', width: 0 }
+                                : {
+                                    backgroundColor: COLORS.surface,
+                                    borderRightColor: COLORS.border,
+                                    borderRightWidth: 1,
+                                    width: isDesktop ? 240 : 280
+                                },
+                            sceneStyle: {
+                                backgroundColor: COLORS.bg
                             },
-                        sceneStyle: {
-                            backgroundColor: COLORS.bg
-                        },
-                        swipeEnabled: !isPlayer
-                    };
-                }}
-                drawerContent={(props) => <DrawerContent {...props} />}
-            >
-                <Drawer.Screen name="Home" component={HomeScreen} />
-                <Drawer.Screen name="Movies" component={MoviesScreen} />
-                <Drawer.Screen name="TV" component={TVScreen} />
-                <Drawer.Screen name="Anime" component={AnimeScreen} />
-                <Drawer.Screen name="ShortDramas" component={ShortDramasScreen} />
-                <Drawer.Screen name="Genres" component={GenreScreen} />
-                <Drawer.Screen name="Countries" component={CountriesScreen} />
-                <Drawer.Screen name="CountryDetail" component={CountryDetailScreen} />
-                <Drawer.Screen name="Languages" component={LanguagesScreen} />
-                <Drawer.Screen name="Collections" component={CollectionsScreen} />
-                <Drawer.Screen name="CollectionDetail" component={CollectionDetailScreen} />
-                <Drawer.Screen name="Browse" component={BrowseScreen} />
-                <Drawer.Screen name="Search" component={SearchScreen} />
-                <Drawer.Screen name="Watchlist" component={WatchlistScreen} />
-                <Drawer.Screen name="History" component={HistoryScreen} />
-                <Drawer.Screen name="TitleDetail" component={TitleDetailScreen} />
-                <Drawer.Screen name="Player" component={PlayerScreen} />
-                <Drawer.Screen name="Settings" component={SettingsScreen} />
-                <Drawer.Screen name="Apps" component={AppsScreen} />
-                <Drawer.Screen name="Admin" component={AdminScreen} />
-                <Drawer.Screen name="Blogs" component={BlogsScreen} />
-                <Drawer.Screen name="BlogDetail" component={BlogDetailScreen} />
-            </Drawer.Navigator>
-        </NavigationContainer>
+                            swipeEnabled: !isPlayer
+                        };
+                    }}
+                    drawerContent={(props) => <DrawerContent {...props} />}
+                >
+                    <Drawer.Screen name="Home" component={HomeScreen} />
+                    <Drawer.Screen name="Movies" component={MoviesScreen} />
+                    <Drawer.Screen name="TV" component={TVScreen} />
+                    <Drawer.Screen name="Anime" component={AnimeScreen} />
+                    <Drawer.Screen name="ShortDramas" component={ShortDramasScreen} />
+                    <Drawer.Screen name="Genres" component={GenreScreen} />
+                    <Drawer.Screen name="Countries" component={CountriesScreen} />
+                    <Drawer.Screen name="CountryDetail" component={CountryDetailScreen} />
+                    <Drawer.Screen name="Languages" component={LanguagesScreen} />
+                    <Drawer.Screen name="Collections" component={CollectionsScreen} />
+                    <Drawer.Screen name="CollectionDetail" component={CollectionDetailScreen} />
+                    <Drawer.Screen name="Browse" component={BrowseScreen} />
+                    <Drawer.Screen name="Search" component={SearchScreen} />
+                    <Drawer.Screen name="Watchlist" component={WatchlistScreen} />
+                    <Drawer.Screen name="History" component={HistoryScreen} />
+                    <Drawer.Screen name="TitleDetail" component={TitleDetailScreen} />
+                    <Drawer.Screen name="Player" component={PlayerScreen} />
+                    <Drawer.Screen name="Settings" component={SettingsScreen} />
+                    <Drawer.Screen name="Apps" component={AppsScreen} />
+                    <Drawer.Screen name="Admin" component={AdminScreen} />
+                    <Drawer.Screen name="Blogs" component={BlogsScreen} />
+                    <Drawer.Screen name="BlogDetail" component={BlogDetailScreen} />
+                </Drawer.Navigator>
+            </NavigationContainer>
+        </ErrorBoundary>
     );
 }

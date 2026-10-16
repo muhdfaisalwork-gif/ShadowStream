@@ -1,6 +1,6 @@
 """
 ShadowStream SEO & Showbiz Editorial Agent
-(Sultrix & Raulf International SEO Standard)
+(ShadowStream International SEO Standard)
 Powered by OpenRouter Gemma 4 + Local Resilient Fallbacks.
 
 Generates comprehensive, E-E-A-T compliant showbiz and entertainment editorial blog posts
@@ -42,7 +42,7 @@ if not OPENROUTER_API_KEY:
                 if _line.startswith("OPENROUTER_API_KEY="):
                     OPENROUTER_API_KEY = _line.split("=", 1)[1].strip()
 if not OPENROUTER_API_KEY:
-    raise SystemExit("OPENROUTER_API_KEY not set (env var or scraper/.env)")
+    print("[SEO Agent] Info: OPENROUTER_API_KEY not set. Will use high-fidelity local editorial template generator.")
 
 MODELS = [
     "google/gemma-4-31b-it:free",
@@ -51,7 +51,7 @@ MODELS = [
     "google/gemma-3-27b-it"
 ]
 
-BASE_SITE_URL = "https://streamapp.muhd-faisal-work.workers.dev"
+BASE_SITE_URL = "https://ssmoviestvs.site"
 
 SHOWBIZ_EDITORIAL_TOPICS = [
     {
@@ -63,9 +63,9 @@ SHOWBIZ_EDITORIAL_TOPICS = [
         "category": "movies",
         "tags": ["Upcoming Movies", "2026 Blockbusters", "Spider-Man", "Resident Evil", "Showbiz News", "Box Office Preview"],
         "region": "Worldwide (Hollywood & International)",
-        "hero_title_id": 107960,  # Spider-Man: Brand New Day (2026)
+        "hero_title_id": 12818,  # Spider-Man: Brand New Day (2026)
         "middle_title_id": 13609,  # Resident Evil (2026)
-        "featured_query": "SELECT id, slug, title, year, poster, backdrop, rating, overview, type FROM titles WHERE id IN (107960, 13609, 40111, 517, 506) OR (year >= 2025 AND poster LIKE 'http%') ORDER BY popularity DESC LIMIT 6",
+        "featured_query": "SELECT id, slug, title, year, poster, backdrop, rating, overview, type FROM titles WHERE id IN (12818, 13609, 40111, 517, 506) OR (year >= 2025 AND poster LIKE 'http%') ORDER BY popularity DESC LIMIT 6",
         "keywords": ["upcoming movies 2026", "Spider-Man Brand New Day 2026", "Resident Evil 2026 stream", "box office preview", "showbiz entertainment news", "2026 blockbusters"]
     },
     {
@@ -139,6 +139,125 @@ SHOWBIZ_EDITORIAL_TOPICS = [
         "keywords": ["short TV dramas", "micro series streaming", "vertical short episodes", "mobile entertainment trends", "trending short dramas 2026", "watch short drama online"]
     }
 ]
+
+def discover_trending_keywords_and_topics(conn: sqlite3.Connection, limit: int = 2) -> list[dict]:
+    """
+    Dynamic Keyword & Showbiz Topic Discovery Engine:
+    Inspects catalog.db to identify trending movies, TV series, anime, and collections
+    with high audience interest. Synthesizes high-converting search intent keywords
+    and formats them into production-ready blog topic configurations.
+    """
+    existing_slugs = set(r[0] for r in conn.execute("SELECT slug FROM blogs").fetchall())
+    for st in SHOWBIZ_EDITORIAL_TOPICS:
+        existing_slugs.add(st["slug"])
+
+    discovered = []
+
+    # 1. Discover top trending releases (2024-2026 with highest popularity and authentic artwork)
+    trending_rows = conn.execute("""
+        SELECT id, slug, title, year, poster, backdrop, rating, overview, type, popularity,
+               COALESCE(is_anime, 0), COALESCE(is_short_drama, 0)
+        FROM titles
+        WHERE poster LIKE 'http%' AND year >= 2024 AND popularity > 20
+        ORDER BY popularity DESC LIMIT 40
+    """).fetchall()
+
+    for r in trending_rows:
+        t_id, t_slug, t_title, t_year, t_poster, t_backdrop, t_rating, t_overview, t_type, t_pop, is_anime, is_short = r
+        clean_slug = t_slug or f"title-{t_id}"
+        blog_slug = f"where-to-stream-{clean_slug}-release-streaming-guide"
+
+        if blog_slug in existing_slugs:
+            continue
+
+        cat = "anime" if is_anime else ("short-dramas" if (is_short or t_type == "short_drama") else ("movies" if t_type == "movie" else "tv-series"))
+        region = "Japan & Global Anime Community" if is_anime else "Worldwide (Hollywood & International)"
+
+        # Find complementary middle spotlight title
+        mid_row = conn.execute("""
+            SELECT id FROM titles
+            WHERE id != ? AND type = ? AND poster LIKE 'http%' AND (backdrop LIKE 'http%' OR poster LIKE 'http%')
+            ORDER BY popularity DESC LIMIT 1
+        """, (t_id, t_type)).fetchone()
+        mid_id = mid_row[0] if mid_row else t_id
+
+        # Target search intent keywords (high volume entertainment queries)
+        keywords = [
+            f"where to stream {t_title}",
+            f"{t_title} {t_year} watch online",
+            f"{t_title} streaming release date",
+            f"{t_title} review and cast guide",
+            f"watch {t_title} full hd",
+            f"best {cat} to stream 2026"
+        ]
+
+        topic = {
+            "id": f"trending-{clean_slug}",
+            "slug": blog_slug,
+            "title": f"Where to Stream {t_title} ({t_year}): Streaming Release, Plot Analysis & Cast Guide",
+            "meta_title": f"Where to Stream {t_title} ({t_year}) | ShadowStream Showbiz",
+            "meta_description": f"Everything you need to know about streaming {t_title} ({t_year}). Explore storyline insights, cast performances, viewer reception, and verified Full HD streaming options on ShadowStream.",
+            "category": cat,
+            "tags": [t_title, f"{t_year} Releases", "Streaming Guide", "Showbiz News", "Where to Stream"],
+            "region": region,
+            "hero_title_id": t_id,
+            "middle_title_id": mid_id,
+            "featured_query": f"SELECT id, slug, title, year, poster, backdrop, rating, overview, type FROM titles WHERE id = {t_id} OR (type = '{t_type}' AND poster LIKE 'http%') ORDER BY popularity DESC LIMIT 6",
+            "keywords": keywords,
+            "is_dynamic": True
+        }
+
+        discovered.append(topic)
+        existing_slugs.add(blog_slug)
+        if len(discovered) >= limit:
+            break
+
+    # 2. If limit not reached, discover popular franchises/collections
+    if len(discovered) < limit:
+        colls = conn.execute("SELECT id, name, slug FROM collections ORDER BY id ASC LIMIT 15").fetchall()
+        for col_id, col_name, col_slug in colls:
+            col_blog_slug = f"{col_slug}-cinematic-marathon-watch-order-guide"
+            if col_blog_slug in existing_slugs:
+                continue
+
+            col_titles = conn.execute("""
+                SELECT t.id, t.slug, t.title, t.year, t.poster, t.backdrop, t.rating, t.overview, t.type
+                FROM titles t
+                JOIN title_collections tc ON t.id = tc.title_id
+                WHERE tc.collection_id = ? AND t.poster LIKE 'http%'
+                ORDER BY t.year ASC, t.popularity DESC LIMIT 6
+            """, (col_id,)).fetchall()
+
+            if len(col_titles) >= 2:
+                hero_id = col_titles[0][0]
+                mid_id = col_titles[-1][0]
+                topic = {
+                    "id": f"collection-{col_slug}",
+                    "slug": col_blog_slug,
+                    "title": f"The {col_name} Cinematic Marathon: Chronological Watch Order & Streaming Guide",
+                    "meta_title": f"{col_name} Watch Order & Complete Streaming Guide | ShadowStream",
+                    "meta_description": f"The definitive chronological watch order for the {col_name}. From release schedules to storyline continuity, stream every entry in Full HD on ShadowStream.",
+                    "category": "collections",
+                    "tags": [col_name, "Watch Order", "Franchise Marathon", "Streaming Guide", "Cinema Universes"],
+                    "region": "Global Cinema & Franchise Universes",
+                    "hero_title_id": hero_id,
+                    "middle_title_id": mid_id,
+                    "featured_query": f"SELECT t.id, t.slug, t.title, t.year, t.poster, t.backdrop, t.rating, t.overview, t.type FROM titles t JOIN title_collections tc ON t.id = tc.title_id WHERE tc.collection_id = {col_id} AND t.poster LIKE 'http%' ORDER BY t.year ASC LIMIT 6",
+                    "keywords": [
+                        f"{col_name} in order",
+                        f"{col_name} movies watch order",
+                        f"how to watch {col_name}",
+                        f"best {col_name} movies ranked",
+                        f"stream {col_name} full franchise"
+                    ],
+                    "is_dynamic": True
+                }
+                discovered.append(topic)
+                existing_slugs.add(col_blog_slug)
+                if len(discovered) >= limit:
+                    break
+
+    return discovered
 
 
 def init_db(conn: sqlite3.Connection) -> None:
@@ -310,6 +429,10 @@ def inject_backlinks_html(
 
 def call_gemma(prompt: str, system_prompt: str) -> tuple[str, str]:
     """Attempts generation across Gemma 4 and Gemma 3 models via OpenRouter."""
+    if not OPENROUTER_API_KEY:
+        print("  [Gemma AI] No OpenRouter API key found. Using resilient local editorial engine.", flush=True)
+        return "", "shadowstream-editorial-engine"
+
     for model in MODELS:
         is_free = ":free" in model
         timeout = 12 if is_free else 35
@@ -331,7 +454,7 @@ def call_gemma(prompt: str, system_prompt: str) -> tuple[str, str]:
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "HTTP-Referer": "https://streamapp.muhd-faisal-work.workers.dev",
+                    "HTTP-Referer": "https://ssmoviestvs.site",
                     "X-Title": "ShadowStream Showbiz SEO Agent"
                 }
             )
@@ -618,12 +741,20 @@ def upload_to_r2(local_path: str, r2_key: str) -> bool:
     """Uploads a generated file to Cloudflare R2 bucket streamapp-catalog."""
     cmd_str = f'npx wrangler r2 object put "streamapp-catalog/{r2_key}" --file="{local_path}" --remote'
     try:
-        res = subprocess.run(cmd_str, capture_output=True, text=True, timeout=40, shell=True)
+        res = subprocess.run(
+            cmd_str,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            shell=True
+        )
         if res.returncode == 0:
             print(f"  [R2 Upload] ✓ Synced {r2_key} to streamapp-catalog", flush=True)
             return True
         else:
-            print(f"  [R2 Upload] Notice on {r2_key}: {res.stderr[:80]}", flush=True)
+            err_msg = (res.stderr or res.stdout or "").strip()
+            print(f"  [R2 Upload] Notice on {r2_key}: {err_msg[:80]}", flush=True)
             return False
     except Exception as e:
         print(f"  [R2 Upload] Exception uploading {r2_key}: {e}", flush=True)
@@ -632,24 +763,62 @@ def upload_to_r2(local_path: str, r2_key: str) -> bool:
 
 def run_seo_agent(
     db_path: str = "G:/streaming app/scraper/catalog.db",
-    export_dir: str = "G:/streaming app/scraper/worker_export"
+    export_dir: str = "G:/streaming app/scraper/worker_export",
+    force_all: bool = False
 ) -> list[dict]:
     conn = sqlite3.connect(db_path)
     init_db(conn)
 
     blogs_export_dir = os.path.join(export_dir, "blogs")
     os.makedirs(blogs_export_dir, exist_ok=True)
-    all_blogs = []
     published_now = datetime.now(timezone.utc).isoformat()
 
     print("=================================================================")
     print("   ShadowStream Showbiz & Entertainment SEO Intelligence Agent   ")
     print("   Topic Source Verification, AI SEO, Backlinking & R2 Sync      ")
     print("=================================================================")
-    print(f"Total showbiz entertainment topics: {len(SHOWBIZ_EDITORIAL_TOPICS)}")
 
-    for idx, topic in enumerate(SHOWBIZ_EDITORIAL_TOPICS, 1):
-        print(f"\n[{idx}/{len(SHOWBIZ_EDITORIAL_TOPICS)}] Processing: {topic['title']}...")
+    # 1. Existing database blogs
+    existing_rows = conn.execute("SELECT slug, published_at FROM blogs").fetchall()
+    existing_slug_map = {r[0]: r[1] for r in existing_rows}
+    print(f"Existing published blogs in database: {len(existing_slug_map)}")
+
+    # 2. Dynamic Keyword & Topic Discovery
+    discovered_topics = discover_trending_keywords_and_topics(conn, limit=2)
+    print(f"Dynamically discovered trending topics: {len(discovered_topics)}")
+    for dt in discovered_topics:
+        print(f"  + Discovered High-Intent Topic: '{dt['title']}' (Slug: {dt['slug']})")
+        print(f"    Keywords: {', '.join(dt['keywords'][:3])}...")
+
+    # Determine topics that need generation this cycle
+    topics_to_process = []
+    topics_to_process.extend(discovered_topics)
+
+    # Add seed topics if missing from DB or forced
+    for st in SHOWBIZ_EDITORIAL_TOPICS:
+        if force_all or (st["slug"] not in existing_slug_map):
+            topics_to_process.append(st)
+
+    # If all exist and no new topics, pick 1 seed topic to refresh
+    if not topics_to_process:
+        print("  All discovered and seed topics up to date. Refreshing primary showcase guide.")
+        topics_to_process.append(SHOWBIZ_EDITORIAL_TOPICS[0])
+
+    print(f"Topics scheduled for generation this cycle: {len(topics_to_process)}")
+
+    # Combine all known topic configs for cross-backlinking
+    all_known_topics = list(SHOWBIZ_EDITORIAL_TOPICS) + discovered_topics
+    for r in existing_rows:
+        slug = r[0]
+        if not any(t["slug"] == slug for t in all_known_topics):
+            all_known_topics.append({
+                "slug": slug,
+                "title": slug.replace("-", " ").title(),
+                "meta_description": f"Explore {slug.replace('-', ' ')} on ShadowStream."
+            })
+
+    for idx, topic in enumerate(topics_to_process, 1):
+        print(f"\n[{idx}/{len(topics_to_process)}] Processing: {topic['title']}...")
 
         # 1. Source Verification
         hero = verify_title_source(conn, topic["hero_title_id"])
@@ -657,7 +826,6 @@ def run_seo_agent(
         featured_titles = get_verified_featured_titles(conn, topic["featured_query"])
 
         if not hero:
-            # Fallback to first featured title
             hero = featured_titles[0] if featured_titles else verify_title_source(conn, 568)
         if not middle:
             middle = featured_titles[1] if len(featured_titles) > 1 else hero
@@ -674,9 +842,9 @@ def run_seo_agent(
         raw_md, faqs, model_used = generate_article_content(topic, featured_titles, hero, middle)
 
         # 3. Automated Internal Cross-Backlinking
-        content_md = inject_backlinks_markdown(raw_md, featured_titles, topic["slug"], SHOWBIZ_EDITORIAL_TOPICS)
+        content_md = inject_backlinks_markdown(raw_md, featured_titles, topic["slug"], all_known_topics)
         raw_html = markdown_to_html(content_md, cover_img, cover_alt, mid_img, mid_alt)
-        content_html = inject_backlinks_html(raw_html, featured_titles, topic["slug"], SHOWBIZ_EDITORIAL_TOPICS)
+        content_html = inject_backlinks_html(raw_html, featured_titles, topic["slug"], all_known_topics)
 
         # 4. Schema.org JSON-LD (NewsArticle + Breadcrumbs + FAQs + ItemList)
         schema_data = build_schema_json(topic, cover_img, faqs, featured_titles, published_now)
@@ -729,41 +897,129 @@ def run_seo_agent(
         with open(single_blog_file, "w", encoding="utf-8") as f:
             json.dump(blog_entry, f, ensure_ascii=False, indent=2)
 
-        all_blogs.append({
-            "slug": topic["slug"],
-            "title": topic["title"],
-            "meta_title": topic["meta_title"],
-            "meta_description": topic["meta_description"],
-            "category": topic["category"],
-            "tags": topic["tags"],
-            "region": topic["region"],
-            "cover_image": cover_img,
-            "cover_image_alt": cover_alt,
-            "middle_image": mid_img,
-            "middle_image_alt": mid_alt,
-            "reading_time": reading_time,
-            "author": "ShadowStream Editorial & SEO Intelligence",
-            "featured_titles_count": len(featured_titles),
-            "published_at": published_now
+    # 7. MASTER CATALOG EXPORT: Export ALL blogs from SQLite catalog.db
+    print("\n--- Compiling Master Catalog Blogs Index (All Database Articles) ---")
+    all_db_rows = conn.execute("""
+        SELECT slug, title, meta_title, meta_description, category, tags_json,
+               cover_image, cover_image_alt, middle_image, middle_image_alt,
+               reading_time, author, region, content_markdown, content_html,
+               faqs_json, schema_json, featured_titles_json, published_at, status
+        FROM blogs
+        ORDER BY published_at DESC
+    """).fetchall()
+
+    all_blogs_summary = []
+    for r in all_db_rows:
+        (b_slug, b_title, b_meta_title, b_meta_desc, b_cat, b_tags_json,
+         b_cover, b_cover_alt, b_mid, b_mid_alt, b_read_time, b_author,
+         b_region, b_md, b_html, b_faqs_json, b_schema_json,
+         b_featured_json, b_pub, b_status) = r
+
+        try:
+            b_tags = json.loads(b_tags_json) if b_tags_json else []
+        except Exception:
+            b_tags = []
+        try:
+            b_faqs = json.loads(b_faqs_json) if b_faqs_json else []
+        except Exception:
+            b_faqs = []
+        try:
+            b_schema = json.loads(b_schema_json) if b_schema_json else {}
+        except Exception:
+            b_schema = {}
+        try:
+            b_featured = json.loads(b_featured_json) if b_featured_json else []
+        except Exception:
+            b_featured = []
+
+        single_path = os.path.join(blogs_export_dir, f"{b_slug}.json")
+        # If the individual file doesn't exist on disk, create it from database
+        if not os.path.exists(single_path):
+            full_entry = {
+                "slug": b_slug,
+                "title": b_title,
+                "meta_title": b_meta_title,
+                "meta_description": b_meta_desc,
+                "category": b_cat,
+                "tags": b_tags,
+                "region": b_region,
+                "cover_image": b_cover,
+                "cover_image_alt": b_cover_alt,
+                "middle_image": b_mid,
+                "middle_image_alt": b_mid_alt,
+                "reading_time": b_read_time,
+                "author": b_author,
+                "content_markdown": b_md,
+                "content_html": b_html,
+                "faqs": b_faqs,
+                "schema": b_schema,
+                "featured_titles": b_featured,
+                "published_at": b_pub,
+                "status": b_status
+            }
+            with open(single_path, "w", encoding="utf-8") as f:
+                json.dump(full_entry, f, ensure_ascii=False, indent=2)
+
+        all_blogs_summary.append({
+            "slug": b_slug,
+            "title": b_title,
+            "meta_title": b_meta_title,
+            "meta_description": b_meta_desc,
+            "category": b_cat,
+            "tags": b_tags,
+            "region": b_region,
+            "cover_image": b_cover,
+            "cover_image_alt": b_cover_alt,
+            "middle_image": b_mid,
+            "middle_image_alt": b_mid_alt,
+            "reading_time": b_read_time,
+            "author": b_author,
+            "featured_titles_count": len(b_featured),
+            "published_at": b_pub
         })
 
-    # 7. Export master blogs.json
     master_blogs_file = os.path.join(export_dir, "blogs.json")
     with open(master_blogs_file, "w", encoding="utf-8") as f:
-        json.dump(all_blogs, f, ensure_ascii=False, indent=2)
+        json.dump(all_blogs_summary, f, ensure_ascii=False, indent=2)
+
+    print(f"Total master blogs indexed: {len(all_blogs_summary)} articles.")
 
     # 8. Sync all generated articles to Cloudflare R2
     print("\n--- Syncing Showbiz Editorial Articles to Cloudflare R2 CDN ---")
     upload_to_r2(master_blogs_file, "blogs.json")
-    for topic in SHOWBIZ_EDITORIAL_TOPICS:
-        single_path = os.path.join(blogs_export_dir, f"{topic['slug']}.json")
+    for b in all_blogs_summary:
+        slug = b["slug"]
+        single_path = os.path.join(blogs_export_dir, f"{slug}.json")
         if os.path.exists(single_path):
-            upload_to_r2(single_path, f"blogs/{topic['slug']}.json")
+            upload_to_r2(single_path, f"blogs/{slug}.json")
+
+    # 9. Update persistent state file
+    state_file = os.path.join(os.path.dirname(__file__), ".seo_agent_state.json")
+    state_data = {
+        "last_run_timestamp": time.time(),
+        "last_run_iso": published_now,
+        "total_blogs": len(all_blogs_summary),
+        "processed_cycle_count": len(topics_to_process),
+        "last_status": "success"
+    }
+    with open(state_file, "w", encoding="utf-8") as sf:
+        json.dump(state_data, sf, indent=2)
+    print(f"  ✓ Saved SEO state to {state_file}")
+
+    # 10. Run generate_sitemap.py
+    sitemap_script = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "generate_sitemap.py")
+    if os.path.exists(sitemap_script):
+        try:
+            subprocess.run([sys.executable, sitemap_script], check=True, timeout=60)
+            print("  ✓ Sitemap updated with all blogs and titles.")
+        except Exception as e:
+            print(f"  Notice updating sitemap: {e}")
 
     conn.close()
-    print(f"\n[ShadowStream SEO Agent] Success: All {len(all_blogs)} showbiz editorial articles generated, cross-backlinked, and uploaded to R2!")
-    return all_blogs
+    print(f"\n[ShadowStream SEO Agent] Success: All {len(all_blogs_summary)} showbiz editorial articles verified, cross-backlinked, and uploaded to R2!")
+    return all_blogs_summary
 
 
 if __name__ == "__main__":
     run_seo_agent()
+

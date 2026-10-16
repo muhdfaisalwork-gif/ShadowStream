@@ -9,9 +9,21 @@ import MobileTabBar from '../components/MobileTabBar';
 import { getApiBase } from '../utils/api';
 import { HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount } from '../utils/adShield';
 
 export default function SettingsScreen({ navigation }) {
     useRouteMeta('Settings');
+    const [noAdsOn, setNoAdsOn] = useState(isNoAdsActive());
+    const [blockedCount, setBlockedCount] = useState(getBlockedCount());
+
+    useEffect(() => {
+        const unsubToggle = onNoAdsChange(setNoAdsOn);
+        const unsubBlocked = onAdBlocked(e => setBlockedCount(e.count));
+        return () => {
+            unsubToggle();
+            unsubBlocked();
+        };
+    }, []);
     const [stats, setStats] = useState({
         indexed: 13390,
         playable_legal: 10,
@@ -100,6 +112,38 @@ export default function SettingsScreen({ navigation }) {
                     </View>
                 </View>
 
+                {/* Privacy & AdShield Card */}
+                <View style={styles.card}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={styles.cardHeader}>PRIVACY & 3RD-PARTY LINK SHIELD</Text>
+                        <TouchableOpacity
+                            style={[styles.settingsToggleBtn, noAdsOn ? styles.settingsToggleBtnOn : styles.settingsToggleBtnOff]}
+                            onPress={() => toggleNoAds()}
+                            activeOpacity={0.8}
+                            accessibilityRole="switch"
+                            accessibilityState={{ checked: noAdsOn }}
+                        >
+                            <Text style={styles.settingsToggleIcon}>🛡️</Text>
+                            <Text style={[styles.settingsToggleText, noAdsOn ? styles.settingsToggleTextOn : styles.settingsToggleTextOff]}>
+                                {noAdsOn ? 'SHIELD ON' : 'SHIELD OFF'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.complianceNotice}>
+                        Strictly blocks, suppresses, and immediately closes all 3rd-party popups, popunders, top-level redirects, and invisible clickjacking links from video embed providers.
+                    </Text>
+                    <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Shield Status</Text>
+                        <Text style={[styles.metricVal, { color: noAdsOn ? COLORS.success : '#F87171' }]}>
+                            {noAdsOn ? 'Active (All 3rd-party links blocked)' : 'Disabled'}
+                        </Text>
+                    </View>
+                    <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Blocked Ads This Session</Text>
+                        <Text style={[styles.metricVal, { color: COLORS.accent }]}>{blockedCount} items blocked</Text>
+                    </View>
+                </View>
+
                 {/* Local Storage & Cache Card */}
                 <View style={styles.card}>
                     <Text style={styles.cardHeader}>STORAGE & LOCAL CACHE</Text>
@@ -114,8 +158,8 @@ export default function SettingsScreen({ navigation }) {
                 {/* App Version Card */}
                 <View style={styles.versionCard}>
                     <Text style={styles.versionTitle}>ShadowStream Cinematic Discovery</Text>
-                    <Text style={styles.versionMeta}>Version 2.0.0 • React Native Web + Expo</Text>
-                    <Text style={styles.versionMeta}>Dual-Engine Architecture (Node :3000 + Python :7801)</Text>
+                    <Text style={styles.versionMeta}>Version 2.4.1 (Production Release) • React Native Web + Expo</Text>
+                    <Text style={styles.versionMeta}>Edge Architecture (Cloudflare Workers + R2 Distributed Catalog)</Text>
                 </View>
 
                 {/* Developer / Admin Tools */}
@@ -209,5 +253,36 @@ const styles = StyleSheet.create({
         paddingVertical: 20
     },
     versionTitle: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700' },
-    versionMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 }
+    versionMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+    settingsToggleBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        gap: 6,
+    },
+    settingsToggleBtnOn: {
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderColor: '#10B981',
+    },
+    settingsToggleBtnOff: {
+        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        borderColor: '#EF4444',
+    },
+    settingsToggleIcon: {
+        fontSize: 13,
+    },
+    settingsToggleText: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    settingsToggleTextOn: {
+        color: '#34D399',
+    },
+    settingsToggleTextOff: {
+        color: '#FCA5A5',
+    }
 });

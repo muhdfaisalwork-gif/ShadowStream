@@ -52,7 +52,10 @@ const COUNTRY_MAP = {
     PL: { name: 'Poland', flag: '🇵🇱' },
     CO: { name: 'Colombia', flag: '🇨🇴' },
     AR: { name: 'Argentina', flag: '🇦🇷' },
-    IR: { name: 'Iran', flag: '🇮🇷' }
+    IR: { name: 'Iran', flag: '🇮🇷' },
+    TW: { name: 'Taiwan', flag: '🇹🇼' },
+    HK: { name: 'Hong Kong', flag: '🇭🇰' },
+    GH: { name: 'Ghana', flag: '🇬🇭' }
 };
 
 export default function CountryDetailScreen({ route, navigation }) {
@@ -83,6 +86,20 @@ export default function CountryDetailScreen({ route, navigation }) {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+
+    useEffect(() => {
+        if (rawCountry && typeof rawCountry === 'object' && rawCountry.name) {
+            setCountryInfo(rawCountry);
+        } else {
+            const mapped = COUNTRY_MAP[countryCode] || {};
+            setCountryInfo({
+                code: countryCode,
+                name: mapped.name || countryCode,
+                flag: mapped.flag || '🏳️'
+            });
+        }
+        setActiveTab('all');
+    }, [countryCode]);
 
     const tabs = [
         { id: 'all', label: '📂 All Titles' },
@@ -148,7 +165,10 @@ export default function CountryDetailScreen({ route, navigation }) {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Country Header */}
                 <View style={styles.headerBox}>
-                    <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                    <TouchableOpacity style={styles.backBtn} onPress={() => {
+                        if (navigation.canGoBack()) navigation.goBack();
+                        else navigation.navigate('Countries');
+                    }}>
                         <Text style={styles.backBtnText}>‹ All Countries</Text>
                     </TouchableOpacity>
                     <View style={styles.headerInfoRow}>

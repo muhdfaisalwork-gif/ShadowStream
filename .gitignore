@@ -1,4 +1,4 @@
-﻿# Node / Python
+# Node / Python
 node_modules/
 *.log
 .env
@@ -77,4 +77,84 @@ release.keystore
 # OpenSubtitles JWT cache
 .opensubtitles_token.json
 .subtitle_state.json
+
+
+# Android build-tools (zipalign/apksigner), fetched locally by scraper/build_android_apk.py
+.android-tools/
+
+# Scratch logs, errors and dumps
+*.err
+*.log.err
+*.log.prev
+*.prev
+*.stub
+*.old
+logs/
+.wrangler/
+downloads/.wrangler/
+
+# Large binaries and releases
+downloads/snapshots/
+downloads/streamapp-releases/
+downloads/www/
+downloads/*.json
+downloads/*.exe
+downloads/StreamApp-linux-*
+downloads/StreamApp-macos-*
+downloads/StreamApp-windows-*
+!downloads/streamapp-worker/
+downloads/ShadowStream.apk
+packaging/windows/*.exe
+packaging/windows/*.zip
+packaging/windows/ShadowStream-win-x64/
+packaging/windows/app/
+*.exe
+*.zip
+*.pdf
+
+# Scraper state and export archives
+scraper/.backups/
+scraper/worker_export/
+scraper/worker_export.prev/
+scraper/*.db
+scraper/*.db-*
+scraper/.*_state.json*
+scraper/.*_state.prev*
+scraper/*.txt
+scraper/*.err
+scratch_dub_work/
+symtest*/
+wcsign_test*/
+test_dub_output/
+tmdb-api/
+attic/
+inst_check*/
+_dl*/
+
+# One-off scratch scripts and probes
+*.ps1
+.*.ps1
+probe*.py
+check_*.py
+fix_*.py
+debug_*.py
+test_*.py
+rel_*.cmd
+rel_*.txt
+*.cmd
+cat_*.ps1
+list_*.ps1
+list_*.py
+stats_check.py
+audit_*.py
+find_*.py
+dedupe_*.py
+enrich_*.py
+_cat.*
+=
+.claude/
+.live-config
+create_pages_project.json
+packaging/export_dub.stale/
+
 

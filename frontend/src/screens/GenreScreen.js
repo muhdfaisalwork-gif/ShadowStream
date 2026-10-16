@@ -21,7 +21,16 @@ export default function GenreScreen({ route, navigation }) {
     const [genres, setGenres] = useState([]);
 
     useRouteMeta('Genres', { slug: selectedGenre });
-    const [selectedSort, setSelectedSort] = useState('popularity');
+    const [selectedSort, setSelectedSort] = useState(route?.params?.sort || 'popularity');
+
+    useEffect(() => {
+        if (route?.params?.genreSlug) {
+            setSelectedGenre(route.params.genreSlug);
+        }
+        if (route?.params?.sort) {
+            setSelectedSort(route.params.sort);
+        }
+    }, [route?.params?.genreSlug, route?.params?.sort]);
     const [titles, setTitles] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ShadowStream service worker.
  *
  * IMPORTANT â€” navigations are NETWORK-FIRST, not cache-first.
@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v8';
+const VERSION = 'v15';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -32,6 +32,7 @@ const SHELL_ASSETS = [
     '/index.html',
     '/offline.html',
     '/manifest.webmanifest',
+    '/featured.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/apple-touch-icon.png',
@@ -39,9 +40,8 @@ const SHELL_ASSETS = [
 ];
 
 const CATALOG_ORIGINS = [
-    'https://streamapp-catalog.muhd-faisal-work.workers.dev',
-    'https://streamapp.muhd-faisal-work.workers.dev',
-    'https://frontend.muhd-faisal-work.workers.dev',
+    'https://ssmoviestvs.site',
+    'https://www.ssmoviestvs.site',
 ];
 
 self.addEventListener('install', (event) => {
@@ -128,7 +128,24 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Tier 2a: catalog JSON, stale-while-revalidate.
+    // Tier 2a: Seasons endpoints â€” NETWORK-FIRST.
+    // Never serve stale or empty seasons caches to visitors.
+    if (url.pathname.includes('/seasons')) {
+        event.respondWith(
+            fetch(request)
+                .then((res) => {
+                    if (res && res.ok) {
+                        const copy = res.clone();
+                        caches.open(CATALOG_CACHE).then((cache) => cache.put(request, copy));
+                    }
+                    return res;
+                })
+                .catch(() => caches.match(request).then((hit) => hit || offlineFallback()))
+        );
+        return;
+    }
+
+    // Tier 2b: catalog JSON, stale-while-revalidate.
     // Key on the full Request (URL + method + headers), NOT a normalised
     // origin+pathname, so country/language/genre/page filters don't share
     // cache entries. The 200 responses here are immutable-from-the-client's-

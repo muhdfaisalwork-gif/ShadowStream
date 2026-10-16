@@ -39,14 +39,13 @@ export async function registerServiceWorker() {
 export function watchInstallPrompt() {
     if (!isWeb) return () => undefined;
 
-    let deferred = null;
     const onBeforeInstall = (e) => {
         e.preventDefault();
-        deferred = e;
+        window.__shadowStreamInstallPrompt = e;
         window.dispatchEvent(new CustomEvent('shadowstream:installable'));
     };
     const onInstalled = () => {
-        deferred = null;
+        window.__shadowStreamInstallPrompt = null;
         window.dispatchEvent(new CustomEvent('shadowstream:installed'));
     };
 

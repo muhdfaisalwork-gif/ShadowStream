@@ -1,7 +1,7 @@
 import { BaseScraper } from './BaseScraper.js';
 
 /**
- * MovieBoxScraper - MovieBox-style multi-source aggregator
+ * MovieBoxScraper - Multi-source aggregator
  *
  * Replaces LegalCatalogScraper with a VidSrc + SuperEmbed + MultiEmbed
  * backed catalog. Every title streams via embeddable iframes from these
@@ -2758,7 +2758,7 @@ export class MovieBoxScraper extends BaseScraper {
     }
 
     /**
-     * Build the multi-source pool. MovieBox-style: 3-4 mirrors per title.
+     * Build the multi-source pool: 3-4 failover mirrors per title.
      */
     buildSources(entry) {
         const sources = [];

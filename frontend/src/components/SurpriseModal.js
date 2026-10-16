@@ -1,5 +1,5 @@
 /**
- * SurpriseModal.js — MovieBox-style random title picker.
+ * SurpriseModal.js — ShadowStream random title picker & discoverer.
  * Backend: GET /api/v1/surprise?type=&min_rating=
  */
 import React, { useEffect, useState, useCallback } from 'react';
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import Poster from './Poster';
 import { getApiBase } from '../utils/api';
+import { WatchlistAPI } from '../utils/storage';
 
 const TYPE_LABEL = {
     movie: 'FILM',
@@ -28,6 +29,7 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [typeFilter, setTypeFilter] = useState(initialType);
+    const [inWatchlist, setInWatchlist] = useState(false);
 
     const fetchPick = useCallback(async (t) => {
         setLoading(true);
@@ -37,7 +39,9 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
             const res = await fetch(url, { headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error(`API ${res.status}`);
             const data = await res.json();
-            setPick(data.item || null);
+            const nextPick = data.item || null;
+            setPick(nextPick);
+            setInWatchlist(nextPick ? WatchlistAPI.isSaved(nextPick.id) : false);
         } catch (e) {
             setError(e.message);
         } finally {
@@ -52,7 +56,7 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
     const onWatchNow = () => {
         if (!pick) return;
         onClose();
-        navigation.navigate('Player', { item: pick });
+        navigation.navigate('Player', { item: pick, slug: pick.slug || String(pick.id) });
     };
     const onDetails = () => {
         if (!pick) return;
@@ -63,11 +67,12 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
     const onAddWatchlist = () => {
         if (!pick) return;
         try {
-            const WatchlistAPI = require('../utils/watchlistApi').default;
             if (WatchlistAPI.isSaved(pick.id)) {
                 WatchlistAPI.remove(pick.id);
+                setInWatchlist(false);
             } else {
                 WatchlistAPI.add(pick);
+                setInWatchlist(true);
             }
         } catch (e) {
             /* watchlist module optional */
@@ -185,8 +190,8 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
                                         <Text style={styles.btnGhostText}>Another</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.btnGhost} onPress={onAddWatchlist} accessibilityRole="button" accessibilityLabel="Save to watchlist">
-                                        <Text style={styles.btnGhostIcon}>🔖</Text>
-                                        <Text style={styles.btnGhostText}>Watchlist</Text>
+                                        <Text style={styles.btnGhostIcon}>{inWatchlist ? '✓' : '🔖'}</Text>
+                                        <Text style={styles.btnGhostText}>{inWatchlist ? 'Saved' : 'Watchlist'}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
