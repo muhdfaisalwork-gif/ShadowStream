@@ -42,7 +42,7 @@ describe('Phase 7 — Performance Benchmarking, Concurrency & Chaos Test Suite',
     // B. Search Filter Latency
     const startSearch = performance.now();
     for (let i = 0; i < iterations; i++) {
-      server.searchService.search('animation');
+      server.searchService.search({ query: 'animation' });
     }
     const elapsedSearch = performance.now() - startSearch;
     const avgSearchMs = elapsedSearch / iterations;
