@@ -1,0 +1,35 @@
+name: GitHub SEO & Discoverability Agent
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Weekly every Sunday
+  workflow_dispatch:
+  push:
+    paths:
+      - 'README.md'
+      - '.github/**'
+      - 'scripts/github_seo.py'
+
+jobs:
+  seo_audit:
+    name: Repository SEO & Ranking Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run GitHub SEO Agent Audit
+        run: |
+          python scripts/github_seo.py audit
+
+      - name: Validate High-Intent Keywords
+        run: |
+          grep -i "cloudflare" README.md
+          grep -i "react native" README.md
+          grep -i "failover" README.md
+          grep -i "open-source" README.md

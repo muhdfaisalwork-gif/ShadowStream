@@ -1,0 +1,18 @@
+name: Feature Request
+description: Propose a new playback provider, region catalog, or client capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: feature-pitch
+    attributes:
+      label: Feature Description
+      description: Explain the feature and how it enhances the ShadowStream experience.
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Use-Case
+      description: Why would users or developers find this useful?
+    validations:
+      required: true

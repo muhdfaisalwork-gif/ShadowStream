@@ -1,0 +1,37 @@
+name: Bug Report
+description: Report a broken stream, UI glitch, or missing season/episode
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping keep ShadowStream flawless!
+  - type: input
+    id: title-name
+    attributes:
+      label: Title / Media Name
+      placeholder: e.g. Reacher Season 2 or Inception (2010)
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Operating Platform
+      options:
+        - Web / PWA (Desktop Chrome / Firefox / Safari)
+        - Web / PWA (Mobile Browser)
+        - Android App
+        - Smart TV / FireStick
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: What happened and what did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Logs / Error Messages
+      description: Paste any browser console errors or network failure codes.
