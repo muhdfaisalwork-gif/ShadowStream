@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=line-too-long,too-many-locals,too-many-branches,too-many-statements,broad-exception-caught
 """
 ShadowStream - GitHub SEO & Repository Discoverability Engine
 Usage:
@@ -12,7 +13,7 @@ import os
 import sys
 import re
 import argparse
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 # Ensure utf-8 stdout on Windows console
 if hasattr(sys.stdout, "reconfigure"):
@@ -143,10 +144,14 @@ class ShadowStreamGitHubSEO:
         lic_exists = os.path.exists(os.path.join(self.repo_dir, "LICENSE"))
 
         missing_docs = []
-        if not contrib_exists: missing_docs.append("CONTRIBUTING.md")
-        if not sec_exists: missing_docs.append("SECURITY.md")
-        if not coc_exists: missing_docs.append("CODE_OF_CONDUCT.md")
-        if not lic_exists: missing_docs.append("LICENSE")
+        if not contrib_exists:
+            missing_docs.append("CONTRIBUTING.md")
+        if not sec_exists:
+            missing_docs.append("SECURITY.md")
+        if not coc_exists:
+            missing_docs.append("CODE_OF_CONDUCT.md")
+        if not lic_exists:
+            missing_docs.append("LICENSE")
 
         if missing_docs:
             score -= len(missing_docs) * 3
@@ -595,6 +600,7 @@ Documentation: {repo_url}#readme"""
 
 
 def main():
+    """Main CLI entry point for the ShadowStream GitHub SEO agent."""
     parser = argparse.ArgumentParser(description="ShadowStream - GitHub SEO & Discoverability Engine")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 

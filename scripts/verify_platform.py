@@ -435,16 +435,30 @@ def test_apk_target_sdk():
     g = "Releases"
     import io
     import zipfile
+    import shutil
+    import subprocess
+    import tempfile
+
+    aapt_tool = shutil.which("aapt2") or shutil.which("aapt")
+    if not aapt_tool:
+        record(g, "APK targetSdkVersion is 36", True,
+               "aapt2/aapt not available in host environment; check skipped", skipped=True)
+        return
 
     try:
         _, _, body = http(f"{RELEASES}/ShadowStream.apk", timeout=90)
-        zf = zipfile.ZipFile(io.BytesIO(body))
-        names = zf.namelist()
-        if "META-INF" in " ".join(names):
-            record(g, "APK targetSdkVersion is 36", False,
-                   "cannot read targetSdk without aapt2; run the local APK inspector instead")
-            return
-        record(g, "APK targetSdkVersion is 36", False, "manifest unreadable without aapt2")
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as tmp:
+            tmp.write(body)
+            tmp_path = tmp.name
+        try:
+            res = subprocess.run([aapt_tool, "dump", "badging", tmp_path],
+                                 capture_output=True, text=True, timeout=15, check=False)
+            has_sdk_36 = "targetSdkVersion:'36'" in res.stdout
+            record(g, "APK targetSdkVersion is 36", has_sdk_36,
+                   "targetSdkVersion: 36 verified" if has_sdk_36 else f"badging output: {res.stdout[:100]}")
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
     except Exception as e:
         record(g, "APK targetSdkVersion is 36", False, str(e)[:90])
 
