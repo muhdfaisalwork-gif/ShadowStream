@@ -46,8 +46,8 @@ try:
 except Exception:
     pass
 
-CATALOG = "https://streamapp-catalog.muhd-faisal-work.workers.dev"
-WEB = "https://streamapp.muhd-faisal-work.workers.dev"
+CATALOG = os.environ.get("CATALOG_URL", "https://streamapp-catalog.muhd-faisal-work.workers.dev")
+WEB = os.environ.get("WEB_URL", "https://ssmoviestvs.site")
 RELEASES = f"{CATALOG}/downloads"
 
 # Real TMDB ids, for titles that actually HAVE season data in the catalogue.

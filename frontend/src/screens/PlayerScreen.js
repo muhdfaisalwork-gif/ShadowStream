@@ -189,8 +189,9 @@ export default function PlayerScreen({ route, navigation }) {
                         if (currentSeason == null) setCurrentSeason(1);
                         if (currentEpisode == null) setCurrentEpisode(1);
                     }
-                    if (Array.isArray(data.seasons) && data.seasons.length > 0) {
-                        setSeasons(data.seasons);
+                    const seasonsList = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
+                    if (seasonsList.length > 0) {
+                        setSeasons(seasonsList);
                     }
                     const detectedDubs = data.audioLanguages || data.audio_languages || data.spoken_languages || data.languages;
                     if (Array.isArray(detectedDubs) && detectedDubs.length > 0) {
@@ -275,9 +276,10 @@ export default function PlayerScreen({ route, navigation }) {
                 const res = await fetch(`${getApiBase()}/title/${encodeURIComponent(item.id || item.slug)}/seasons`);
                 if (res.ok && !cancelled) {
                     const data = await res.json();
-                    if (Array.isArray(data.seasons) && data.seasons.length > 0) {
-                        setSeasons(data.seasons);
-                        const canonical = resolveCanonicalSeasonAndEpisode(data.seasons, currentSeason, currentEpisode);
+                    const seasonsList = Array.isArray(data) ? data : (Array.isArray(data?.seasons) ? data.seasons : []);
+                    if (seasonsList.length > 0) {
+                        setSeasons(seasonsList);
+                        const canonical = resolveCanonicalSeasonAndEpisode(seasonsList, currentSeason, currentEpisode);
                         if (canonical.season !== currentSeason || canonical.episode !== currentEpisode) {
                             setCurrentSeason(canonical.season);
                             setCurrentEpisode(canonical.episode);

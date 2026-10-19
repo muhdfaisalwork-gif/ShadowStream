@@ -216,8 +216,9 @@ export default function TitleDetailScreen({ route, navigation }) {
                             const seasonsRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}/seasons`);
                             if (seasonsRes.ok) {
                                 const sData = await seasonsRes.json();
-                                if (!cancelled && Array.isArray(sData.seasons) && sData.seasons.length > 0) {
-                                    hasSeasons = setupSeasons(sData.seasons);
+                                const seasonsList = Array.isArray(sData) ? sData : (Array.isArray(sData?.seasons) ? sData.seasons : []);
+                                if (!cancelled && seasonsList.length > 0) {
+                                    hasSeasons = setupSeasons(seasonsList);
                                 }
                             }
                         } catch (e) {
