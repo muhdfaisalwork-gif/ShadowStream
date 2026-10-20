@@ -26,11 +26,28 @@ const linking = {
             ShortDramas: 'short-dramas',
             Genres: 'genres',
             Countries: 'countries',
-            CountryDetail: 'country/:slug',
+            CountryDetail: {
+                path: 'country/:slug',
+                stringify: {
+                    country: () => undefined,
+                    code: () => undefined,
+                }
+            },
             Languages: 'languages',
             Collections: 'collections',
-            CollectionDetail: 'collection/:slug',
-            Browse: 'browse/:kind?',
+            CollectionDetail: {
+                path: 'collection/:slug',
+                stringify: {
+                    collection: () => undefined,
+                    initialItems: () => undefined,
+                }
+            },
+            Browse: {
+                path: 'browse/:kind?',
+                stringify: {
+                    initialItems: () => undefined,
+                }
+            },
             Search: 'search',
             Watchlist: 'watchlist',
             History: 'history',

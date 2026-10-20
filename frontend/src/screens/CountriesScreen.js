@@ -158,7 +158,11 @@ export default function CountriesScreen({ navigation }) {
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                                 {regionTitles.map(t => (
                                     <View key={t.id} style={{ width: `${100 / numCols - 2}%`, marginBottom: 16 }}>
-                                        <MediaCard item={t} navigation={navigation} />
+                                        <MediaCard
+                                            item={t}
+                                            navigation={navigation}
+                                            onPress={(it) => navigation.navigate('TitleDetail', { slug: it.slug || String(it.id), item: it })}
+                                        />
                                     </View>
                                 ))}
                             </View>

@@ -5,6 +5,7 @@ export const COLORS = {
     surfaceCard: '#1a1a1a',
     border: '#2a2a2a',
     borderLight: '#383838',
+    text: '#FFFFFF',
     textPrimary: '#FFFFFF',
     textSecondary: '#A3A3A3',
     textMuted: '#6B7280',

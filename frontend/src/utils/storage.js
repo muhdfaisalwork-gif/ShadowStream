@@ -117,8 +117,14 @@ export const WatchlistAPI = {
     },
 
     isSaved(titleId) {
+        if (!titleId) return false;
+        const target = String(titleId);
         const list = Storage.get('watchlist', []);
-        return list.some(id => String(id) === String(titleId));
+        return list.some(id => {
+            if (String(id) === target) return true;
+            const meta = Storage.get(`meta_${id}`, null);
+            return Boolean(meta && meta.slug && String(meta.slug) === target);
+        });
     }
 };
 

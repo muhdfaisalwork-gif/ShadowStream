@@ -21,7 +21,7 @@
 ### ⚡ Lightning-Fast Edge Architecture
 * Powered by **Cloudflare Workers** with zero cold starts and sub-millisecond edge routing.
 * Global catalog snapshots distributed across Cloudflare R2 bucket storage.
-* High-concurrency client experience with built-in stale-while-revalidate and network-first Service Worker caching (`v16`).
+* High-concurrency client experience with built-in stale-while-revalidate and network-first Service Worker caching (`v17`).
 
 ### 🌍 42-Nation World Cinema & Television Hub
 * Explore cinematic masterpieces and television releases from **42 nations** across **7 key continental regions**:

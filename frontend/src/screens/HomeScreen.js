@@ -262,7 +262,7 @@ export default function HomeScreen({ navigation }) {
                             <View style={styles.heroActionsRow}>
                                 <TouchableOpacity
                                     style={styles.heroPrimaryBtn}
-                                    onPress={() => navigation.navigate('Player', { item: hero })}
+                                    onPress={() => navigation.navigate('Player', { slug: hero.slug || String(hero.id), item: hero })}
                                     activeOpacity={0.8}
                                 >
                                     <Text style={styles.heroPrimaryBtnIcon}>▶</Text>
@@ -339,7 +339,12 @@ export default function HomeScreen({ navigation }) {
                                 <View key={`${item.id}-${idx}`} style={styles.continueCardSlot}>
                                     <MediaCard
                                         item={item}
-                                        onPress={(it) => navigation.navigate('Player', { item: it })}
+                                        onPress={(it) => navigation.navigate('Player', {
+                                            slug: it.slug || String(it.id),
+                                            item: it,
+                                            season: it.season || undefined,
+                                            episode: it.episode || undefined,
+                                        })}
                                         showProgress
                                     />
                                 </View>

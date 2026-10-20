@@ -38,7 +38,7 @@ const R2_PREFIX = "";
 
 const CORS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -1888,6 +1888,29 @@ export default {
                 const q = params.get("q") || "";
                 const limit = parseInt(params.get("page_size") || params.get("limit") || "30", 10);
                 return await searchTitles(q, env, limit, params);
+            }
+
+            if (normPath === "/watchlist" || normPath.startsWith("/watchlist/")) {
+                return jsonResponse({ status: "ok", items: [] });
+            }
+
+            if (normPath === "/history" || normPath.startsWith("/history/")) {
+                return jsonResponse({ status: "ok", items: [] });
+            }
+
+            if (normPath === "/dub/download") {
+                const targetUrl = params.get("url") || "";
+                if (targetUrl && /^https?:\/\//i.test(targetUrl)) {
+                    return Response.redirect(targetUrl, 302);
+                }
+                const titleName = params.get("title") || "ShadowStream";
+                const langCode = (params.get("lang") || "en").toUpperCase();
+                return jsonResponse({
+                    status: "ok",
+                    title: titleName,
+                    lang: langCode,
+                    message: `Use the in-player Audio / Dub selector to stream ${titleName} in ${langCode}.`,
+                });
             }
 
             return notFound(path);

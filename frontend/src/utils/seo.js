@@ -222,7 +222,7 @@ export function setRouteMeta(screen, params) {
             description = overview
                 ? `${overview.slice(0, 220)}${overview.length > 220 ? '…' : ''}`
                 : `${t}${year ? ` (${year})` : ''} - ${typeLabel} on ShadowStream. ${rating ? `Rated ${Number(rating).toFixed(1)}.` : ''}`;
-            canonical = slug ? `${CANONICAL_BASE}/${type === 'tv' ? 'tv' : type === 'anime' ? 'anime' : type === 'short_drama' ? 'short-drama' : 'movie'}/${slug}` : CANONICAL_BASE;
+            canonical = slug ? `${CANONICAL_BASE}/title/${slug}` : CANONICAL_BASE;
 
             // JSON-LD structured data (§42). Schema.org types: Movie, TVSeries, etc.
             const schemaType = type === 'tv' ? 'TVSeries'
@@ -254,10 +254,10 @@ export function setRouteMeta(screen, params) {
             break;
         }
         case 'CollectionDetail': {
-            const c = params.name || params.collection?.name || 'Collection';
-            const desc = params.description || params.collection?.description || '';
-            const slug = params.slug || params.collection?.slug || '';
-            const count = params.count || params.collection?.count;
+            const c = safeParams.name || safeParams.collection?.name || 'Collection';
+            const desc = safeParams.description || safeParams.collection?.description || '';
+            const slug = safeParams.slug || safeParams.collection?.slug || '';
+            const count = safeParams.count || safeParams.collection?.count;
             title = `${c} - Collection | ShadowStream`;
             description = desc ? `${desc.slice(0, 200)}…` : `Explore the ${c} collection on ShadowStream.`;
             canonical = slug ? `${CANONICAL_BASE}/collection/${slug}` : CANONICAL_BASE;
@@ -275,8 +275,8 @@ export function setRouteMeta(screen, params) {
         }
         case 'GenreScreen':
         case 'CountryDetail': {
-            const n = params.name || 'Browse';
-            const slug = params.slug || params.code || '';
+            const n = safeParams.name || 'Browse';
+            const slug = safeParams.slug || safeParams.code || '';
             title = `${n} - Browse | ShadowStream`;
             description = `Titles from ${n} on ShadowStream.`;
             canonical = slug ? `${CANONICAL_BASE}/${screen === 'GenreScreen' ? 'genre' : 'country'}/${slug}` : CANONICAL_BASE;

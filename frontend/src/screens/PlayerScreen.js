@@ -284,6 +284,21 @@ export default function PlayerScreen({ route, navigation }) {
                             setCurrentSeason(canonical.season);
                             setCurrentEpisode(canonical.episode);
                         }
+                    } else if (!Array.isArray(item.seasons) || item.seasons.length === 0) {
+                        const sCount = Math.max(1, Number(item.seasonCount) || 1);
+                        const synths = Array.from({ length: sCount }, (_, i) => ({
+                            id: ((Number(item.id) || 1) * 100) + (i + 1),
+                            season_number: i + 1,
+                            name: `Season ${i + 1}`,
+                            episode_count: 8,
+                            episodes: Array.from({ length: 8 }, (__, j) => ({
+                                id: ((Number(item.id) || 1) * 1000) + ((i + 1) * 100) + (j + 1),
+                                episode_number: j + 1,
+                                name: `Episode ${j + 1}`,
+                                runtime: item.runtime || 45,
+                            })),
+                        }));
+                        setSeasons(synths);
                     }
                 }
             } catch (e) {
@@ -513,6 +528,31 @@ export default function PlayerScreen({ route, navigation }) {
         }
     }, [seasons, currentSeason, currentEpisode]);
 
+    const handleBack = useCallback(() => {
+        if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else if (item?.slug || slug || item?.id) {
+            navigation.navigate('TitleDetail', { slug: item?.slug || slug || String(item.id), item });
+        } else {
+            navigation.navigate('Home');
+        }
+    }, [navigation, item, slug]);
+
+    const activeSeasonObj = (seasons || []).find(s => s && s.season_number === currentSeason);
+    const activeEpObj = (activeSeasonObj?.episodes || []).find(e => e && e.episode_number === currentEpisode);
+    const isUpcomingEpisode = Boolean(activeEpObj?.air_date && new Date(activeEpObj.air_date) > new Date());
+
+    const releasedSeasons = useMemo(() => {
+        if (!Array.isArray(seasons) || seasons.length === 0) return [];
+        const now = new Date();
+        return seasons.filter(s => {
+            if (!s || s.season_number <= 0) return false;
+            const eps = s.episodes || [];
+            if (eps.length === 0) return true;
+            return eps.some(e => !e.air_date || new Date(e.air_date) <= now);
+        }).sort((a, b) => a.season_number - b.season_number);
+    }, [seasons]);
+
     if (loading) {
         return (
             <SafeAreaView style={styles.screen}>
@@ -557,7 +597,7 @@ export default function PlayerScreen({ route, navigation }) {
                     onSelectMirror={applyMirror}
                     onSelectEpisode={handleSelectEpisode}
                     onNextEpisode={handleNextEpisode}
-                    onBack={() => navigation.goBack()}
+                    onBack={handleBack}
                     mediaId={item?.id || item?.slug}
                     renditions={renditions}
                     notice={resolveNote}
@@ -565,21 +605,6 @@ export default function PlayerScreen({ route, navigation }) {
             </SafeAreaView>
         );
     }
-
-    const activeSeasonObj = (seasons || []).find(s => s && s.season_number === currentSeason);
-    const activeEpObj = (activeSeasonObj?.episodes || []).find(e => e && e.episode_number === currentEpisode);
-    const isUpcomingEpisode = Boolean(activeEpObj?.air_date && new Date(activeEpObj.air_date) > new Date());
-
-    const releasedSeasons = useMemo(() => {
-        if (!Array.isArray(seasons) || seasons.length === 0) return [];
-        const now = new Date();
-        return seasons.filter(s => {
-            if (!s || s.season_number <= 0) return false;
-            const eps = s.episodes || [];
-            if (eps.length === 0) return true;
-            return eps.some(e => !e.air_date || new Date(e.air_date) <= now);
-        }).sort((a, b) => a.season_number - b.season_number);
-    }, [seasons]);
 
     // Metadata / Discovery State (Only shown if no playable stream is found)
     return (
@@ -591,7 +616,7 @@ export default function PlayerScreen({ route, navigation }) {
                     style={StyleSheet.absoluteFill}
                 />
                 <View style={styles.metadataStateOverlay}>
-                    <TouchableOpacity style={styles.backBtnFloating} onPress={() => navigation.goBack()}>
+                    <TouchableOpacity style={styles.backBtnFloating} onPress={handleBack}>
                         <Text style={styles.backBtnText}>‹ Back</Text>
                     </TouchableOpacity>
 

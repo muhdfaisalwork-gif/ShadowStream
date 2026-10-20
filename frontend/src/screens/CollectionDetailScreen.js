@@ -228,7 +228,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
                     />
                     <View style={styles.heroOverlay}>
                         <View style={styles.backRow}>
-                            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Collections')}>
                                 <Text style={styles.backBtnText}>‹ Back</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.allCollectionsBtn} onPress={() => navigation.navigate('Collections')}>

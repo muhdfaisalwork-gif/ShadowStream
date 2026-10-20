@@ -1,7 +1,7 @@
 /*
  * ShadowStream service worker.
  *
- * IMPORTANT â€” navigations are NETWORK-FIRST, not cache-first.
+ * IMPORTANT — navigations are NETWORK-FIRST, not cache-first.
  *
  * The shell is an Expo web export, so index.html points at a content-hashed
  * bundle like index-<hash>.js. When a deploy ships a new bundle the old hash
@@ -18,11 +18,11 @@
  * Bump VERSION on every deploy so old shells are purged on activate.
  *
  * Other tiers are unchanged: catalogue JSON is stale-while-revalidate, and
- * stream/embed/resolver URLs are never cached â€” a cached dead mirror is worse
+ * stream/embed/resolver URLs are never cached — a cached dead mirror is worse
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v16';
+const VERSION = 'v17';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -40,8 +40,7 @@ const SHELL_ASSETS = [
 ];
 
 const CATALOG_ORIGINS = [
-    'https://ssmoviestvs.site',
-    'https://www.ssmoviestvs.site',
+    'https://streamapp-catalog.muhd-faisal-work.workers.dev',
 ];
 
 self.addEventListener('install', (event) => {
@@ -72,7 +71,7 @@ self.addEventListener('activate', (event) => {
 /**
  * Catalog endpoints are filtered heavily (country, type, genre, year, page,
  * audio_language, etc.). The query string IS the filter, so the cache key
- * must include it â€” otherwise the first response for /api/v1/titles is
+ * must include it — otherwise the first response for /api/v1/titles is
  * served for every subsequent country/language/genre call. Use the full
  * Request as the cache key (Cache.match/put on a Request keys on URL +
  * method + headers, which gives us query-string fidelity for free).
@@ -84,6 +83,7 @@ self.addEventListener('activate', (event) => {
 
 function isCatalog(request, url) {
     if (request.method !== 'GET') return false;
+    if (request.mode === 'navigate') return false;
     if (url.pathname.startsWith('/api/')) return true;
     return CATALOG_ORIGINS.includes(url.origin);
 }
@@ -110,6 +110,36 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Tier 1: navigations — NETWORK-FIRST.
+    //
+    // A cached index.html pins a bundle hash that a new deploy has already
+    // replaced, so the app 404s its own JS and the visitor sees a white
+    // screen. Going to the network first costs one request and makes deploys
+    // take effect immediately; the cache is the offline fallback only.
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request)
+                .then((res) => {
+                    if (res && res.ok) {
+                        const copy = res.clone();
+                        caches.open(SHELL_CACHE).then(c => c.put('/index.html', copy)).catch(() => {});
+                    }
+                    return res;
+                })
+                .catch(async () => {
+                    const cache = await caches.open(SHELL_CACHE);
+                    return (await cache.match('/index.html'))
+                        || (await cache.match('/'))
+                        || (await cache.match('/offline.html'))
+                        || new Response('Offline', {
+                            status: 503,
+                            headers: { 'Content-Type': 'text/plain' },
+                        });
+                })
+        );
+        return;
+    }
+
     // Tier 2b: content-hashed bundle, cache-first (immutable).
     if (isStaticBundle(url)) {
         event.respondWith(
@@ -128,7 +158,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Tier 2a: Seasons endpoints â€” NETWORK-FIRST.
+    // Tier 2a: Seasons endpoints — NETWORK-FIRST.
     // Never serve stale or empty seasons caches to visitors.
     if (url.pathname.includes('/seasons')) {
         event.respondWith(
@@ -163,36 +193,6 @@ self.addEventListener('fetch', (event) => {
                     .catch(() => null);
                 return hit || network.then((res) => res || offlineFallback());
             })
-        );
-        return;
-    }
-
-    // Tier 1: navigations â€” NETWORK-FIRST.
-    //
-    // A cached index.html pins a bundle hash that a new deploy has already
-    // replaced, so the app 404s its own JS and the visitor sees a white
-    // screen. Going to the network first costs one request and makes deploys
-    // take effect immediately; the cache is the offline fallback only.
-    if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request)
-                .then((res) => {
-                    if (res && res.ok) {
-                        const copy = res.clone();
-                        caches.open(SHELL_CACHE).then(c => c.put('/index.html', copy)).catch(() => {});
-                    }
-                    return res;
-                })
-                .catch(async () => {
-                    const cache = await caches.open(SHELL_CACHE);
-                    return (await cache.match('/index.html'))
-                        || (await cache.match('/'))
-                        || (await cache.match('/offline.html'))
-                        || new Response('Offline', {
-                            status: 503,
-                            headers: { 'Content-Type': 'text/plain' },
-                        });
-                })
         );
         return;
     }

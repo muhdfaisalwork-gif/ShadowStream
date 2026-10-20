@@ -200,7 +200,7 @@ export default function BrowseScreen({ route, navigation }) {
             if (tab === 'anime') url += '&type=anime';
             else if (tab === 'short_drama') url += '&type=short_drama';
             else if (tab === 'tv') url += '&type=tv';
-            else url += '&type=movie';
+            else if (tab === 'movie') url += '&type=movie';
 
             if (categorySlug === 'top-rated') url += '&min_rating=7.5';
             if (genre) url += `&genre=${encodeURIComponent(genre)}`;

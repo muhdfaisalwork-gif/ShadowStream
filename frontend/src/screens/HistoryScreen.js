@@ -125,7 +125,12 @@ export default function HistoryScreen({ navigation }) {
                                             <Text style={styles.pctText}>{pct}% watched</Text>
                                             <TouchableOpacity
                                                 style={styles.resumeBtn}
-                                                onPress={() => navigation.navigate('Player', { item })}
+                                                onPress={() => navigation.navigate('Player', {
+                                                    slug: item.slug || String(item.id),
+                                                    item,
+                                                    season: item.season || undefined,
+                                                    episode: item.episode || undefined,
+                                                })}
                                                 activeOpacity={0.8}
                                             >
                                                 <Text style={styles.resumeIcon}>▶</Text>

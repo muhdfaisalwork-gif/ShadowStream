@@ -22,8 +22,10 @@ export default function LanguagesScreen({ navigation }) {
     const [filterType, setFilterType] = useState('any'); // any, audio, sub
     const [titles, setTitles] = useState([]);
     const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
     const [loadingLangs, setLoadingLangs] = useState(true);
     const [loadingTitles, setLoadingTitles] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -45,11 +47,12 @@ export default function LanguagesScreen({ navigation }) {
         return () => { cancelled = true; };
     }, []);
 
-    const fetchTitles = useCallback(async (langCode, filter) => {
+    const fetchTitles = useCallback(async (langCode, filter, pageNum = 1, append = false) => {
         if (!langCode) return;
-        setLoadingTitles(true);
+        if (append) setLoadingMore(true);
+        else setLoadingTitles(true);
         try {
-            let url = `${getApiBase()}/titles?page=1&page_size=24`;
+            let url = `${getApiBase()}/titles?page=${pageNum}&page_size=24`;
             if (filter === 'audio') {
                 // /api/v1/titles expects `audio_language` (matches the search endpoint)
                 url += `&audio_language=${encodeURIComponent(langCode)}`;
@@ -62,19 +65,29 @@ export default function LanguagesScreen({ navigation }) {
             const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
-                setTitles(data.items || []);
-                setTotal(data.total || (data.items || []).length);
+                const nextItems = data.items || [];
+                setTitles(prev => append ? [...prev, ...nextItems] : nextItems);
+                setTotal(data.total || nextItems.length);
             }
         } catch (err) {
             console.error('[LanguagesScreen] fetchTitles error:', err);
         } finally {
             setLoadingTitles(false);
+            setLoadingMore(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchTitles(selectedLang, filterType);
+        setPage(1);
+        fetchTitles(selectedLang, filterType, 1, false);
     }, [selectedLang, filterType, fetchTitles]);
+
+    const handleLoadMore = () => {
+        if (loadingMore || titles.length >= total) return;
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchTitles(selectedLang, filterType, nextPage, true);
+    };
 
     const activeLangObj = languages.find(l => l.code === selectedLang);
 
@@ -159,6 +172,22 @@ export default function LanguagesScreen({ navigation }) {
                             </View>
                         ))}
                     </View>
+                )}
+
+                {!loadingTitles && titles.length < total && (
+                    <TouchableOpacity
+                        style={styles.loadMoreBtn}
+                        onPress={handleLoadMore}
+                        disabled={loadingMore}
+                    >
+                        {loadingMore ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.loadMoreText}>
+                                Load More Titles ({titles.length} of {total.toLocaleString()})
+                            </Text>
+                        )}
+                    </TouchableOpacity>
                 )}
 
                 <View style={{ height: 40 }} />
@@ -273,6 +302,21 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingTop: 12
+    },
+    loadMoreBtn: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        paddingVertical: 14,
+        borderRadius: 10,
+        backgroundColor: COLORS.surfaceAlt,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        alignItems: 'center'
+    },
+    loadMoreText: {
+        color: COLORS.textPrimary,
+        fontSize: 13,
+        fontWeight: '700'
     }
 });
 

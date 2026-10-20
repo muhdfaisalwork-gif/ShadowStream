@@ -5,8 +5,16 @@ import Poster from './Poster';
 import { Storage } from '../utils/storage';
 import { ReleaseStatusBadge } from './ReleaseStatusFilter';
 
-export default function MediaCard({ item, onPress, isLarge, showProgress, width, height }) {
+export default function MediaCard({ item, onPress, navigation, isLarge, showProgress, width, height }) {
     if (!item) return null;
+
+    const handleCardPress = () => {
+        if (typeof onPress === 'function') {
+            onPress(item);
+        } else if (navigation && typeof navigation.navigate === 'function') {
+            navigation.navigate('TitleDetail', { slug: item.slug || String(item.id), item });
+        }
+    };
 
     const watchProgress = Storage.get(`progress_${item.id}`, 0);
     const cardWidth = width || (isLarge ? 170 : 144);
@@ -60,7 +68,7 @@ export default function MediaCard({ item, onPress, isLarge, showProgress, width,
     return (
         <TouchableOpacity
             style={[styles.card, { width: cardWidth }]}
-            onPress={() => onPress && onPress(item)}
+            onPress={handleCardPress}
             activeOpacity={0.82}
             accessible
             accessibilityRole="button"

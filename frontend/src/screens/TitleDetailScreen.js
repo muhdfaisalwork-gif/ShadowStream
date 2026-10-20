@@ -134,6 +134,11 @@ export default function TitleDetailScreen({ route, navigation }) {
                 if (cancelled) return;
 
                 setItem(detailData);
+                setInWatchlist(
+                    WatchlistAPI.isSaved(detailData.id) ||
+                    WatchlistAPI.isSaved(detailData.slug) ||
+                    WatchlistAPI.isSaved(titleKey)
+                );
 
                 // 4. Fetch similar titles
                 const firstGenre = detailData.genres && detailData.genres[0]
@@ -409,8 +414,17 @@ export default function TitleDetailScreen({ route, navigation }) {
         if (directPlayback?.playbackUrl || directPlayback?.playback_url) return directPlayback.playbackUrl || directPlayback.playback_url;
         if (downloadable?.playbackUrl || downloadable?.playback_url) return downloadable.playbackUrl || downloadable.playback_url;
         if (item?.streamUrl || item?.playbackUrl) return item.streamUrl || item.playbackUrl;
-        const av = availList.find(a => (a.playbackUrl || a.playback_url || a.url));
-        return av ? (av.playbackUrl || av.playback_url || av.url) : null;
+        const av = availList.find(a => (a.playbackUrl || a.playback_url || a.url || a.external_url));
+        if (av) return av.playbackUrl || av.playback_url || av.url || av.external_url;
+        const tmdb = item?.tmdbId || item?.tmdb_id || (typeof item?.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
+        if (tmdb) {
+            const s = ep ? (ep.season_number != null ? ep.season_number : (activeSeasonNum || 1)) : (activeSeasonNum || 1);
+            const e = ep ? (ep.episode_number || 1) : 1;
+            return isEpisodic
+                ? `https://vidlink.pro/tv/${tmdb}/${s}/${e}`
+                : `https://vidlink.pro/movie/${tmdb}`;
+        }
+        return null;
     };
 
     const triggerVideoDownload = (ep = null) => {

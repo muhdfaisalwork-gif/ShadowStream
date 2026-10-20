@@ -18,11 +18,10 @@ export function useRouteMeta(screen, params) {
     screenRef.current = screen;
 
     const depKey = typeof screen === 'string'
-        ? `${screen}:${params?.id || params?.slug || params?.item?.id || params?.item?.slug || ''}`
+        ? `${screen}:${params?.id || params?.slug || params?.code || params?.name || params?.title || params?.item?.id || params?.item?.slug || ''}`
         : `${screen?.title || ''}:${screen?.url || ''}:${screen?.description || ''}`;
 
     useEffect(() => {
         setRouteMeta(screenRef.current, paramsRef.current);
     }, [depKey]);
 }
-
