@@ -1,15 +1,7 @@
 {
-  "name": "@muhdfaisalwork-gif/shadowstream-web",
+  "name": "frontend",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/muhdfaisalwork-gif/ShadowStream.git",
-    "directory": "frontend"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
     "@react-navigation/bottom-tabs": "^7.19.2",
