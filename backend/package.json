@@ -1,22 +1,33 @@
 {
-  "name": "streaming-app-backend",
+  "name": "@muhdfaisalwork-gif/shadowstream-backend",
   "version": "1.0.0",
-  "description": "Enterprise Cross-Platform Legal Streaming Platform - Core Backend Services",
+  "description": "ShadowStream Cross-Platform Streaming Platform - Core Backend Services",
   "type": "module",
   "main": "src/index.js",
+  "files": [
+    "src/"
+  ],
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node --test src/tests/backend.test.ts"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/muhdfaisalwork-gif/ShadowStream.git",
+    "directory": "backend"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "keywords": [
+    "shadowstream",
     "streaming",
     "hls",
-    "legal",
     "public-domain",
     "open-movies"
   ],
-  "author": "Antigravity Engineering Team",
+  "author": "Muhammad Faisal (@muhdfaisalwork-gif)",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.6",

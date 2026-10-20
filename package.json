@@ -1,0 +1,45 @@
+{
+  "name": "@muhdfaisalwork-gif/shadowstream",
+  "version": "1.0.0",
+  "description": "ShadowStream SDK & Edge Streaming Catalog Client — 100K+ titles across 42 nations with multi-source failover, TV seasons/episodes, and multi-audio dubs.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test index.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/muhdfaisalwork-gif/ShadowStream.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "keywords": [
+    "shadowstream",
+    "streaming",
+    "cloudflare-workers",
+    "react-native",
+    "expo",
+    "hls",
+    "video-player",
+    "tmdb",
+    "movies",
+    "tv-series",
+    "anime"
+  ],
+  "author": "Muhammad Faisal (@muhdfaisalwork-gif)",
+  "license": "MIT",
+  "homepage": "https://www.ssmoviestvs.site",
+  "bugs": {
+    "url": "https://github.com/muhdfaisalwork-gif/ShadowStream/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

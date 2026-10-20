@@ -127,6 +127,22 @@ The app will launch locally at `http://localhost:8081`.
 cd downloads/streamapp-worker
 npm install
 npx wrangler dev
+`
+
+---
+
+### 4. Install Packages from GitHub Packages (
+pm.pkg.github.com)
+Configure your project's .npmrc to route @muhdfaisalwork-gif packages through GitHub Packages:
+`ini
+@muhdfaisalwork-gif:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+`
+Then install the published ShadowStream packages:
+`ash
+npm install @muhdfaisalwork-gif/shadowstream@1.0.0
+npm install @muhdfaisalwork-gif/shadowstream-backend@1.0.0
+npm install @muhdfaisalwork-gif/shadowstream-catalog-worker@1.0.0
 ```
 
 ---

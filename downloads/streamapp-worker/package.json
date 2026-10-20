@@ -1,12 +1,28 @@
 {
-  "name": "streamapp-catalog-worker",
+  "name": "@muhdfaisalwork-gif/shadowstream-catalog-worker",
   "version": "1.0.0",
-  "private": true,
+  "description": "ShadowStream Cloudflare Edge Catalog & Multi-Source Failover Worker",
+  "main": "src/index.ts",
+  "files": [
+    "src/",
+    "wrangler.toml",
+    "tsconfig.json"
+  ],
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "tail": "wrangler tail"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/muhdfaisalwork-gif/ShadowStream.git",
+    "directory": "downloads/streamapp-worker"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "author": "Muhammad Faisal (@muhdfaisalwork-gif)",
+  "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260921.1",
     "typescript": "^5.5.0",
