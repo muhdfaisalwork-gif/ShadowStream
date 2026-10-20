@@ -16,7 +16,7 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "html_handling": "auto-trailing-slash",
-    "run_worker_first": ["/downloads/*", "/downloads", "/api/*", "/api"]
+    "run_worker_first": ["/downloads/*", "/downloads", "/api/*", "/api", "/version.json", "/app-version", "/latest.yml"]
   },
   "vars": {
     "API_BASE_URL": "https://ssmoviestvs.site/api/v1"

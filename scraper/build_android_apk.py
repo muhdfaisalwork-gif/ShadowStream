@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 241
-VERSION_NAME = "2.4.1"
+VERSION_CODE = 242
+VERSION_NAME = "2.4.2"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -163,6 +163,7 @@ public class MainActivity extends Activity {{
     private WebChromeClient.CustomViewCallback customViewCallback;
 
     private boolean isVideoPlaying = false;
+    private boolean forceOfflineFallback = false;
     private long lastBackPress = 0L;
 
     public class NativeBridge {{
@@ -215,12 +216,22 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.1";
+            return "2.4.2";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 241;
+            return 242;
+        }}
+
+        @JavascriptInterface
+        public void downloadUpdate(final String downloadUrl) {{
+            runOnUiThread(new Runnable() {{
+                @Override
+                public void run() {{
+                    handleNativeDownload(downloadUrl, null, null, "application/vnd.android.package-archive");
+                }}
+            }});
         }}
     }}
 
@@ -304,6 +315,23 @@ public class MainActivity extends Activity {{
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                 }}
             }}
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest req, android.webkit.WebResourceError error) {{
+                if (req != null && req.isForMainFrame()) {{
+                    // Fall back to offline assets if network fails
+                    forceOfflineFallback = true;
+                    view.loadUrl(HOME_URL);
+                }}
+            }}
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {{
+                if (failingUrl != null && failingUrl.contains(DOMAIN)) {{
+                    forceOfflineFallback = true;
+                    view.loadUrl(HOME_URL);
+                }}
+            }}
         }});
 
         web.setWebChromeClient(new WebChromeClient() {{
@@ -352,8 +380,34 @@ public class MainActivity extends Activity {{
         web.loadUrl(HOME_URL);
     }}
 
+    
+    private boolean isNetworkAvailable() {{
+        try {{
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {{
+                android.net.Network net = cm.getActiveNetwork();
+                if (net == null) return false;
+                android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+                return caps != null && (caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET));
+            }} else {{
+                android.net.NetworkInfo ni = cm.getActiveNetworkInfo();
+                return ni != null && ni.isConnected();
+            }}
+        }} catch (Throwable ignored) {{
+            return false;
+        }}
+    }}
+
     private WebResourceResponse interceptLocalAsset(WebResourceRequest req) {{
         if (req == null || req.getUrl() == null) return null;
+
+        // When online and not in forced offline fallback, let requests load live from the web
+        // so deploys take effect immediately and apps auto-update!
+        if (isNetworkAvailable() && !forceOfflineFallback) {{
+            return null;
+        }}
+
         Uri uri = req.getUrl();
         String host = uri.getHost();
 

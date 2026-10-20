@@ -1,0 +1,10 @@
+{
+  "version": "2.4.2",
+  "versionCode": 242,
+  "minVersion": "1.0.0",
+  "name": "ShadowStream",
+  "releaseDate": "2026-10-21",
+  "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
+  "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
+  "releaseNotes": "Automatic background update engine, network-first live sync with offline fallback, and high-performance failover player."
+}

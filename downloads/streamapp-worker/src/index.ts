@@ -36,6 +36,18 @@ export interface Env {
 
 const R2_PREFIX = "";
 
+const CURRENT_APP_RELEASE = {
+    version: "2.4.2",
+    versionCode: 242,
+    minVersion: "1.0.0",
+    name: "ShadowStream",
+    releaseDate: "2026-10-21",
+    apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
+    desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
+    releaseNotes: "Automatic background update engine, network-first live sync with offline fallback, and high-performance failover player.",
+};
+
+
 const CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -1706,6 +1718,27 @@ export default {
                 return streamR2("categories.json", env);
             }
 
+            
+            if (normPath === "/app-version" || normPath === "/api/v1/app-version" || normPath === "/version.json" || normPath === "/api/v1/version.json") {
+                if (env.RELEASES) {
+                    try {
+                        const r2Obj = await env.RELEASES.get("version.json");
+                        if (r2Obj) {
+                            return new Response(r2Obj.body, {
+                                headers: {
+                                    "Content-Type": "application/json; charset=utf-8",
+                                    "Cache-Control": "no-cache, must-revalidate",
+                                    ...CORS,
+                                },
+                            });
+                        }
+                    } catch (_) {}
+                }
+                return jsonResponse(CURRENT_APP_RELEASE, 200, {
+                    "Cache-Control": "no-cache, must-revalidate",
+                });
+            }
+
             if (normPath === "/downloads" || normPath === "/downloads/list") {
                 if (!env.RELEASES) return errorResponse("Releases storage not bound", 500);
                 const listing = await env.RELEASES.list();
@@ -1715,6 +1748,29 @@ export default {
             const downloadMatch = normPath.match(/^\/downloads?\/([^/]+)$/);
             if (downloadMatch) {
                 const requestedName = downloadMatch[1];
+                const lowerName = requestedName.toLowerCase();
+
+                // Specific metadata files: version.json
+                if (lowerName === "version.json") {
+                    if (env.RELEASES) {
+                        try {
+                            const r2Obj = await env.RELEASES.get("version.json");
+                            if (r2Obj) {
+                                return new Response(r2Obj.body, {
+                                    headers: {
+                                        "Content-Type": "application/json; charset=utf-8",
+                                        "Cache-Control": "no-cache, must-revalidate",
+                                        ...CORS,
+                                    },
+                                });
+                            }
+                        } catch (_) {}
+                    }
+                    return jsonResponse(CURRENT_APP_RELEASE, 200, {
+                        "Cache-Control": "no-cache, must-revalidate",
+                    });
+                }
+
                 if (!env.RELEASES) return errorResponse("Releases storage not bound", 500);
                 let obj = await env.RELEASES.get(requestedName);
                 if (!obj && requestedName.startsWith("ShadowStream")) {
@@ -1724,25 +1780,52 @@ export default {
                     const fallbackName = requestedName.replace("StreamApp", "ShadowStream");
                     obj = await env.RELEASES.get(fallbackName);
                 }
+
+                // If latest.yml is requested by electron-updater and not found in R2, generate it
+                if (!obj && (lowerName === "latest.yml" || lowerName === "latest-win.yml")) {
+                    const latestYml = `version: ${CURRENT_APP_RELEASE.version}\npath: ShadowStream-Setup-x64.exe\nsha512: d41d8cd98f00b204e9800998ecf8427e\nreleaseDate: '${new Date().toISOString()}'\n`;
+                    return new Response(latestYml, {
+                        headers: {
+                            "Content-Type": "text/yaml; charset=utf-8",
+                            "Cache-Control": "no-cache, must-revalidate",
+                            "X-Content-Type-Options": "nosniff",
+                            ...CORS,
+                        },
+                    });
+                }
+
                 if (!obj) return notFound(path);
-                const lowerName = requestedName.toLowerCase();
+
+                const isYaml = lowerName.endsWith(".yml") || lowerName.endsWith(".yaml");
+                const isJson = lowerName.endsWith(".json");
                 const isApk = lowerName.endsWith(".apk");
-                const contentType = isApk
-                    ? "application/vnd.android.package-archive"
-                    : lowerName.endsWith(".exe")
-                        ? "application/vnd.microsoft.portable-executable"
-                        : lowerName.endsWith(".zip")
-                            ? "application/zip"
-                            : "application/octet-stream";
+                const isExe = lowerName.endsWith(".exe");
+                const isZip = lowerName.endsWith(".zip");
+
+                const contentType = isYaml
+                    ? "text/yaml; charset=utf-8"
+                    : isJson
+                        ? "application/json; charset=utf-8"
+                        : isApk
+                            ? "application/vnd.android.package-archive"
+                            : isExe
+                                ? "application/vnd.microsoft.portable-executable"
+                                : isZip
+                                    ? "application/zip"
+                                    : "application/octet-stream";
+
                 const dlHeaders: Record<string, string> = {
                     "Content-Type": contentType,
-                    "Content-Disposition": `attachment; filename="${requestedName}"`,
-                    // Installers are replaced in place on every release: always revalidate
-                    // so users never receive a stale (previously broken) build from the CDN.
                     "Cache-Control": "no-cache, must-revalidate",
                     "X-Content-Type-Options": "nosniff",
                     ...CORS,
                 };
+
+                // Only attach Content-Disposition for binary installer archives, never for YAML / JSON metadata
+                if (!isYaml && !isJson) {
+                    dlHeaders["Content-Disposition"] = `attachment; filename="${requestedName}"`;
+                }
+
                 if (obj.size) dlHeaders["Content-Length"] = String(obj.size);
                 if (obj.httpEtag) dlHeaders["ETag"] = obj.httpEtag;
                 return new Response(obj.body, { headers: dlHeaders });

@@ -158,7 +158,7 @@ export default function SettingsScreen({ navigation }) {
                 {/* App Version Card */}
                 <View style={styles.versionCard}>
                     <Text style={styles.versionTitle}>ShadowStream Cinematic Discovery</Text>
-                    <Text style={styles.versionMeta}>Version 2.4.1 (Production Release) • React Native Web + Expo</Text>
+                    <Text style={styles.versionMeta}>Version 2.4.2 (Production Release) • React Native Web + Expo</Text>
                     <Text style={styles.versionMeta}>Edge Architecture (Cloudflare Workers + R2 Distributed Catalog)</Text>
                 </View>
 

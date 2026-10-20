@@ -1,52 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { COLORS } from '../theme/colors';
-
-const LATEST_APK_VERSION = '2.4.1';
-const LATEST_APK_CODE = 241;
+import { applyAppUpdate } from '../utils/pwa';
 
 export default function UpdateBanner() {
-    const [showUpdate, setShowUpdate] = useState(false);
+    const [updateInfo, setUpdateInfo] = useState(null);
     const [dismissed, setDismissed] = useState(false);
 
     useEffect(() => {
         if (Platform.OS !== 'web' || typeof window === 'undefined') return;
 
-        // Check if running inside Android APK wrapper
-        const isAndroidApk = Boolean(window.ShadowStreamNative);
-        if (isAndroidApk) {
-            // Check if native bridge has latest orientation support or version code
-            const currentCode = typeof window.ShadowStreamNative.getAppVersionCode === 'function'
-                ? window.ShadowStreamNative.getAppVersionCode()
-                : (window.ShadowStreamNative.setOrientation ? 241 : 240);
+        // 1. Listen for PWA service-worker updates
+        const handlePwaUpdate = () => {
+            setUpdateInfo({
+                type: 'pwa',
+                version: 'Latest',
+                title: 'New Web Update Available',
+                subtitle: 'Tap update to reload and apply the newest player and catalog fixes.',
+                action: () => applyAppUpdate(),
+            });
+        };
+        window.addEventListener('shadowstream:update-available', handlePwaUpdate);
 
-            if (currentCode < LATEST_APK_CODE) {
-                setShowUpdate(true);
-            }
-        }
+        // 2. Dynamic check against remote version API
+        const checkRemoteVersion = async () => {
+            try {
+                const res = await fetch('/api/v1/app-version', { cache: 'no-store' });
+                if (!res.ok) return;
+                const remote = await res.json();
+
+                // If running inside Android APK wrapper
+                if (window.ShadowStreamNative) {
+                    const currentCode = typeof window.ShadowStreamNative.getAppVersionCode === 'function'
+                        ? window.ShadowStreamNative.getAppVersionCode()
+                        : 240;
+
+                    if (remote.versionCode && currentCode < remote.versionCode) {
+                        setUpdateInfo({
+                            type: 'apk',
+                            version: remote.version || '2.4.2',
+                            title: `Update Available (v${remote.version || '2.4.2'})`,
+                            subtitle: remote.releaseNotes || 'Install the newest version for player fixes & performance improvements.',
+                            action: () => {
+                                const dlUrl = remote.apkUrl || 'https://ssmoviestvs.site/downloads/ShadowStream.apk';
+                                if (typeof window.ShadowStreamNative.downloadUpdate === 'function') {
+                                    window.ShadowStreamNative.downloadUpdate(dlUrl);
+                                } else {
+                                    window.location.href = dlUrl;
+                                }
+                            },
+                        });
+                    }
+                }
+            } catch (_) {}
+        };
+
+        checkRemoteVersion();
+
+        return () => {
+            window.removeEventListener('shadowstream:update-available', handlePwaUpdate);
+        };
     }, []);
 
-    if (!showUpdate || dismissed) return null;
-
-    const handleUpdate = () => {
-        if (typeof window !== 'undefined') {
-            window.location.href = 'https://ssmoviestvs.site/downloads/ShadowStream.apk';
-        }
-    };
+    if (!updateInfo || dismissed) return null;
 
     return (
         <View style={styles.banner}>
             <View style={styles.content}>
                 <Text style={styles.icon}>🚀</Text>
                 <View style={styles.textWrap}>
-                    <Text style={styles.title}>Update Available (v{LATEST_APK_VERSION})</Text>
-                    <Text style={styles.subtitle}>
-                        Install the latest version for automatic screen rotation & player fixes.
-                    </Text>
+                    <Text style={styles.title}>{updateInfo.title}</Text>
+                    <Text style={styles.subtitle}>{updateInfo.subtitle}</Text>
                 </View>
             </View>
             <View style={styles.actions}>
-                <TouchableOpacity style={styles.updateBtn} onPress={handleUpdate} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.updateBtn} onPress={updateInfo.action} activeOpacity={0.8}>
                     <Text style={styles.updateBtnText}>Update Now</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.dismissBtn} onPress={() => setDismissed(true)}>
@@ -99,14 +127,14 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     updateBtn: {
-        backgroundColor: COLORS.brand,
-        paddingVertical: 5,
+        backgroundColor: '#E50914',
+        paddingVertical: 6,
         paddingHorizontal: 12,
-        borderRadius: 4,
+        borderRadius: 6,
     },
     updateBtnText: {
         color: '#FFFFFF',
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
     },
     dismissBtn: {
@@ -114,7 +142,6 @@ const styles = StyleSheet.create({
     },
     dismissBtnText: {
         color: COLORS.textMuted,
-        fontSize: 13,
-        fontWeight: '700',
+        fontSize: 14,
     },
 });

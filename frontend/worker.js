@@ -31,7 +31,10 @@ export default {
         url.pathname === '/downloads' ||
         url.pathname.startsWith('/downloads/') ||
         url.pathname === '/api' ||
-        url.pathname.startsWith('/api/')
+        url.pathname.startsWith('/api/') ||
+        url.pathname === '/version.json' ||
+        url.pathname === '/app-version' ||
+        url.pathname === '/latest.yml'
       ) {
         const targetUrl = new URL(url.pathname + url.search, 'https://streamapp-catalog.muhd-faisal-work.workers.dev');
         const proxyRequest = new Request(targetUrl.toString(), request);

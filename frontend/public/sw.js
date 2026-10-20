@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v17';
+const VERSION = 'v18';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -42,6 +42,13 @@ const SHELL_ASSETS = [
 const CATALOG_ORIGINS = [
     'https://streamapp-catalog.muhd-faisal-work.workers.dev',
 ];
+
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -105,6 +112,9 @@ self.addEventListener('fetch', (event) => {
         url.pathname.startsWith('/api/v1/resolve') ||
         url.pathname.startsWith('/stream/resolve') ||
         url.pathname.startsWith('/health/providers') ||
+        url.pathname.startsWith('/version.json') ||
+        url.pathname.startsWith('/app-version') ||
+        url.pathname.startsWith('/latest.yml') ||
         /\.(m3u8|ts|m4s|mp4|webm|mkv)(\?|$)/i.test(url.pathname)
     ) {
         return;

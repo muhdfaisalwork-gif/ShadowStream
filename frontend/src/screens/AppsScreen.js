@@ -20,7 +20,7 @@ export function getReleaseBase() {
 const RELEASE_BASE = 'https://ssmoviestvs.site/downloads';
 
 // 2.4.1 / current live build identifier.
-const BUILD_VERSION = '2.4.1';
+const BUILD_VERSION = '2.4.2';
 
 const APPS = [
     {
