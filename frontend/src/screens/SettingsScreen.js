@@ -11,6 +11,8 @@ import { HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount } from '../utils/adShield';
 
+const CURRENT_VERSION = '2.4.3';
+
 export default function SettingsScreen({ navigation }) {
     useRouteMeta('Settings');
     const [checkingUpdate, setCheckingUpdate] = useState(false);
@@ -23,16 +25,16 @@ export default function SettingsScreen({ navigation }) {
             const res = await fetch('/api/v1/app-version', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
-                if (data.version && data.version !== '2.4.2') {
+                if (data.version && data.version !== CURRENT_VERSION) {
                     setUpdateMessage(`🚀 Update v${data.version} available! (${data.releaseNotes || 'New improvements'})`);
                 } else {
-                    setUpdateMessage(`✅ You're up to date! Version 2.4.2 is the latest release.`);
+                    setUpdateMessage(`✅ You're up to date! Version ${CURRENT_VERSION} is the latest release.`);
                 }
             } else {
-                setUpdateMessage(`✅ Connected. Latest build 2.4.2 verified.`);
+                setUpdateMessage(`✅ Connected. Latest build ${CURRENT_VERSION} verified.`);
             }
         } catch (_) {
-            setUpdateMessage(`✅ Latest build 2.4.2 running locally.`);
+            setUpdateMessage(`✅ Latest build ${CURRENT_VERSION} running locally.`);
         } finally {
             setCheckingUpdate(false);
         }
@@ -182,7 +184,7 @@ export default function SettingsScreen({ navigation }) {
                 {/* App Version Card */}
                 <View style={styles.versionCard}>
                     <Text style={styles.versionTitle}>ShadowStream Cinematic Discovery</Text>
-                    <Text style={styles.versionMeta}>Version 2.4.2 (Production Release) • React Native Web + Expo</Text>
+                    <Text style={styles.versionMeta}>Version {CURRENT_VERSION} (Production Release) • React Native Web + Expo</Text>
                     <Text style={styles.versionMeta}>Edge Architecture (Cloudflare Workers + R2 Distributed Catalog)</Text>
 
                     <TouchableOpacity
