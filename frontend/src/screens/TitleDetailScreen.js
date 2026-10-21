@@ -439,7 +439,18 @@ export default function TitleDetailScreen({ route, navigation }) {
             return;
         }
 
-        if (typeof window !== 'undefined') {
+        // 1. Native Android DownloadManager
+        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadMedia === 'function') {
+            window.ShadowStreamNative.downloadMedia(rawUrl, filename);
+            setCopyToast(`⬇ Downloading ${filename}...`);
+            setTimeout(() => setCopyToast(null), 3500);
+            setDownloadModalVisible(false);
+            return;
+        }
+
+        // 2. Direct playable media file
+        const isDirectFile = /\.(mp4|webm|mkv)(\?|$)/i.test(rawUrl);
+        if (isDirectFile && typeof window !== 'undefined') {
             const a = document.createElement('a');
             a.href = rawUrl;
             a.download = filename;
@@ -450,7 +461,14 @@ export default function TitleDetailScreen({ route, navigation }) {
             setCopyToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setCopyToast(null), 3000);
         } else {
-            Linking.openURL(rawUrl);
+            // For HLS streams & embeds, copy stream link for 1DM, ADM, IDM, VLC
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(rawUrl);
+                setCopyToast('📋 Stream link copied! Paste into 1DM, ADM, or VLC.');
+                setTimeout(() => setCopyToast(null), 4000);
+            } else if (typeof window !== 'undefined') {
+                window.open(rawUrl, '_blank');
+            }
         }
     };
 

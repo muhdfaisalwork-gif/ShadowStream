@@ -160,17 +160,16 @@ export default function AppsScreen({ navigation }) {
             : (app.url || `${getReleaseBase()}/${app.fileName}`);
 
         try {
-            if (Platform.OS === 'web' && typeof document !== 'undefined') {
-                // Direct file download trigger for browsers
-                const a = document.createElement('a');
-                a.href = targetUrl;
-                a.setAttribute('download', app.fileName || '');
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    try { document.body.removeChild(a); } catch (_) {}
-                }, 1000);
+            // If running inside Android APK and downloading an update
+            if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadUpdate === 'function') {
+                window.ShadowStreamNative.downloadUpdate(targetUrl);
+                Alert.alert('Downloading', `Downloading ${app.fileName || 'ShadowStream.apk'} to your notification shade.`);
+                return;
+            }
+
+            if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                // Direct navigation ensures mobile browsers (Chrome, Safari) trigger native file download prompt
+                window.location.href = targetUrl;
                 return;
             }
             const supported = await Linking.canOpenURL(targetUrl);

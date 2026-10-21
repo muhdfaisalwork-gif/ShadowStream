@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
 
+const CURRENT_VERSION = '2.4.2';
+const CURRENT_CODE = 242;
+
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);
     const [dismissed, setDismissed] = useState(false);
@@ -22,7 +25,7 @@ export default function UpdateBanner() {
         };
         window.addEventListener('shadowstream:update-available', handlePwaUpdate);
 
-        // 2. Dynamic check against remote version API
+        // 2. Dynamic check against remote version API for ALL platforms
         const checkRemoteVersion = async () => {
             try {
                 const res = await fetch('/api/v1/app-version', { cache: 'no-store' });
@@ -33,7 +36,7 @@ export default function UpdateBanner() {
                 if (window.ShadowStreamNative) {
                     const currentCode = typeof window.ShadowStreamNative.getAppVersionCode === 'function'
                         ? window.ShadowStreamNative.getAppVersionCode()
-                        : 240;
+                        : CURRENT_CODE;
 
                     if (remote.versionCode && currentCode < remote.versionCode) {
                         setUpdateInfo({
@@ -50,7 +53,19 @@ export default function UpdateBanner() {
                                 }
                             },
                         });
+                        return;
                     }
+                }
+
+                // Web / PWA / Browser check
+                if (remote.version && remote.version !== CURRENT_VERSION) {
+                    setUpdateInfo({
+                        type: 'web',
+                        version: remote.version,
+                        title: `ShadowStream v${remote.version} Available`,
+                        subtitle: remote.releaseNotes || 'Tap to reload and apply the latest update.',
+                        action: () => applyAppUpdate(),
+                    });
                 }
             } catch (_) {}
         };
@@ -92,6 +107,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#E50914',
         paddingVertical: 8,
         paddingHorizontal: 14,
+        paddingTop: Platform.OS === 'web' ? 'max(8px, env(safe-area-inset-top, 8px))' : 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

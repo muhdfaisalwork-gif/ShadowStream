@@ -225,6 +225,16 @@ public class MainActivity extends Activity {{
         }}
 
         @JavascriptInterface
+        public void downloadMedia(final String downloadUrl, final String fileName) {{
+            runOnUiThread(new Runnable() {{
+                @Override
+                public void run() {{
+                    handleNativeDownload(downloadUrl, null, "attachment; filename=\"" + fileName + "\"", "video/mp4");
+                }}
+            }});
+        }}
+
+        @JavascriptInterface
         public void downloadUpdate(final String downloadUrl) {{
             runOnUiThread(new Runnable() {{
                 @Override
@@ -311,9 +321,7 @@ public class MainActivity extends Activity {{
             @Override
             public void onPageFinished(WebView view, String url) {{
                 injectNativeHooks(view);
-                if (url != null && (url.contains("/play/") || url.contains("play"))) {{
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                }}
+                // Keep orientation adaptive and allow vertical portrait playback
             }}
 
             @Override

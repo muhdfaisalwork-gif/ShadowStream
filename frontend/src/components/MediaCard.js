@@ -17,8 +17,8 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
     };
 
     const watchProgress = Storage.get(`progress_${item.id}`, 0);
-    const cardWidth = width || (isLarge ? 170 : 144);
-    const posterHeight = height || (isLarge ? 250 : 216);
+    const cardWidth = width || (isLarge ? 170 : 140);
+    const posterHeight = height || Math.round(cardWidth * 1.5);
 
     // Type badge color and label
     const getTypeInfo = () => {

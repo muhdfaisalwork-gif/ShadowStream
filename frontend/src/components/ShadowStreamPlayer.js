@@ -226,27 +226,29 @@ export default function ShadowStreamPlayer({
 
     const handleToggleRotate = useCallback(() => {
         // 1. Native Android APK bridge
-        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.toggleOrientation === 'function') {
-            try {
-                window.ShadowStreamNative.toggleOrientation();
-                setDubToast('📱 Screen Orientation Toggled');
-                setTimeout(() => setDubToast(null), 2500);
-                return;
-            } catch (_) {}
+        if (typeof window !== 'undefined' && window.ShadowStreamNative) {
+            if (typeof window.ShadowStreamNative.toggleOrientation === 'function') {
+                try {
+                    window.ShadowStreamNative.toggleOrientation();
+                    setDubToast('📱 Orientation Toggled');
+                    setTimeout(() => setDubToast(null), 2500);
+                    return;
+                } catch (_) {}
+            }
         }
 
         // 2. Screen Orientation API (Android Chrome, Edge, PWA)
         if (typeof window !== 'undefined' && window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
             try {
                 const currentType = window.screen.orientation.type || '';
-                if (currentType.includes('landscape')) {
+                if (currentType.includes('landscape') || isForcedLandscape) {
                     window.screen.orientation.lock('portrait').catch(() => {});
                     setIsForcedLandscape(false);
-                    setDubToast('📱 Rotated to Portrait');
+                    setDubToast('📱 Rotated to Vertical');
                 } else {
                     window.screen.orientation.lock('landscape').catch(() => {});
                     setIsForcedLandscape(true);
-                    setDubToast('📱 Rotated to Landscape');
+                    setDubToast('📱 Rotated to Horizontal');
                 }
                 setTimeout(() => setDubToast(null), 2500);
                 return;
@@ -256,11 +258,11 @@ export default function ShadowStreamPlayer({
         // 3. Universal CSS 90-degree Rotation (iOS Safari, iPhone PWA, Mobile browsers)
         setIsForcedLandscape((prev) => {
             const next = !prev;
-            setDubToast(next ? '📱 Landscape Mode (Rotated)' : '📱 Portrait Mode');
+            setDubToast(next ? '📱 Horizontal Mode (Rotated)' : '📱 Vertical Mode');
             setTimeout(() => setDubToast(null), 2500);
             return next;
         });
-    }, []);
+    }, [isForcedLandscape]);
 
     // Auto-reset forced landscape if the user physically turns device to landscape
     useEffect(() => {
@@ -483,11 +485,22 @@ export default function ShadowStreamPlayer({
 
     const handleDownloadVideo = useCallback(() => {
         if (!streamUrl) return;
-        const cleanTitle = (title || 'StreamApp_Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const cleanTitle = (title || 'ShadowStream_Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
         const epSuffix = season && episode ? ` - S${season}E${episode}` : '';
         const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
 
-        if (typeof window !== 'undefined') {
+        // 1. Native Android APK DownloadManager
+        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadMedia === 'function') {
+            window.ShadowStreamNative.downloadMedia(streamUrl, filename);
+            setDubToast(`⬇ Downloading ${filename} via DownloadManager...`);
+            setTimeout(() => setDubToast(null), 3500);
+            setShowDownloadMenu(false);
+            return;
+        }
+
+        // 2. Direct playable file (e.g. mp4, webm)
+        const isDirectFile = /\.(mp4|webm|mkv)(\?|$)/i.test(streamUrl);
+        if (isDirectFile && typeof window !== 'undefined') {
             const a = document.createElement('a');
             a.href = streamUrl;
             a.download = filename;
@@ -498,7 +511,14 @@ export default function ShadowStreamPlayer({
             setDubToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setDubToast(null), 3500);
         } else {
-            Linking.openURL(streamUrl);
+            // For HLS streams and embed providers, copy the direct stream link for download managers
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(streamUrl);
+                setDubToast('📋 Stream link copied! Paste into 1DM, ADM, IDM, or VLC.');
+                setTimeout(() => setDubToast(null), 4000);
+            } else if (typeof window !== 'undefined') {
+                window.open(streamUrl, '_blank');
+            }
         }
         setShowDownloadMenu(false);
     }, [streamUrl, title, season, episode]);

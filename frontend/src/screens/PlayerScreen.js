@@ -234,16 +234,8 @@ export default function PlayerScreen({ route, navigation }) {
     const [resolveNote, setResolveNote] = useState(null);
     const [renditions, setRenditions] = useState([]);
 
-    // Auto-request landscape orientation on mobile APK and supported browsers when entering player
+    // Player orientation lifecycle: allow natural vertical/portrait playback, reset on leave
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (window.ShadowStreamNative && typeof window.ShadowStreamNative.setOrientation === 'function') {
-                try { window.ShadowStreamNative.setOrientation('landscape'); } catch (_) {}
-            }
-            if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
-                try { window.screen.orientation.lock('landscape').catch(() => {}); } catch (_) {}
-            }
-        }
         return () => {
             if (typeof window !== 'undefined') {
                 if (window.ShadowStreamNative && typeof window.ShadowStreamNative.setOrientation === 'function') {

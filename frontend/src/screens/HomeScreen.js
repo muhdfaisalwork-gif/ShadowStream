@@ -14,10 +14,12 @@ import SurpriseModal from '../components/SurpriseModal';
 import { getApiBase } from '../utils/api';
 import { Storage, HistoryAPI, WatchlistAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 export default function HomeScreen({ navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
+    const responsive = useResponsive();
 
     const [categories, setCategories] = useState([]);
     const [heroSlides, setHeroSlides] = useState([]);
@@ -227,14 +229,14 @@ export default function HomeScreen({ navigation }) {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Hero Banner */}
                 {hero && (
-                    <View style={[styles.heroContainer, isDesktop && styles.heroContainerDesktop]}>
+                    <View style={[styles.heroContainer, { height: responsive.heroHeight }]}>
                         <Poster
                             url={hero.backdrop || hero.poster}
                             title={hero.title}
                             style={StyleSheet.absoluteFill}
                             resizeMode="cover"
                         />
-                        <View style={styles.heroOverlay}>
+                        <View style={[styles.heroOverlay, { padding: responsive.isMobile ? 14 : 24, paddingBottom: responsive.isMobile ? 24 : 40 }]}>
                             <View style={styles.heroBadgeRow}>
                                 <View style={styles.heroTypeBadge}>
                                     <Text style={styles.heroTypeBadgeText}>
@@ -249,7 +251,7 @@ export default function HomeScreen({ navigation }) {
                                 )}
                             </View>
 
-                            <Text style={styles.heroTitle} numberOfLines={2}>{hero.title}</Text>
+                            <Text style={[styles.heroTitle, { fontSize: responsive.heroTitleSize }]} numberOfLines={2}>{hero.title}</Text>
 
                             <Text style={styles.heroMeta}>
                                 {hero.year} {hero.runtime ? `• ${hero.runtime}m` : ''} {hero.seasons ? `• ${hero.seasons} Seasons` : ''}
@@ -355,7 +357,7 @@ export default function HomeScreen({ navigation }) {
 
                 {/* Discovery Categories (16 Rows) — or Offline Hub when API is unreachable */}
                 {loading ? (
-                    <SkeletonGrid count={8} numCols={isDesktop ? 4 : 2} />
+                    <SkeletonGrid count={8} numCols={responsive.gridColumns} />
                 ) : apiStatus !== 'ok' || categories.length === 0 ? (
                     <View style={styles.offlineHub}>
                         <View style={styles.offlineHeroCard}>

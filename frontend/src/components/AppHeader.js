@@ -55,7 +55,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
     return (
         <View style={styles.header}>
             <View style={styles.leftSection}>
-                {isMobile && (
+                {!isDesktop && (
                     <TouchableOpacity
                         style={styles.hamburgerBtn}
                         onPress={toggleDrawer}
