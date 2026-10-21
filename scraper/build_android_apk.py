@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 243
-VERSION_NAME = "2.4.3"
+VERSION_CODE = 244
+VERSION_NAME = "2.4.4"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -216,12 +216,12 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.3";
+            return "2.4.4";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 243;
+            return 244;
         }}
 
         @JavascriptInterface
@@ -229,7 +229,8 @@ public class MainActivity extends Activity {{
             runOnUiThread(new Runnable() {{
                 @Override
                 public void run() {{
-                    handleNativeDownload(downloadUrl, null, "attachment; filename=\"" + fileName + "\"", "video/mp4");
+                    String ua = web != null ? web.getSettings().getUserAgentString() : null;
+                    handleNativeDownload(downloadUrl, ua, "attachment; filename=\"" + fileName + "\"", "video/mp4");
                 }}
             }});
         }}
@@ -239,7 +240,29 @@ public class MainActivity extends Activity {{
             runOnUiThread(new Runnable() {{
                 @Override
                 public void run() {{
-                    handleNativeDownload(downloadUrl, null, null, "application/vnd.android.package-archive");
+                    String ua = web != null ? web.getSettings().getUserAgentString() : null;
+                    handleNativeDownload(downloadUrl, ua, "attachment; filename=\"ShadowStream.apk\"", "application/vnd.android.package-archive");
+                }}
+            }});
+        }}
+
+        @JavascriptInterface
+        public void openExternalDownloader(final String mediaUrl, final String title) {{
+            runOnUiThread(new Runnable() {{
+                @Override
+                public void run() {{
+                    try {{
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(Uri.parse(mediaUrl), "video/*");
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(Intent.createChooser(intent, "Download / Stream with..."));
+                    }} catch (Throwable t) {{
+                        try {{
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mediaUrl)));
+                        }} catch (Throwable ignored) {{
+                            Toast.makeText(getApplicationContext(), "No external downloader app found", Toast.LENGTH_SHORT).show();
+                        }}
+                    }}
                 }}
             }});
         }}
@@ -475,20 +498,30 @@ public class MainActivity extends Activity {{
             Uri uri = Uri.parse(url);
             String fileName = URLUtil.guessFileName(url, contentDisposition, mimeType);
             if (fileName == null || fileName.isEmpty() || fileName.endsWith(".bin")) {{
-                fileName = "ShadowStream_Download.mp4";
+                fileName = (mimeType != null && mimeType.contains("package-archive")) ? "ShadowStream.apk" : "ShadowStream_Download.mp4";
             }}
 
             DownloadManager.Request request = new DownloadManager.Request(uri);
             if (mimeType != null && !mimeType.isEmpty()) {{
                 request.setMimeType(mimeType);
             }}
-            if (userAgent != null && !userAgent.isEmpty()) {{
-                request.addRequestHeader("User-Agent", userAgent);
-            }}
+            String ua = (userAgent != null && !userAgent.isEmpty())
+                ? userAgent
+                : (web != null ? web.getSettings().getUserAgentString() : "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36");
+            request.addRequestHeader("User-Agent", ua);
+            request.setAllowedOverMetered(true);
+            request.setAllowedOverRoaming(true);
             request.setDescription("ShadowStream: " + fileName);
             request.setTitle(fileName);
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+
+            try {{
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+            }} catch (Throwable destErr) {{
+                try {{
+                    request.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, fileName);
+                }} catch (Throwable ignored) {{}}
+            }}
 
             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
             if (dm != null) {{
@@ -497,9 +530,16 @@ public class MainActivity extends Activity {{
             }}
         }} catch (Throwable t) {{
             try {{
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-            }} catch (Throwable ignored) {{
-                Toast.makeText(getApplicationContext(), "Could not launch download", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.parse(url), (mimeType != null && !mimeType.isEmpty()) ? mimeType : "*/*");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(Intent.createChooser(intent, "Download with..."));
+            }} catch (Throwable chooserErr) {{
+                try {{
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                }} catch (Throwable ignored) {{
+                    Toast.makeText(getApplicationContext(), "Could not launch download", Toast.LENGTH_SHORT).show();
+                }}
             }}
         }}
     }}
@@ -735,8 +775,12 @@ def build():
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- External video players handoff -->
+    <!-- External video players & downloaders handoff -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -744,6 +788,10 @@ def build():
         </intent>
         <package android:name="com.videolan.vlc" />
         <package android:name="org.mxplayer" />
+        <package android:name="idm.internet.download.manager" />
+        <package android:name="idm.internet.download.manager.plus" />
+        <package android:name="com.dv.adm" />
+        <package android:name="com.agtech.idm" />
     </queries>
 
     <uses-sdk android:minSdkVersion="{MIN_SDK}" android:targetSdkVersion="{TARGET_SDK}" />
@@ -753,7 +801,8 @@ def build():
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme"
         android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="false"
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:supportsRtl="true">
 

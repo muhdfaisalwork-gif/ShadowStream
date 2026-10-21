@@ -439,10 +439,19 @@ export default function TitleDetailScreen({ route, navigation }) {
             return;
         }
 
-        // 1. Native Android DownloadManager
-        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadMedia === 'function') {
-            window.ShadowStreamNative.downloadMedia(rawUrl, filename);
-            setCopyToast(`⬇ Downloading ${filename}...`);
+        // 1. Native Android APK
+        if (typeof window !== 'undefined' && window.ShadowStreamNative) {
+            const isDirect = /\.(mp4|webm|mkv)(\?|$)/i.test(rawUrl);
+            if (isDirect && typeof window.ShadowStreamNative.downloadMedia === 'function') {
+                window.ShadowStreamNative.downloadMedia(rawUrl, filename);
+                setCopyToast(`⬇ Downloading ${filename}...`);
+            } else if (typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
+                window.ShadowStreamNative.openExternalDownloader(rawUrl, filename);
+                setCopyToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
+            } else if (typeof window.ShadowStreamNative.downloadMedia === 'function') {
+                window.ShadowStreamNative.downloadMedia(rawUrl, filename);
+                setCopyToast(`⬇ Downloading ${filename}...`);
+            }
             setTimeout(() => setCopyToast(null), 3500);
             setDownloadModalVisible(false);
             return;
@@ -450,26 +459,51 @@ export default function TitleDetailScreen({ route, navigation }) {
 
         // 2. Direct playable media file
         const isDirectFile = /\.(mp4|webm|mkv)(\?|$)/i.test(rawUrl);
-        if (isDirectFile && typeof window !== 'undefined') {
+        if (isDirectFile && typeof document !== 'undefined') {
             const a = document.createElement('a');
             a.href = rawUrl;
             a.download = filename;
             a.target = '_blank';
+            a.rel = 'noopener noreferrer';
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+            setTimeout(() => { if (document.body.contains(a)) document.body.removeChild(a); }, 300);
             setCopyToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setCopyToast(null), 3000);
         } else {
-            // For HLS streams & embeds, copy stream link for 1DM, ADM, IDM, VLC
-            if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                navigator.clipboard.writeText(rawUrl);
-                setCopyToast('📋 Stream link copied! Paste into 1DM, ADM, or VLC.');
-                setTimeout(() => setCopyToast(null), 4000);
-            } else if (typeof window !== 'undefined') {
+            // For HLS streams & embeds: open in external downloader tab AND copy stream link
+            if (typeof window !== 'undefined') {
                 window.open(rawUrl, '_blank');
             }
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(rawUrl);
+                setCopyToast('📋 Stream opened & link copied for 1DM, ADM, or VLC.');
+                setTimeout(() => setCopyToast(null), 4000);
+            }
         }
+        setDownloadModalVisible(false);
+    };
+
+    const handleOpenExternalDownloader = (ep = null) => {
+        const rawUrl = getMediaDownloadUrl(ep);
+        const cleanTitle = (item?.title || 'Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const epSuffix = ep ? ` - S${ep.season_number != null ? ep.season_number : activeSeasonNum}E${ep.episode_number}` : '';
+        const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
+
+        if (!rawUrl) return;
+
+        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
+            window.ShadowStreamNative.openExternalDownloader(rawUrl, filename);
+            setCopyToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
+        } else if (typeof window !== 'undefined') {
+            window.open(rawUrl, '_blank');
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(rawUrl);
+            }
+            setCopyToast('🚀 Opened external stream tab & copied link!');
+        }
+        setTimeout(() => setCopyToast(null), 3500);
+        setDownloadModalVisible(false);
     };
 
     const copyDownloadLink = (ep = null) => {
@@ -1166,6 +1200,16 @@ export default function TitleDetailScreen({ route, navigation }) {
                             >
                                 <Text style={styles.downloadSecondaryBtnText}>
                                     📋 Copy Direct Stream Link (For 1DM, ADM, IDM, VLC)
+                                </Text>
+                            </TouchableOpacity>
+                        
+                            <TouchableOpacity
+                                style={[styles.downloadSecondaryBtn, { borderColor: '#3B82F6', marginTop: 8 }]}
+                                onPress={() => handleOpenExternalDownloader(selectedDownloadEpisode)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[styles.downloadSecondaryBtnText, { color: '#60A5FA' }]}>
+                                    🚀 Open in 1DM / ADM / Downloader App
                                 </Text>
                             </TouchableOpacity>
                         </View>

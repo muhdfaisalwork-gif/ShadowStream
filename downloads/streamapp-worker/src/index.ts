@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.3",
-    versionCode: 243,
+    version: "2.4.4",
+    versionCode: 244,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-21",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Global responsive scaling across mobile & tablet, native portrait/vertical player playback, direct download engine, and universal auto-updates.",
+    releaseNotes: "Enhanced download engine with Android DownloadManager storage permissions, 1DM/ADM external downloader bridge, and Service Worker download bypass.",
 };
 
 

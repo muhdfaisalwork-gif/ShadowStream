@@ -485,14 +485,23 @@ export default function ShadowStreamPlayer({
 
     const handleDownloadVideo = useCallback(() => {
         if (!streamUrl) return;
-        const cleanTitle = (title || 'ShadowStream_Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
-        const epSuffix = season && episode ? ` - S${season}E${episode}` : '';
+        const cleanTitle = (title || 'Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const epSuffix = season != null && episode != null ? ` - S${season}E${episode}` : '';
         const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
 
-        // 1. Native Android APK DownloadManager
-        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadMedia === 'function') {
-            window.ShadowStreamNative.downloadMedia(streamUrl, filename);
-            setDubToast(`⬇ Downloading ${filename} via DownloadManager...`);
+        // 1. Native Android APK
+        if (typeof window !== 'undefined' && window.ShadowStreamNative) {
+            const isDirect = /\.(mp4|webm|mkv)(\?|$)/i.test(streamUrl);
+            if (isDirect && typeof window.ShadowStreamNative.downloadMedia === 'function') {
+                window.ShadowStreamNative.downloadMedia(streamUrl, filename);
+                setDubToast(`⬇ Downloading ${filename} via DownloadManager...`);
+            } else if (typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
+                window.ShadowStreamNative.openExternalDownloader(streamUrl, filename);
+                setDubToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
+            } else if (typeof window.ShadowStreamNative.downloadMedia === 'function') {
+                window.ShadowStreamNative.downloadMedia(streamUrl, filename);
+                setDubToast(`⬇ Downloading ${filename}...`);
+            }
             setTimeout(() => setDubToast(null), 3500);
             setShowDownloadMenu(false);
             return;
@@ -500,25 +509,46 @@ export default function ShadowStreamPlayer({
 
         // 2. Direct playable file (e.g. mp4, webm)
         const isDirectFile = /\.(mp4|webm|mkv)(\?|$)/i.test(streamUrl);
-        if (isDirectFile && typeof window !== 'undefined') {
+        if (isDirectFile && typeof document !== 'undefined') {
             const a = document.createElement('a');
             a.href = streamUrl;
             a.download = filename;
             a.target = '_blank';
+            a.rel = 'noopener noreferrer';
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+            setTimeout(() => { if (document.body.contains(a)) document.body.removeChild(a); }, 300);
             setDubToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setDubToast(null), 3500);
         } else {
-            // For HLS streams and embed providers, copy the direct stream link for download managers
-            if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                navigator.clipboard.writeText(streamUrl);
-                setDubToast('📋 Stream link copied! Paste into 1DM, ADM, IDM, or VLC.');
-                setTimeout(() => setDubToast(null), 4000);
-            } else if (typeof window !== 'undefined') {
+            // For HLS streams & embeds: open in external downloader tab AND copy stream link
+            if (typeof window !== 'undefined') {
                 window.open(streamUrl, '_blank');
             }
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(streamUrl);
+                setDubToast('📋 Stream opened & link copied for 1DM, ADM, or VLC.');
+                setTimeout(() => setDubToast(null), 4000);
+            }
+        }
+        setShowDownloadMenu(false);
+    }, [streamUrl, title, season, episode]);
+
+    const handleOpenExternalDownloader = useCallback(() => {
+        if (!streamUrl) return;
+        const cleanTitle = (title || 'Video').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+        const epSuffix = season != null && episode != null ? ` - S${season}E${episode}` : '';
+        const filename = `${cleanTitle}${epSuffix} [HD].mp4`;
+
+        if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
+            window.ShadowStreamNative.openExternalDownloader(streamUrl, filename);
+            setDubToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
+        } else if (typeof window !== 'undefined') {
+            window.open(streamUrl, '_blank');
+            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(streamUrl);
+            }
+            setDubToast('🚀 Opened external stream & copied link!');
         }
         setShowDownloadMenu(false);
     }, [streamUrl, title, season, episode]);
@@ -1803,6 +1833,12 @@ export default function ShadowStreamPlayer({
                                     >
                                         <Text style={styles.popupMenuText}>⬇ Download Video File (MP4)</Text>
                                     </TouchableOpacity>
+                                     <TouchableOpacity
+                                         style={styles.popupMenuItem}
+                                         onPress={handleOpenExternalDownloader}
+                                     >
+                                         <Text style={[styles.popupMenuText, { color: '#60A5FA' }]}>🚀 Open Downloader (1DM/ADM/VLC)</Text>
+                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.popupMenuItem}
                                         onPress={handleCopyStreamLink}

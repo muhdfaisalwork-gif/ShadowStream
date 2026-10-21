@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
 
-const CURRENT_VERSION = '2.4.3';
-const CURRENT_CODE = 243;
+const CURRENT_VERSION = '2.4.4';
+const CURRENT_CODE = 244;
 
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);
@@ -41,8 +41,8 @@ export default function UpdateBanner() {
                     if (remote.versionCode && currentCode < remote.versionCode) {
                         setUpdateInfo({
                             type: 'apk',
-                            version: remote.version || '2.4.3',
-                            title: `Update Available (v${remote.version || '2.4.3'})`,
+                            version: remote.version || '2.4.4',
+                            title: `Update Available (v${remote.version || '2.4.4'})`,
                             subtitle: remote.releaseNotes || 'Install the newest version for player fixes & performance improvements.',
                             action: () => {
                                 const dlUrl = remote.apkUrl || 'https://ssmoviestvs.site/downloads/ShadowStream.apk';

@@ -20,7 +20,7 @@ export function getReleaseBase() {
 const RELEASE_BASE = 'https://ssmoviestvs.site/downloads';
 
 // 2.4.1 / current live build identifier.
-const BUILD_VERSION = '2.4.2';
+const BUILD_VERSION = '2.4.4';
 
 const APPS = [
     {
@@ -169,6 +169,17 @@ export default function AppsScreen({ navigation }) {
 
             if (Platform.OS === 'web' && typeof window !== 'undefined') {
                 // Direct navigation ensures mobile browsers (Chrome, Safari) trigger native file download prompt
+                if (typeof document !== 'undefined') {
+                    const a = document.createElement('a');
+                    a.href = targetUrl;
+                    a.download = app.fileName || 'ShadowStream.apk';
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { if (document.body.contains(a)) document.body.removeChild(a); }, 300);
+                    return;
+                }
                 window.location.href = targetUrl;
                 return;
             }
