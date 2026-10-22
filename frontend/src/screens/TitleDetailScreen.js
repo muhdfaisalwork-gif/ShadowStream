@@ -11,6 +11,7 @@ import MediaCard from '../components/MediaCard';
 import { getApiBase } from '../utils/api';
 import { WatchlistAPI, HistoryAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 const LANGUAGE_NAMES = {
     en: 'English',
@@ -57,8 +58,8 @@ export default function TitleDetailScreen({ route, navigation }) {
     const initialItem = params.item;
     const slugFromUrl = params.slug || params.id || null;
 
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 768;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
 
     const titleKey = slugFromUrl || initialItem?.slug || initialItem?.id;
     const [item, setItem] = useState(initialItem || null);
@@ -576,7 +577,7 @@ export default function TitleDetailScreen({ route, navigation }) {
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Hero Backdrop Banner */}
-                <View style={[styles.heroBanner, isDesktop && styles.heroBannerDesktop]}>
+                <View style={[styles.heroBanner, isDesktop && styles.heroBannerDesktop, responsive.isMobileLandscape && styles.heroBannerLandscape]}>
                     <Poster
                         url={item.backdrop || item.poster}
                         title={item.title}
@@ -590,7 +591,7 @@ export default function TitleDetailScreen({ route, navigation }) {
                     </TouchableOpacity>
 
                     <View style={styles.heroContentRow}>
-                        <View style={styles.posterContainer}>
+                        <View style={[styles.posterContainer, responsive.isMobileLandscape && styles.posterContainerLandscape]}>
                             <Poster
                                 url={item.poster}
                                 title={item.title}
@@ -613,7 +614,7 @@ export default function TitleDetailScreen({ route, navigation }) {
                                 ) : null}
                             </View>
 
-                            <Text style={styles.mainTitle}>{item.title}</Text>
+                            <Text style={[styles.mainTitle, responsive.isMobileLandscape && styles.mainTitleLandscape]} numberOfLines={responsive.isMobileLandscape ? 1 : 2}>{item.title}</Text>
 
                             {item.originalTitle && item.originalTitle !== item.title && (
                                 <Text style={styles.origTitle}>{item.originalTitle}</Text>
@@ -1274,6 +1275,18 @@ const styles = StyleSheet.create({
     },
     heroBannerDesktop: {
         height: 480
+    },
+    heroBannerLandscape: {
+        height: 270
+    },
+    posterContainerLandscape: {
+        width: 85,
+        height: 125,
+        marginRight: 12
+    },
+    mainTitleLandscape: {
+        fontSize: 18,
+        lineHeight: 22
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,

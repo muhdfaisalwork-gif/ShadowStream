@@ -4,6 +4,7 @@ import { useWindowDimensions, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { COLORS } from './src/theme/colors';
+import { getResponsiveLayout } from './src/theme/scaling';
 import { installAdShield } from './src/utils/adShield';
 import { watchInstallPrompt } from './src/utils/pwa';
 
@@ -112,8 +113,9 @@ import DrawerContent from './src/navigation/DrawerContent';
 const Drawer = createDrawerNavigator();
 
 export default function App() {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
+    const { width, height } = useWindowDimensions();
+    const responsive = getResponsiveLayout(width, height);
+    const isDesktop = responsive.isDesktop;
 
     // Single owner of the window.open override, plus the browser install prompt.
     // Both are web-only and both no-op natively.

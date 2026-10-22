@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 244
-VERSION_NAME = "2.4.4"
+VERSION_CODE = 245
+VERSION_NAME = "2.4.5"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -203,10 +203,9 @@ public class MainActivity extends Activity {{
             runOnUiThread(new Runnable() {{
                 @Override
                 public void run() {{
-                    int current = getRequestedOrientation();
-                    if (current == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE ||
-                        current == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {{
-                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    int orientation = getResources().getConfiguration().orientation;
+                    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {{
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                     }} else {{
                         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                     }}
@@ -215,13 +214,23 @@ public class MainActivity extends Activity {{
         }}
 
         @JavascriptInterface
+        public void unlockOrientation() {{
+            runOnUiThread(new Runnable() {{
+                @Override
+                public void run() {{
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                }}
+            }});
+        }}
+
+        @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.4";
+            return "2.4.5";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 244;
+            return 245;
         }}
 
         @JavascriptInterface
@@ -304,8 +313,12 @@ public class MainActivity extends Activity {{
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setLoadWithOverviewMode(true);
+        s.setLoadWithOverviewMode(false);
         s.setUseWideViewPort(true);
+        s.setTextZoom(100);
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
@@ -344,7 +357,9 @@ public class MainActivity extends Activity {{
             @Override
             public void onPageFinished(WebView view, String url) {{
                 injectNativeHooks(view);
-                // Keep orientation adaptive and allow vertical portrait playback
+                if (url != null && !url.contains("/play/")) {{
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                }}
             }}
 
             @Override
@@ -614,6 +629,29 @@ public class MainActivity extends Activity {{
         super.onUserLeaveHint();
         if (isVideoPlaying) {{
             enterPiPMode();
+        }}
+    }}
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {{
+        super.onConfigurationChanged(newConfig);
+        if (rootLayout != null) {{
+            rootLayout.requestLayout();
+        }}
+        if (web != null) {{
+            web.requestLayout();
+            web.post(new Runnable() {{
+                @Override
+                public void run() {{
+                    if (web != null) {{
+                        web.evaluateJavascript(
+                            "if (typeof window !== 'undefined') {{ " +
+                            "  window.dispatchEvent(new Event('resize')); " +
+                            "  window.dispatchEvent(new Event('orientationchange')); " +
+                            "}}", null);
+                    }}
+                }}
+            }});
         }}
     }}
 

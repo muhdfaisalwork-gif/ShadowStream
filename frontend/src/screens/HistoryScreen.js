@@ -9,10 +9,11 @@ import MobileTabBar from '../components/MobileTabBar';
 import Poster from '../components/Poster';
 import { HistoryAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 export default function HistoryScreen({ navigation }) {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 768;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
 
     useRouteMeta('History');
     const [history, setHistory] = useState([]);

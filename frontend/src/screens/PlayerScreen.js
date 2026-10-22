@@ -239,7 +239,13 @@ export default function PlayerScreen({ route, navigation }) {
         return () => {
             if (typeof window !== 'undefined') {
                 if (window.ShadowStreamNative && typeof window.ShadowStreamNative.setOrientation === 'function') {
-                    try { window.ShadowStreamNative.setOrientation('unspecified'); } catch (_) {}
+                    try {
+                        if (typeof window.ShadowStreamNative.unlockOrientation === 'function') {
+                            window.ShadowStreamNative.unlockOrientation();
+                        } else {
+                            window.ShadowStreamNative.setOrientation('unspecified');
+                        }
+                    } catch (_) {}
                 }
                 if (window.screen && window.screen.orientation && typeof window.screen.orientation.unlock === 'function') {
                     try { window.screen.orientation.unlock(); } catch (_) {}

@@ -9,11 +9,12 @@ import MobileTabBar from '../components/MobileTabBar';
 import Poster from '../components/Poster';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 export default function CollectionsScreen({ route, navigation }) {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
-    const numCols = width >= 1200 ? 3 : width >= 768 ? 2 : 1;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
+    const numCols = responsive.isDesktop ? (responsive.isLargeDesktop ? 4 : 3) : (responsive.isTablet || responsive.isMobileLandscape ? 2 : 1);
 
     useRouteMeta('Collections');
 

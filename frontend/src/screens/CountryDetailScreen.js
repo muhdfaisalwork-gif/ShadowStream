@@ -10,6 +10,7 @@ import MediaCard from '../components/MediaCard';
 import SkeletonGrid from '../components/SkeletonGrid';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 const COUNTRY_MAP = {
     US: { name: 'United States', flag: '🇺🇸' },
@@ -75,9 +76,9 @@ export default function CountryDetailScreen({ route, navigation }) {
         };
     });
 
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
-    const numCols = width >= 1400 ? 6 : width >= 1024 ? 5 : width >= 768 ? 4 : width >= 480 ? 3 : 2;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
+    const numCols = responsive.gridColumns;
 
     useRouteMeta('CountryDetail', { name: countryInfo?.name, code: countryCode });
     const [activeTab, setActiveTab] = useState('all');

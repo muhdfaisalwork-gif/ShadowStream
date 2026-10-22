@@ -221,7 +221,8 @@ export default function ShadowStreamPlayer({
     const playerApps = availablePlayers();
 
     // Screen orientation & mobile landscape state
-    const [isForcedLandscape, setIsForcedLandscape] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const isCompactTopBar = width < 680;
     const isPortrait = height > width;
 
     const handleToggleRotate = useCallback(() => {
@@ -258,11 +259,11 @@ export default function ShadowStreamPlayer({
         // 3. Universal CSS 90-degree Rotation (iOS Safari, iPhone PWA, Mobile browsers)
         setIsForcedLandscape((prev) => {
             const next = !prev;
-            setDubToast(next ? '📱 Horizontal Mode (Rotated)' : '📱 Vertical Mode');
+            setDubToast(isFullscreen ? '📱 Normal View' : '📱 Fullscreen Mode');
             setTimeout(() => setDubToast(null), 2500);
             return next;
         });
-    }, [isForcedLandscape]);
+    }, [isPortrait, isFullscreen, toggleFullscreen]);
 
     // Auto-reset forced landscape if the user physically turns device to landscape
     useEffect(() => {
@@ -1322,7 +1323,7 @@ export default function ShadowStreamPlayer({
             style={[
                 styles.container,
                 isFullscreen && styles.containerFullscreen,
-                isForcedLandscape && forcedLandscapeStyle,
+
                 !controlsVisible && styles.cursorHidden
             ]}
             onMouseMove={resetAutoHide}
@@ -1544,16 +1545,78 @@ export default function ShadowStreamPlayer({
 
                     {/* Mobile Screen Rotate Button */}
                     <TouchableOpacity
-                        style={[styles.pillButton, (isForcedLandscape || !isPortrait) && styles.pillButtonActive]}
+                        style={[styles.pillButton, !isPortrait && styles.pillButtonActive]}
                         onPress={handleToggleRotate}
                         accessibilityLabel="Rotate screen orientation"
                     >
                         <Text style={styles.pillButtonText}>🔄 Rotate</Text>
                     </TouchableOpacity>
 
+                    {/* Compact View: More Options Dropdown for small screens */}
+                    {isCompactTopBar && (
+                        <View style={{ position: 'relative' }}>
+                            <TouchableOpacity
+                                style={[styles.pillButton, showMoreMenu && styles.pillButtonActive]}
+                                onPress={() => setShowMoreMenu(!showMoreMenu)}
+                                accessibilityLabel="More playback options"
+                            >
+                                <Text style={styles.pillButtonText}>⋯ More</Text>
+                            </TouchableOpacity>
+                            {showMoreMenu && (
+                                <View style={[styles.popupMenu, { width: 220, right: 0 }]}>
+                                    <Text style={styles.popupMenuHeader}>Playback Options</Text>
+                                    {mirrorList && mirrorList.length > 0 && (
+                                        <TouchableOpacity
+                                            style={styles.popupMenuItem}
+                                            onPress={() => { setShowMoreMenu(false); setShowServerMenu(true); }}
+                                        >
+                                            <Text style={styles.popupMenuText}>⚡ Server: {sourceName || 'Auto'}</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity
+                                        style={styles.popupMenuItem}
+                                        onPress={() => { nextViewMode(); setShowMoreMenu(false); }}
+                                    >
+                                        <Text style={styles.popupMenuText}>⬚ Fit / Crop: {VIEW_LABEL[viewMode]}</Text>
+                                    </TouchableOpacity>
+                                    {canSelectSubtitles && (
+                                        <TouchableOpacity
+                                            style={styles.popupMenuItem}
+                                            onPress={() => { setShowMoreMenu(false); setShowSubtitleMenu(true); }}
+                                        >
+                                            <Text style={styles.popupMenuText}>💬 Subtitles ({selectedSubtitle === 'off' ? 'Off' : selectedSubtitle})</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity
+                                        style={styles.popupMenuItem}
+                                        onPress={() => { setShowMoreMenu(false); setShowDubMenu(true); }}
+                                    >
+                                        <Text style={styles.popupMenuText}>🌐 Audio & Dubbing</Text>
+                                    </TouchableOpacity>
+                                    {streamUrl ? (
+                                        <TouchableOpacity
+                                            style={styles.popupMenuItem}
+                                            onPress={() => { setShowMoreMenu(false); setShowDownloadMenu(true); }}
+                                        >
+                                            <Text style={styles.popupMenuText}>⬇ Download & Links</Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                    {drawerSeasons && drawerSeasons.length > 0 ? (
+                                        <TouchableOpacity
+                                            style={styles.popupMenuItem}
+                                            onPress={() => { setShowMoreMenu(false); setShowEpisodeDrawer(true); }}
+                                        >
+                                            <Text style={styles.popupMenuText}>📚 Seasons & Episodes</Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            )}
+                        </View>
+                    )}
+
                     {/* Crop / stretch — cycles Fit → Crop → Stretch */}
                     <TouchableOpacity
-                        style={[styles.pillButton, viewMode !== 'fit' && styles.pillButtonActive]}
+                        style={[styles.pillButton, viewMode !== 'fit' && styles.pillButtonActive, isCompactTopBar && { display: 'none' }]}
                         onPress={nextViewMode}
                         accessibilityLabel={`Video fit: ${VIEW_LABEL[viewMode]}`}
                     >
@@ -1562,7 +1625,7 @@ export default function ShadowStreamPlayer({
 
                     {/* Server Switcher */}
                     {mirrorList.length > 0 && (
-                        <View style={{ position: 'relative' }}>
+                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                             <TouchableOpacity
                                 style={styles.pillButton}
                                 onPress={() => setShowServerMenu(!showServerMenu)}
@@ -1594,7 +1657,7 @@ export default function ShadowStreamPlayer({
 
                     {/* Subtitles — only when the track list is real */}
                     {canSelectSubtitles && (
-                        <View style={{ position: 'relative' }}>
+                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                             <TouchableOpacity
                                 style={styles.pillButton}
                                 onPress={() => setShowSubtitleMenu(!showSubtitleMenu)}
@@ -1780,7 +1843,7 @@ export default function ShadowStreamPlayer({
 
                     {/* External player handoff — VLC and friends */}
                     {isDirect && streamUrl ? (
-                        <View style={{ position: 'relative' }}>
+                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                             <TouchableOpacity
                                 style={styles.pillButton}
                                 onPress={() => setShowPlayerMenu(!showPlayerMenu)}
@@ -1816,7 +1879,7 @@ export default function ShadowStreamPlayer({
 
                     {/* Offline Media Download Menu */}
                     {streamUrl ? (
-                        <View style={{ position: 'relative' }}>
+                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                             <TouchableOpacity
                                 style={styles.pillButton}
                                 onPress={() => setShowDownloadMenu(!showDownloadMenu)}
@@ -2169,7 +2232,7 @@ export default function ShadowStreamPlayer({
 
                             <View style={styles.bottomRightControls}>
                                 {/* Playback Speed Selector */}
-                                <View style={{ position: 'relative' }}>
+                                <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                                     <TouchableOpacity
                                         style={styles.textOptionBtn}
                                         onPress={() => setShowSpeedMenu(!showSpeedMenu)}
@@ -2196,7 +2259,7 @@ export default function ShadowStreamPlayer({
 
                                 {/* Quality Selector */}
                                 {qualityLevels.length > 0 && (
-                                    <View style={{ position: 'relative' }}>
+                                    <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                                         <TouchableOpacity
                                             style={styles.textOptionBtn}
                                             onPress={() => setShowQualityMenu(!showQualityMenu)}

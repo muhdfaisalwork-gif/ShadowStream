@@ -5,61 +5,116 @@ const GUIDELINE_BASE_WIDTH = 375;
 const GUIDELINE_BASE_HEIGHT = 812;
 
 /**
- * Linear horizontal scale based on current width.
+ * Safe horizontal linear scale based on current width.
+ * Clamped between 0.8x and 1.35x to prevent extreme ballooning on wide screens or landscape.
  */
 export function scale(size, width = 375) {
-    return Math.round((width / GUIDELINE_BASE_WIDTH) * size);
+    const ratio = Math.min(Math.max(width / GUIDELINE_BASE_WIDTH, 0.8), 1.35);
+    return Math.round(size * ratio);
 }
 
 /**
- * Linear vertical scale based on current height.
+ * Safe vertical linear scale based on current height.
+ * Clamped between 0.8x and 1.35x to prevent extreme compression or expansion.
  */
 export function verticalScale(size, height = 812) {
-    return Math.round((height / GUIDELINE_BASE_HEIGHT) * size);
+    const ratio = Math.min(Math.max(height / GUIDELINE_BASE_HEIGHT, 0.8), 1.35);
+    return Math.round(size * ratio);
 }
 
 /**
  * Moderate scale with dampening factor (0.5 default).
- * Prevents text and buttons from shrinking or ballooning too aggressively.
+ * Prevents text and buttons from shrinking or ballooning aggressively.
  */
 export function moderateScale(size, factor = 0.5, width = 375) {
     return Math.round(size + (scale(size, width) - size) * factor);
 }
 
 /**
- * Determine current responsive tier and layout metrics.
+ * Font scale clamped to prevent text truncation on small or rotated displays.
+ */
+export function fontScale(size, width = 375) {
+    const ratio = Math.min(Math.max(width / GUIDELINE_BASE_WIDTH, 0.85), 1.25);
+    return Math.round(size * ratio);
+}
+
+/**
+ * Determine current responsive tier and layout metrics based on physical device form factor
+ * and active orientation (portrait vs landscape).
  */
 export function getResponsiveLayout(width, height) {
-    const isSmallMobile = width < 400;
-    const isMobile = width < 768;
-    const isTablet = width >= 768 && width < 1024;
-    const isDesktop = width >= 1024;
-    const isLargeDesktop = width >= 1440;
-    const isPortrait = height > width;
+    const minDim = Math.min(width, height);
+    const maxDim = Math.max(width, height);
+    const isLandscape = width > height;
+    const isPortrait = !isLandscape;
 
-    // Grid columns based on viewport tier
-    const gridColumns = isSmallMobile ? 2 : isMobile ? (width > 560 ? 3 : 2) : isTablet ? 4 : isLargeDesktop ? 6 : 5;
+    // Physical device form-factor categorization:
+    // Phone: shortest dimension < 600px (e.g. 360-430px)
+    // Tablet: shortest dimension 600px - 899px (e.g. 768-834px iPad/Galaxy Tab)
+    // Desktop: shortest dimension >= 900px OR (width >= 1024px && minDim >= 600px)
+    const isPhone = minDim < 600;
+    const isTablet = minDim >= 600 && minDim < 900;
+    const isDesktop = !isPhone && !isTablet && width >= 1024;
+    const isLargeDesktop = isDesktop && width >= 1440;
 
-    // Hero banner metrics
-    const heroHeight = isSmallMobile ? 320 : isMobile ? 360 : isTablet ? 440 : 560;
-    const heroTitleSize = isSmallMobile ? 20 : isMobile ? 24 : isTablet ? 28 : 34;
+    // Mobile viewport classification
+    const isMobile = isPhone || width < 600;
+    const isMobileLandscape = isPhone && isLandscape;
+    const isSmallMobile = isPhone && minDim < 380;
+    const isTabletPortrait = isTablet && isPortrait;
+    const isTabletLandscape = isTablet && isLandscape;
+
+    // Grid columns based on usable width and orientation
+    let gridColumns = 2;
+    if (isDesktop) {
+        gridColumns = isLargeDesktop ? 6 : 5;
+    } else if (isTablet) {
+        gridColumns = isLandscape ? 5 : 4;
+    } else if (isMobileLandscape) {
+        gridColumns = width >= 740 ? 4 : 3;
+    } else {
+        gridColumns = width >= 480 ? 3 : 2;
+    }
+
+    // Hero banner metrics: adapt height to screen height in landscape!
+    let heroHeight;
+    if (isDesktop) {
+        heroHeight = 520;
+    } else if (isTablet) {
+        heroHeight = isLandscape ? 380 : 440;
+    } else if (isMobileLandscape) {
+        heroHeight = Math.min(Math.round(height * 0.76), 270);
+    } else if (isSmallMobile) {
+        heroHeight = 310;
+    } else {
+        heroHeight = 350;
+    }
+
+    let heroTitleSize = isDesktop ? 32 : (isTablet ? 26 : (isMobileLandscape ? 20 : 22));
 
     // Media card metrics
-    const cardWidth = isSmallMobile ? 128 : isMobile ? 140 : isTablet ? 155 : 170;
+    const cardWidth = isDesktop ? 170 : (isTablet ? 155 : (isMobileLandscape ? 132 : 140));
     const posterHeight = Math.round(cardWidth * 1.5); // standard 2:3 aspect ratio
 
-    // Screen content padding
-    const horizontalPadding = isSmallMobile ? 12 : isMobile ? 16 : isTablet ? 24 : 32;
+    // Screen content horizontal padding
+    const horizontalPadding = isDesktop ? 28 : (isTablet ? 20 : (isMobileLandscape ? 16 : 14));
 
     return {
         width,
         height,
+        minDim,
+        maxDim,
+        isPortrait,
+        isLandscape,
+        isPhone,
         isSmallMobile,
         isMobile,
+        isMobileLandscape,
         isTablet,
+        isTabletPortrait,
+        isTabletLandscape,
         isDesktop,
         isLargeDesktop,
-        isPortrait,
         gridColumns,
         heroHeight,
         heroTitleSize,

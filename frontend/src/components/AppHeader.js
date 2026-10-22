@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Image } from 'react-native';
 import { COLORS } from '../theme/colors';
+import { getResponsiveLayout } from '../theme/scaling';
 import { Storage } from '../utils/storage';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange } from '../utils/adShield';
 
 export default function AppHeader({ navigation, activeRoute, title }) {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
-    const isTablet = width >= 768 && width < 1024;
-    const isMobile = width < 768;
+    const { width, height } = useWindowDimensions();
+    const responsive = getResponsiveLayout(width, height);
+    const isDesktop = responsive.isDesktop;
+    const isTablet = responsive.isTablet;
+    const isMobile = responsive.isMobile;
+    const isMobileLandscape = responsive.isMobileLandscape;
 
     const [watchlistCount, setWatchlistCount] = useState(0);
     const [noAdsOn, setNoAdsOn] = useState(isNoAdsActive());
@@ -88,7 +91,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
             {/* Desktop Navigation Links */}
             {(isDesktop || isTablet) && (
                 <View style={styles.navLinksRow}>
-                    {navItems.slice(0, isTablet ? 6 : navItems.length).map(item => {
+                    {navItems.slice(0, isTablet ? 5 : navItems.length).map(item => {
                         const isActive = activeRoute === item.route;
                         return (
                             <TouchableOpacity
@@ -107,7 +110,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
 
             {/* Right Action Icons (Search, Watchlist, History) */}
             <View style={styles.rightSection}>
-                {isDesktop && (
+                {(isDesktop || isTablet) && (
                     <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => navigation.navigate('Search')}
@@ -118,7 +121,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                     </TouchableOpacity>
                 )}
 
-                {isDesktop && (
+                {(isDesktop || isTablet) && (
                     <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => navigation.navigate('Watchlist')}
@@ -148,11 +151,11 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                 >
                     <Text style={styles.noAdsHeaderIcon}>🛡️</Text>
                     <Text style={[styles.noAdsHeaderLabel, noAdsOn ? styles.noAdsHeaderLabelOn : styles.noAdsHeaderLabelOff]}>
-                        {noAdsOn ? (width < 400 ? 'No Ads' : 'No Ads: ON') : (width < 400 ? 'Ads' : 'Ads Allowed')}
+                        {noAdsOn ? (width < 460 ? 'ON' : 'No Ads: ON') : (width < 460 ? 'OFF' : 'Ads Allowed')}
                     </Text>
                 </TouchableOpacity>
 
-                {isDesktop && (
+                {(isDesktop || isTablet) && (
                     <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => navigation.navigate('History')}

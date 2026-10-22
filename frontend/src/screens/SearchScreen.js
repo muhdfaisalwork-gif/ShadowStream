@@ -10,11 +10,12 @@ import MediaCard from '../components/MediaCard';
 import SkeletonGrid from '../components/SkeletonGrid';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 export default function SearchScreen({ route, navigation }) {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
-    const numCols = width >= 1400 ? 6 : width >= 1024 ? 5 : width >= 768 ? 4 : width >= 480 ? 3 : 2;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
+    const numCols = responsive.gridColumns;
 
     // Support both navigation params AND deep-link query strings (?q=foo)
     const urlQuery = (typeof window !== 'undefined'

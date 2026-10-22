@@ -1,10 +1,10 @@
 {
-  "version": "2.4.4",
-  "versionCode": 244,
+  "version": "2.4.5",
+  "versionCode": 245,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-21",
+  "releaseDate": "2026-10-22",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Enhanced download engine with Android DownloadManager storage permissions, 1DM/ADM external downloader bridge, and Service Worker download bypass."
+  "releaseNotes": "Adaptive global scaling engine, responsive tablet & mobile layouts, and sensor orientation rotation fix."
 }

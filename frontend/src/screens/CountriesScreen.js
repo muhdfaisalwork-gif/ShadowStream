@@ -9,11 +9,12 @@ import MobileTabBar from '../components/MobileTabBar';
 import MediaCard from '../components/MediaCard';
 import { getApiBase } from '../utils/api';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useResponsive } from '../theme/scaling';
 
 export default function CountriesScreen({ navigation }) {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 1024;
-    const numCols = width >= 1200 ? 4 : width >= 768 ? 3 : 2;
+    const responsive = useResponsive();
+    const isDesktop = responsive.isDesktop;
+    const numCols = responsive.isDesktop ? (responsive.isLargeDesktop ? 5 : 4) : (responsive.isTablet || responsive.isMobileLandscape ? 3 : 2);
 
     useRouteMeta('Countries');
     const [activeRegion, setActiveRegion] = useState('all');
