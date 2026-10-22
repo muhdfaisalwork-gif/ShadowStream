@@ -11,7 +11,7 @@ import { HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount } from '../utils/adShield';
 
-const CURRENT_VERSION = '2.4.5';
+const CURRENT_VERSION = '2.4.6';
 
 export default function SettingsScreen({ navigation }) {
     useRouteMeta('Settings');

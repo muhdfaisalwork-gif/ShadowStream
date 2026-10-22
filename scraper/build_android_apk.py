@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 245
-VERSION_NAME = "2.4.5"
+VERSION_CODE = 246
+VERSION_NAME = "2.4.6"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -225,12 +225,12 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.5";
+            return "2.4.6";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 245;
+            return 246;
         }}
 
         @JavascriptInterface

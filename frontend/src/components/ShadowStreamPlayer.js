@@ -225,72 +225,6 @@ export default function ShadowStreamPlayer({
     const isCompactTopBar = width < 680;
     const isPortrait = height > width;
 
-    const handleToggleRotate = useCallback(() => {
-        // 1. Native Android APK bridge
-        if (typeof window !== 'undefined' && window.ShadowStreamNative) {
-            if (typeof window.ShadowStreamNative.toggleOrientation === 'function') {
-                try {
-                    window.ShadowStreamNative.toggleOrientation();
-                    setDubToast('📱 Orientation Toggled');
-                    setTimeout(() => setDubToast(null), 2500);
-                    return;
-                } catch (_) {}
-            }
-        }
-
-        // 2. Screen Orientation API (Android Chrome, Edge, PWA)
-        if (typeof window !== 'undefined' && window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
-            try {
-                const currentType = window.screen.orientation.type || '';
-                if (currentType.includes('landscape') || isForcedLandscape) {
-                    window.screen.orientation.lock('portrait').catch(() => {});
-                    setIsForcedLandscape(false);
-                    setDubToast('📱 Rotated to Vertical');
-                } else {
-                    window.screen.orientation.lock('landscape').catch(() => {});
-                    setIsForcedLandscape(true);
-                    setDubToast('📱 Rotated to Horizontal');
-                }
-                setTimeout(() => setDubToast(null), 2500);
-                return;
-            } catch (_) {}
-        }
-
-        // 3. Universal CSS 90-degree Rotation (iOS Safari, iPhone PWA, Mobile browsers)
-        setIsForcedLandscape((prev) => {
-            const next = !prev;
-            setDubToast(isFullscreen ? '📱 Normal View' : '📱 Fullscreen Mode');
-            setTimeout(() => setDubToast(null), 2500);
-            return next;
-        });
-    }, [isPortrait, isFullscreen, toggleFullscreen]);
-
-    // Auto-reset forced landscape if the user physically turns device to landscape
-    useEffect(() => {
-        if (width >= height && isForcedLandscape) {
-            setIsForcedLandscape(false);
-        }
-    }, [width, height, isForcedLandscape]);
-
-    const forcedLandscapeStyle = useMemo(() => {
-        if (!isForcedLandscape) return null;
-        if (Platform.OS === 'web') {
-            return {
-                position: 'fixed',
-                top: 0,
-                left: width,
-                width: height,
-                height: width,
-                transform: [{ rotate: '90deg' }],
-                transformOrigin: 'top left',
-                zIndex: 99999,
-                maxWidth: 'none',
-                maxHeight: 'none',
-            };
-        }
-        return null;
-    }, [isForcedLandscape, width, height]);
-
     const [adHelperDismissed, setAdHelperDismissed] = useState(false);
 
     // Embed failover.
@@ -938,6 +872,41 @@ export default function ShadowStreamPlayer({
         const t = setTimeout(() => setFullscreenNote(null), 5000);
         return () => clearTimeout(t);
     }, [fullscreenNote]);
+
+    // Mobile / Tablet Screen Rotation Handler
+    const handleToggleRotate = useCallback(() => {
+        // 1. Native Android APK bridge
+        if (typeof window !== 'undefined' && window.ShadowStreamNative) {
+            if (typeof window.ShadowStreamNative.toggleOrientation === 'function') {
+                try {
+                    window.ShadowStreamNative.toggleOrientation();
+                    setDubToast('📱 Orientation Toggled');
+                    setTimeout(() => setDubToast(null), 2500);
+                    return;
+                } catch (_) {}
+            }
+        }
+
+        // 2. Screen Orientation API (Android Chrome, Edge, PWA)
+        if (typeof window !== 'undefined' && window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+            try {
+                const currentType = window.screen.orientation.type || '';
+                if (currentType.includes('landscape') || !isPortrait) {
+                    window.screen.orientation.lock('portrait').catch(() => {});
+                    setDubToast('📱 Rotated to Portrait');
+                } else {
+                    window.screen.orientation.lock('landscape').catch(() => {});
+                    setDubToast('📱 Rotated to Landscape');
+                }
+                setTimeout(() => setDubToast(null), 2500);
+                return;
+            } catch (_) {}
+        }
+
+        // 3. Fallback on iOS Safari / Desktop / browsers without screen.orientation.lock:
+        // Toggle fullscreen, which naturally aligns orientation on mobile
+        toggleFullscreen();
+    }, [isPortrait, toggleFullscreen]);
 
     // Fullscreen change listener
     //

@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.5",
-    versionCode: 245,
+    version: "2.4.6",
+    versionCode: 246,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-21",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Adaptive global scaling engine, responsive tablet & mobile layouts, and sensor orientation rotation fix.",
+    releaseNotes: "Emergency fix for player runtime TDZ, responsive orientation controls, and stability updates.",
 };
 
 

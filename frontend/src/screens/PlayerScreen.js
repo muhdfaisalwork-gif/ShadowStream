@@ -109,6 +109,24 @@ export default function PlayerScreen({ route, navigation }) {
         Number.isFinite(parsedEpisode) ? parsedEpisode : (isTv ? (item?.episode != null ? item.episode : 1) : null)
     );
 
+    const [seasons, setSeasons] = useState(item?.seasons || []);
+    const [dubs, setDubs] = useState(
+        initialItem?.audioLanguages ||
+        initialItem?.audio_languages ||
+        initialItem?.spoken_languages ||
+        initialItem?.languages ||
+        []
+    );
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+    const [streamUrl, setStreamUrl] = useState(item?.streamUrl || item?.playbackUrl || null);
+    const [streamKind, setStreamKind] = useState(null); // 'direct' | 'embed' | 'metadata'
+    const [sourceName, setSourceName] = useState(null);
+    const [mirrorList, setMirrorList] = useState([]); // [{label, provider, url, quality, direct, resolveMode}]
+    const [activeMirrorIdx, setActiveMirrorIdx] = useState(0);
+    const [resolveNote, setResolveNote] = useState(null);
+    const [renditions, setRenditions] = useState([]);
+
     // Sync route.params when PlayerScreen stays mounted in Drawer.Navigator
     useEffect(() => {
         const nextKey = routeSlug || (rawItem?.slug) || (rawItem?.id ? String(rawItem.id) : null);
@@ -158,14 +176,7 @@ export default function PlayerScreen({ route, navigation }) {
         url.searchParams.set('episode', String(currentEpisode));
         window.history.replaceState({}, '', url.toString());
     }, [isTv, currentSeason, currentEpisode]);
-    const [seasons, setSeasons] = useState(item?.seasons || []);
-    const [dubs, setDubs] = useState(
-        initialItem?.audioLanguages ||
-        initialItem?.audio_languages ||
-        initialItem?.spoken_languages ||
-        initialItem?.languages ||
-        []
-    );
+
 
     // NOTE: the global popup guard lives in src/utils/adShield.js, installed
     // once by App.js. This screen used to install a second, stricter override
@@ -224,15 +235,7 @@ export default function PlayerScreen({ route, navigation }) {
             : (item?.title || 'Watch')
     });
 
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState(null);
-    const [streamUrl, setStreamUrl] = useState(item?.streamUrl || item?.playbackUrl || null);
-    const [streamKind, setStreamKind] = useState(null); // 'direct' | 'embed' | 'metadata'
-    const [sourceName, setSourceName] = useState(null);
-    const [mirrorList, setMirrorList] = useState([]); // [{label, provider, url, quality, direct, resolveMode}]
-    const [activeMirrorIdx, setActiveMirrorIdx] = useState(0);
-    const [resolveNote, setResolveNote] = useState(null);
-    const [renditions, setRenditions] = useState([]);
+
 
     // Player orientation lifecycle: allow natural vertical/portrait playback, reset on leave
     useEffect(() => {
