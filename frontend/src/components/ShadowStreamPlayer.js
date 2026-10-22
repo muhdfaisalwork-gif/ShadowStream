@@ -222,6 +222,7 @@ export default function ShadowStreamPlayer({
 
     // Screen orientation & mobile landscape state
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [moreSubmenu, setMoreSubmenu] = useState(null); // null | 'server' | 'subtitles' | 'dub'
     const isCompactTopBar = width < 680;
     const isPortrait = height > width;
 
@@ -1437,6 +1438,93 @@ export default function ShadowStreamPlayer({
                 </View>
             )}
 
+            {/* In-Player Offline Download & Handoff Modal */}
+            {showDownloadMenu && (
+                <View style={styles.downloadModalBackdrop}>
+                    <TouchableOpacity
+                        style={styles.downloadModalBackdropTap}
+                        activeOpacity={1}
+                        onPress={() => setShowDownloadMenu(false)}
+                    />
+                    <View style={styles.downloadModalCard}>
+                        <View style={styles.downloadModalHeader}>
+                            <View style={{ flex: 1, marginRight: 12 }}>
+                                <Text style={styles.downloadModalTitle}>⬇ Offline Media Download</Text>
+                                <Text style={styles.downloadModalSubtitle} numberOfLines={1}>
+                                    {title || 'Media'} {season != null && episode != null ? `· Season ${season}, Episode ${episode}` : ''}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.drawerCloseBtn}
+                                onPress={() => setShowDownloadMenu(false)}
+                            >
+                                <Text style={styles.drawerCloseText}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.downloadModalBody} contentContainerStyle={{ paddingBottom: 20 }}>
+                            {/* Option 1: Direct File Download */}
+                            <TouchableOpacity
+                                style={styles.downloadModalItem}
+                                onPress={handleDownloadVideo}
+                            >
+                                <View style={styles.downloadModalIconBox}>
+                                    <Text style={{ fontSize: 20 }}>⬇</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.downloadModalHeading}>Direct Video Download (MP4/MKV)</Text>
+                                    <Text style={styles.downloadModalDesc}>
+                                        Save media directly to device storage, Gallery, or Downloads folder.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Option 2: External Downloader (1DM / ADM / VLC) */}
+                            <TouchableOpacity
+                                style={styles.downloadModalItem}
+                                onPress={handleOpenExternalDownloader}
+                            >
+                                <View style={[styles.downloadModalIconBox, { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}>
+                                    <Text style={{ fontSize: 20 }}>🚀</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.downloadModalHeading, { color: '#60A5FA' }]}>
+                                        Open in Downloader App (1DM / ADM / VLC)
+                                    </Text>
+                                    <Text style={styles.downloadModalDesc}>
+                                        Maximum multi-threaded speed with background pause & resume.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Option 3: Copy Stream URL */}
+                            <TouchableOpacity
+                                style={styles.downloadModalItem}
+                                onPress={handleCopyStreamLink}
+                            >
+                                <View style={styles.downloadModalIconBox}>
+                                    <Text style={{ fontSize: 20 }}>📋</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.downloadModalHeading}>Copy Direct Stream URL</Text>
+                                    <Text style={styles.downloadModalDesc}>
+                                        Copy URL to clipboard to paste into IDM on PC or 1DM/ADM on mobile.
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Torrent & Multi-Thread Guidance */}
+                            <View style={styles.downloadTipCard}>
+                                <Text style={styles.downloadTipHeading}>💡 How to Download with Torrent / Multi-Connection Speeds:</Text>
+                                <Text style={styles.downloadTipText}>
+                                    ShadowStream serves direct high-speed HTTP/HLS video streams. On Android, install <Text style={{ fontWeight: '700', color: '#93C5FD' }}>1DM (Video & Torrent Downloader)</Text>. Tapping "Open in Downloader App" or pasting the copied stream link into 1DM downloads the video with multi-connection acceleration and pause/resume support, just like µTorrent!
+                                </Text>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            )}
+
             {/* Minimized Trigger & Mini-Pill Bar (Visible when controls are minimized) */}
             {!controlsVisible && (
                 <View style={styles.topTriggerZone} pointerEvents="box-none">
@@ -1525,65 +1613,195 @@ export default function ShadowStreamPlayer({
                     {isCompactTopBar && (
                         <View style={{ position: 'relative' }}>
                             <TouchableOpacity
-                                style={[styles.pillButton, showMoreMenu && styles.pillButtonActive]}
-                                onPress={() => setShowMoreMenu(!showMoreMenu)}
+                                style={[styles.pillButton, (showMoreMenu || showDownloadMenu) && styles.pillButtonActive]}
+                                onPress={() => {
+                                    setShowMoreMenu(!showMoreMenu);
+                                    setMoreSubmenu(null);
+                                }}
                                 accessibilityLabel="More playback options"
                             >
                                 <Text style={styles.pillButtonText}>⋯ More</Text>
                             </TouchableOpacity>
                             {showMoreMenu && (
-                                <View style={[styles.popupMenu, { width: 220, right: 0 }]}>
-                                    <Text style={styles.popupMenuHeader}>Playback Options</Text>
-                                    {mirrorList && mirrorList.length > 0 && (
-                                        <TouchableOpacity
-                                            style={styles.popupMenuItem}
-                                            onPress={() => { setShowMoreMenu(false); setShowServerMenu(true); }}
-                                        >
-                                            <Text style={styles.popupMenuText}>⚡ Server: {sourceName || 'Auto'}</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.popupMenuItem}
-                                        onPress={() => { nextViewMode(); setShowMoreMenu(false); }}
-                                    >
-                                        <Text style={styles.popupMenuText}>⬚ Fit / Crop: {VIEW_LABEL[viewMode]}</Text>
-                                    </TouchableOpacity>
-                                    {canSelectSubtitles && (
-                                        <TouchableOpacity
-                                            style={styles.popupMenuItem}
-                                            onPress={() => { setShowMoreMenu(false); setShowSubtitleMenu(true); }}
-                                        >
-                                            <Text style={styles.popupMenuText}>💬 Subtitles ({selectedSubtitle === 'off' ? 'Off' : selectedSubtitle})</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.popupMenuItem}
-                                        onPress={() => { setShowMoreMenu(false); setShowDubMenu(true); }}
-                                    >
-                                        <Text style={styles.popupMenuText}>🌐 Audio & Dubbing</Text>
-                                    </TouchableOpacity>
-                                    {streamUrl ? (
-                                        <TouchableOpacity
-                                            style={styles.popupMenuItem}
-                                            onPress={() => { setShowMoreMenu(false); setShowDownloadMenu(true); }}
-                                        >
-                                            <Text style={styles.popupMenuText}>⬇ Download & Links</Text>
-                                        </TouchableOpacity>
-                                    ) : null}
-                                    {drawerSeasons && drawerSeasons.length > 0 ? (
-                                        <TouchableOpacity
-                                            style={styles.popupMenuItem}
-                                            onPress={() => { setShowMoreMenu(false); setShowEpisodeDrawer(true); }}
-                                        >
-                                            <Text style={styles.popupMenuText}>📚 Seasons & Episodes</Text>
-                                        </TouchableOpacity>
+                                <View style={[styles.popupMenu, { width: 250, right: 0, maxHeight: 400 }]}>
+                                    {moreSubmenu === null ? (
+                                        <>
+                                            <Text style={styles.popupMenuHeader}>Playback Options</Text>
+                                            {mirrorList && mirrorList.length > 0 && (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => setMoreSubmenu('server')}
+                                                >
+                                                    <Text style={styles.popupMenuText}>⚡ Server: {sourceName || 'Auto'} ›</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                            <TouchableOpacity
+                                                style={styles.popupMenuItem}
+                                                onPress={nextViewMode}
+                                            >
+                                                <Text style={styles.popupMenuText}>⬚ Fit / Crop: {VIEW_LABEL[viewMode]}</Text>
+                                            </TouchableOpacity>
+                                            {canSelectSubtitles && (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => setMoreSubmenu('subtitles')}
+                                                >
+                                                    <Text style={styles.popupMenuText}>💬 Subtitles ({selectedSubtitle === 'off' ? 'Off' : selectedSubtitle}) ›</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                            {(hasSubAndDubMirrors || (isDirect && availableAudioTracks.length > 1)) && (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => setMoreSubmenu('dub')}
+                                                >
+                                                    <Text style={styles.popupMenuText}>🌐 Audio & Dubbing ›</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                            {streamUrl ? (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => {
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                        setShowDownloadMenu(true);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>⬇ Download & Offline</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                            {drawerSeasons && drawerSeasons.length > 0 ? (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => {
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                        setShowEpisodeDrawer(true);
+                                                    }}
+                                                >
+                                                    <Text style={styles.popupMenuText}>📚 Seasons & Episodes</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                        </>
+                                    ) : moreSubmenu === 'server' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.popupMenuItem, { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: 4 }]}
+                                                onPress={() => setMoreSubmenu(null)}
+                                            >
+                                                <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.popupMenuHeader}>Select Stream Server</Text>
+                                            {mirrorList.map((m, idx) => (
+                                                <TouchableOpacity
+                                                    key={idx}
+                                                    style={[styles.popupMenuItem, idx === activeMirrorIdx && styles.popupMenuItemActive]}
+                                                    onPress={() => {
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                        if (onSelectMirror) onSelectMirror(m, idx);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, idx === activeMirrorIdx && styles.popupMenuTextActive]}>
+                                                        {idx === activeMirrorIdx ? '▶ ' : ''}{m.label} ({m.quality || 'HD'})
+                                                        {m.direct ? ' · direct' : ''}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
+                                    ) : moreSubmenu === 'subtitles' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.popupMenuItem, { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: 4 }]}
+                                                onPress={() => setMoreSubmenu(null)}
+                                            >
+                                                <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.popupMenuHeader}>Subtitles</Text>
+                                            <TouchableOpacity
+                                                style={[styles.popupMenuItem, selectedSubtitle === 'off' && styles.popupMenuItemActive]}
+                                                onPress={() => {
+                                                    setSelectedSubtitle('off');
+                                                    setShowMoreMenu(false);
+                                                    setMoreSubmenu(null);
+                                                }}
+                                            >
+                                                <Text style={styles.popupMenuText}>Off</Text>
+                                            </TouchableOpacity>
+                                            {subtitles.map(sub => (
+                                                <TouchableOpacity
+                                                    key={sub.id || sub.language}
+                                                    style={[styles.popupMenuItem, selectedSubtitle === sub.language && styles.popupMenuItemActive]}
+                                                    onPress={() => {
+                                                        setSelectedSubtitle(sub.language);
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, selectedSubtitle === sub.language && styles.popupMenuTextActive]}>
+                                                        {sub.label || sub.language}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
+                                    ) : moreSubmenu === 'dub' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.popupMenuItem, { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: 4 }]}
+                                                onPress={() => setMoreSubmenu(null)}
+                                            >
+                                                <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.popupMenuHeader}>Audio & Dubbing</Text>
+                                            {hasSubAndDubMirrors && (
+                                                <>
+                                                    <TouchableOpacity
+                                                        style={[styles.popupMenuItem, activeMirrorIdx === subMirrorIdx && styles.popupMenuItemActive]}
+                                                        onPress={() => {
+                                                            setShowMoreMenu(false);
+                                                            setMoreSubmenu(null);
+                                                            if (onSelectMirror) onSelectMirror(mirrorList[subMirrorIdx], subMirrorIdx);
+                                                        }}
+                                                    >
+                                                        <Text style={[styles.popupMenuText, activeMirrorIdx === subMirrorIdx && styles.popupMenuItemActive]}>
+                                                            {activeMirrorIdx === subMirrorIdx ? '▶ ' : ''}Original / Subtitles
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.popupMenuItem, activeMirrorIdx === dubMirrorIdx && styles.popupMenuItemActive]}
+                                                        onPress={() => {
+                                                            setShowMoreMenu(false);
+                                                            setMoreSubmenu(null);
+                                                            if (onSelectMirror) onSelectMirror(mirrorList[dubMirrorIdx], dubMirrorIdx);
+                                                        }}
+                                                    >
+                                                        <Text style={[styles.popupMenuText, activeMirrorIdx === dubMirrorIdx && styles.popupMenuItemActive]}>
+                                                            {activeMirrorIdx === dubMirrorIdx ? '▶ ' : ''}Dubbed Audio Stream
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </>
+                                            )}
+                                            {isDirect && availableAudioTracks.length > 1 && availableAudioTracks.map((tr, idx) => (
+                                                <TouchableOpacity
+                                                    key={idx}
+                                                    style={[styles.popupMenuItem, selectedAudioTrack === idx && styles.popupMenuItemActive]}
+                                                    onPress={() => {
+                                                        selectAudioTrack(idx);
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, selectedAudioTrack === idx && styles.popupMenuTextActive]}>
+                                                        {selectedAudioTrack === idx ? '▶ ' : ''}{tr.label || tr.language || `Track ${idx + 1}`}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
                                     ) : null}
                                 </View>
                             )}
                         </View>
                     )}
-
-                    {/* Crop / stretch — cycles Fit → Crop → Stretch */}
+{/* Crop / stretch — cycles Fit → Crop → Stretch */}
                     <TouchableOpacity
                         style={[styles.pillButton, viewMode !== 'fit' && styles.pillButtonActive, isCompactTopBar && { display: 'none' }]}
                         onPress={nextViewMode}
@@ -1846,50 +2064,19 @@ export default function ShadowStreamPlayer({
                         </View>
                     ) : null}
 
-                    {/* Offline Media Download Menu */}
+                    {/* Offline Media Download Button (Desktop View) */}
                     {streamUrl ? (
                         <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                             <TouchableOpacity
-                                style={styles.pillButton}
+                                style={[styles.pillButton, showDownloadMenu && styles.pillButtonActive]}
                                 onPress={() => setShowDownloadMenu(!showDownloadMenu)}
                                 accessibilityLabel="Download video or audio for offline watching"
                             >
                                 <Text style={styles.pillButtonText}>⬇ Download</Text>
                             </TouchableOpacity>
-                            {showDownloadMenu && (
-                                <View style={[styles.popupMenu, { minWidth: 260 }]}>
-                                    <Text style={styles.popupMenuHeader}>Offline Download</Text>
-                                    <TouchableOpacity
-                                        style={styles.popupMenuItem}
-                                        onPress={handleDownloadVideo}
-                                    >
-                                        <Text style={styles.popupMenuText}>⬇ Download Video File (MP4)</Text>
-                                    </TouchableOpacity>
-                                     <TouchableOpacity
-                                         style={styles.popupMenuItem}
-                                         onPress={handleOpenExternalDownloader}
-                                     >
-                                         <Text style={[styles.popupMenuText, { color: '#60A5FA' }]}>🚀 Open Downloader (1DM/ADM/VLC)</Text>
-                                     </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.popupMenuItem}
-                                        onPress={handleCopyStreamLink}
-                                    >
-                                        <Text style={styles.popupMenuText}>📋 Copy Stream Link (1DM, ADM, IDM)</Text>
-                                    </TouchableOpacity>
-                                    <View style={styles.popupMenuDivider} />
-                                    <TouchableOpacity
-                                        style={styles.popupMenuItem}
-                                        onPress={() => setShowDownloadMenu(false)}
-                                    >
-                                        <Text style={[styles.popupMenuText, { color: COLORS.textMuted }]}>Cancel</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
                         </View>
                     ) : null}
-
-                    {/* Episodes Drawer */}
+{/* Episodes Drawer */}
                     {seasons.length > 0 && (
                         <TouchableOpacity
                             style={styles.pillButton}
@@ -2926,6 +3113,109 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 11,
         fontWeight: '800',
+    },
+    downloadModalBackdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.78)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 120,
+        padding: 16,
+    },
+    downloadModalBackdropTap: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    downloadModalCard: {
+        width: '100%',
+        maxWidth: 480,
+        maxHeight: '88%',
+        backgroundColor: 'rgba(20, 20, 24, 0.98)',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.16)',
+        boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85)',
+        overflow: 'hidden',
+    },
+    downloadModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    downloadModalTitle: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '800',
+    },
+    downloadModalSubtitle: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    downloadModalBody: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+    },
+    downloadModalItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 10,
+        padding: 12,
+        marginVertical: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    downloadModalIconBox: {
+        width: 42,
+        height: 42,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 14,
+    },
+    downloadModalHeading: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    downloadModalDesc: {
+        color: '#9CA3AF',
+        fontSize: 11,
+        marginTop: 2,
+        lineHeight: 15,
+    },
+    downloadTipCard: {
+        backgroundColor: 'rgba(30, 58, 138, 0.25)',
+        borderRadius: 10,
+        padding: 14,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+    },
+    downloadTipHeading: {
+        color: '#93C5FD',
+        fontSize: 12,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    downloadTipText: {
+        color: '#CBD5E1',
+        fontSize: 11,
+        lineHeight: 16,
     },
     episodeDrawer: {
         position: 'absolute',

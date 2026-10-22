@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 246
-VERSION_NAME = "2.4.6"
+VERSION_CODE = 247
+VERSION_NAME = "2.4.7"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -225,12 +225,12 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.6";
+            return "2.4.7";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 246;
+            return 247;
         }}
 
         @JavascriptInterface
@@ -575,7 +575,7 @@ public class MainActivity extends Activity {{
         }}
 
         // Handle external player schemes (VLC, MX Player, market links, intents)
-        if (scheme != null && (scheme.equals("vlc") || scheme.equals("vlc-x-callback") || scheme.equals("intent") || scheme.equals("market"))) {{
+        if (scheme != null && (scheme.equals("vlc") || scheme.equals("vlc-x-callback") || scheme.equals("intent") || scheme.equals("market") || scheme.equals("magnet"))) {{
             try {{
                 Intent intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME);
                 if (intent != null) {{
