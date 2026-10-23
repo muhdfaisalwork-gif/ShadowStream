@@ -48,11 +48,18 @@ export async function apiFetch(endpoint, options = {}, timeoutMs = 8000) {
     
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    if (options.signal) {
+        if (options.signal.aborted) {
+            controller.abort();
+        } else {
+            options.signal.addEventListener('abort', () => controller.abort(), { once: true });
+        }
+    }
     
     try {
         const res = await fetch(url, {
             ...options,
-            signal: options.signal || controller.signal,
+            signal: controller.signal,
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',

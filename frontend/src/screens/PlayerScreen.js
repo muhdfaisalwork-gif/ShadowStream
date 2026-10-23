@@ -118,6 +118,12 @@ export default function PlayerScreen({ route, navigation }) {
         initialItem?.languages ||
         []
     );
+    const [subtitles, setSubtitles] = useState(
+        initialItem?.subtitles ||
+        initialItem?.subtitleLanguages ||
+        initialItem?.subtitle_languages ||
+        []
+    );
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(null);
     const [streamUrl, setStreamUrl] = useState(item?.streamUrl || item?.playbackUrl || null);
@@ -148,6 +154,12 @@ export default function PlayerScreen({ route, navigation }) {
                 rawItem?.audio_languages ||
                 rawItem?.spoken_languages ||
                 rawItem?.languages ||
+                []
+            );
+            setSubtitles(
+                rawItem?.subtitles ||
+                rawItem?.subtitleLanguages ||
+                rawItem?.subtitle_languages ||
                 []
             );
             const nextIsTv = rawItem?.type === 'tv' ||
@@ -208,6 +220,10 @@ export default function PlayerScreen({ route, navigation }) {
                     const detectedDubs = data.audioLanguages || data.audio_languages || data.spoken_languages || data.languages;
                     if (Array.isArray(detectedDubs) && detectedDubs.length > 0) {
                         setDubs(detectedDubs);
+                    }
+                    const detectedSubs = data.subtitles || data.subtitleLanguages || data.subtitle_languages;
+                    if (Array.isArray(detectedSubs) && detectedSubs.length > 0) {
+                        setSubtitles(detectedSubs);
                     }
                 } else if (!cancelled) {
                     setLoadError(
@@ -650,6 +666,7 @@ export default function PlayerScreen({ route, navigation }) {
                     seasons={seasons}
                     mirrorList={mirrorList}
                     activeMirrorIdx={activeMirrorIdx}
+                    subtitles={subtitles}
                     dubs={dubs}
                     onSelectMirror={applyMirror}
                     onSelectEpisode={handleSelectEpisode}

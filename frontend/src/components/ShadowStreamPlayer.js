@@ -54,6 +54,27 @@ const GLOBAL_WATCH_LANGUAGES = [
     { code: 'tr', label: 'Turkish', flag: '🇹🇷' },
 ];
 
+function normalizeSubtitle(s) {
+    if (!s) return null;
+    if (typeof s === 'string') {
+        const code = s.toLowerCase().trim();
+        return {
+            id: code,
+            language: code,
+            label: LANGUAGE_NAMES[code] || code.toUpperCase(),
+            url: '',
+        };
+    }
+    const code = String(s.language || s.code || s.iso || '').toLowerCase().trim();
+    const label = s.label || s.name || LANGUAGE_NAMES[code] || (code ? code.toUpperCase() : 'Subtitles');
+    return {
+        id: s.id || code,
+        language: code,
+        label,
+        url: s.url || '',
+    };
+}
+
 function normalizeDub(d) {
     if (!d) return null;
     if (typeof d === 'string') {
@@ -387,9 +408,13 @@ export default function ShadowStreamPlayer({
         }
     }, [selectedSubtitle, isDirect, streamUrl, subtitles.length]);
 
-    // Expose the Subtitle menu on embed too, but make it honest: the provider
-    // owns the track list there, so we only show the hint.
-    const canSelectSubtitles = isDirect && Array.isArray(subtitles) && subtitles.length > 0;
+    const normalizedSubtitles = useMemo(() => {
+        if (!Array.isArray(subtitles)) return [];
+        return subtitles.map(normalizeSubtitle).filter(Boolean);
+    }, [subtitles]);
+
+    // Expose the Subtitle menu on both direct (with tracks) and embed (with provider CC guidance)
+    const canSelectSubtitles = (normalizedSubtitles.length > 0) || !isDirect;
 
     // Dub (audio language) picker — combines detected title dubs with common options
     const normalizedDubs = useMemo(() => {
@@ -1392,7 +1417,7 @@ export default function ShadowStreamPlayer({
                         {/* Real subtitle tracks. These are what the Subtitles
                             menu switches between — previously the menu existed
                             and did nothing, because no <track> was ever added. */}
-                        {subtitles.map((s) => (
+                        {normalizedSubtitles.filter((s) => Boolean(s.url && s.url.trim())).map((s) => (
                             <track
                                 key={s.id || s.language}
                                 kind="subtitles"
@@ -1801,7 +1826,7 @@ export default function ShadowStreamPlayer({
                                             >
                                                 <Text style={styles.popupMenuText}>Off</Text>
                                             </TouchableOpacity>
-                                            {subtitles.map(sub => (
+                                            {normalizedSubtitles.map(sub => (
                                                 <TouchableOpacity
                                                     key={sub.id || sub.language}
                                                     style={[styles.popupMenuItem, selectedSubtitle === sub.language && styles.popupMenuItemActive]}
@@ -1947,7 +1972,7 @@ export default function ShadowStreamPlayer({
                                     >
                                         <Text style={styles.popupMenuText}>Off</Text>
                                     </TouchableOpacity>
-                                    {subtitles.map(sub => (
+                                    {normalizedSubtitles.map(sub => (
                                         <TouchableOpacity
                                             key={sub.id || sub.language}
                                             style={[styles.popupMenuItem, selectedSubtitle === sub.language && styles.popupMenuItemActive]}
@@ -1956,6 +1981,13 @@ export default function ShadowStreamPlayer({
                                             <Text style={styles.popupMenuText}>{sub.label || sub.language}</Text>
                                         </TouchableOpacity>
                                     ))}
+                                    {!isDirect && (
+                                        <View style={{ paddingHorizontal: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' }}>
+                                            <Text style={styles.popupMenuHint}>
+                                                💡 In embed mode, toggle 💬/CC inside the player frame for synchronous localized subtitles.
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
                             )}
                         </View>

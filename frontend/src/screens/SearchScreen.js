@@ -100,7 +100,9 @@ export default function SearchScreen({ route, navigation }) {
                 console.error('[SearchScreen] search error:', err);
             }
         } finally {
-            setLoading(false);
+            if (abortRef.current === controller) {
+                setLoading(false);
+            }
         }
     }, []);
 

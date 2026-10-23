@@ -126,9 +126,11 @@ export async function resolveMirrors(mirrors, ctx) {
 
 export function guessType(url) {
     if (typeof url !== 'string') return 'unknown';
-    if (url.includes('.m3u8')) return 'hls';
-    if (url.endsWith('.mp4') || url.includes('.mp4?')) return 'mp4';
-    if (url.endsWith('.webm') || url.includes('.webm?')) return 'webm';
+    const lower = url.toLowerCase();
+    if (lower.includes('.m3u8')) return 'hls';
+    if (lower.includes('.mp4')) return 'mp4';
+    if (lower.includes('.webm')) return 'webm';
+    if (lower.includes('.mkv')) return 'mkv';
     return 'unknown';
 }
 
