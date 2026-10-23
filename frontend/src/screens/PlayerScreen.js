@@ -197,10 +197,10 @@ export default function PlayerScreen({ route, navigation }) {
     // once by App.js. This screen used to install a second, stricter override
     // that swallowed the app's own navigation — that conflict is gone.
 
-    // Resolve title data if navigated directly or refreshed via URL
+    // Resolve title data if navigated directly or refreshed via URL (or shallow card missing tmdbId)
     useEffect(() => {
         if (!slug) return;
-        if (item && (item.slug === slug || String(item.id) === String(slug))) return;
+        if (item && (item.slug === slug || String(item.id) === String(slug)) && (item.tmdbId || item.tmdb_id || (Array.isArray(item.availability) && item.availability.length > 0))) return;
         let cancelled = false;
         async function fetchTitleData() {
             try {
@@ -395,7 +395,30 @@ export default function PlayerScreen({ route, navigation }) {
             );
 
             let sourcesToUse = playableSources;
-            const effectiveTmdb = item.tmdbId || item.tmdb_id || (typeof item.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
+
+            // Safe TMDB ID resolution: Never accept a 4-digit release year (1900-2099) from slug
+            let effectiveTmdb = null;
+            if (item.tmdbId && !/^(19\d\d|20\d\d)$/.test(String(item.tmdbId))) {
+                effectiveTmdb = String(item.tmdbId);
+            } else if (item.tmdb_id && !/^(19\d\d|20\d\d)$/.test(String(item.tmdb_id))) {
+                effectiveTmdb = String(item.tmdb_id);
+            }
+            if (!effectiveTmdb && Array.isArray(avList) && avList.length > 0) {
+                for (const a of avList) {
+                    const u = a.playbackUrl || a.url || a.external_url || '';
+                    const m = u.match(/(?:vidlink\.pro\/(?:movie|tv)\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/);
+                    if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
+                        effectiveTmdb = m[1];
+                        break;
+                    }
+                }
+            }
+            if (!effectiveTmdb && typeof item.slug === 'string') {
+                const m = item.slug.match(/-(\d{4,9})$/);
+                if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
+                    effectiveTmdb = m[1];
+                }
+            }
             const effectiveImdb = item.imdbId || item.imdb_id;
 
             // Fetch worker-side multi-language & regional dub streams (SmashyStream, Vidlink, AnimeSalt, etc.)
@@ -459,7 +482,7 @@ export default function PlayerScreen({ route, navigation }) {
             }
 
             if (sourcesToUse.length > 0) {
-                const PROVIDER_RANK = ['vidlink_sub', 'vidlink_dub', 'vidlink', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
+                const PROVIDER_RANK = ['vidlink_sub', 'vidlink_dub', 'vidlink', 'multiembed', 'smashystream', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
                 const MAX_MIRRORS = 10;
 
                 const byProvider = new Map();
@@ -509,7 +532,8 @@ export default function PlayerScreen({ route, navigation }) {
                     const matchIdx = resolved.findIndex(m => 
                         (m.isDub && m.language === wantedLang) ||
                         (m.language === wantedLang && m.provider && m.provider.includes('animesalt')) ||
-                        (wantedLang === 'hi' && m.provider === 'multiembed')
+                        (wantedLang === 'hi' && (m.provider === 'multiembed' || m.label?.toLowerCase().includes('multiembed'))) ||
+                        (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(wantedLang) && (m.provider === 'smashystream' || m.label?.toLowerCase().includes('smashystream')))
                     );
                     if (matchIdx !== -1) {
                         chosenMirror = resolved[matchIdx];

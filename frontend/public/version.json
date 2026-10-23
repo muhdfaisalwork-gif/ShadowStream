@@ -1,10 +1,10 @@
 {
-  "version": "2.4.12",
-  "versionCode": 252,
+  "version": "2.4.13",
+  "versionCode": 253,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-23",
+  "releaseDate": "2026-10-24",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "True multi-language dubbing resolution, honest audio routing, automatic synchronized subtitle fallback for titles without studio dubs, and seamless AdShield."
+  "releaseNotes": "Fixed title resolution for slug-year movies (Project Hail Mary), honest embed audio routing, and multiembed regional dubs."
 }

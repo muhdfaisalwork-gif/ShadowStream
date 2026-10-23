@@ -437,7 +437,27 @@ export default function TitleDetailScreen({ route, navigation }) {
         if (item?.streamUrl || item?.playbackUrl) return item.streamUrl || item.playbackUrl;
         const av = availList.find(a => (a.playbackUrl || a.playback_url || a.url || a.external_url));
         if (av) return av.playbackUrl || av.playback_url || av.url || av.external_url;
-        const tmdb = item?.tmdbId || item?.tmdb_id || (typeof item?.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
+        let tmdb = null;
+        if (item?.tmdbId && !/^(19\d\d|20\d\d)$/.test(String(item.tmdbId))) {
+            tmdb = String(item.tmdbId);
+        } else if (item?.tmdb_id && !/^(19\d\d|20\d\d)$/.test(String(item.tmdb_id))) {
+            tmdb = String(item.tmdb_id);
+        } else if (Array.isArray(availList) && availList.length > 0) {
+            for (const a of availList) {
+                const u = a.playbackUrl || a.playback_url || a.url || a.external_url || '';
+                const m = u.match(/(?:vidlink\.pro\/(?:movie|tv)\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/);
+                if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
+                    tmdb = m[1];
+                    break;
+                }
+            }
+        }
+        if (!tmdb && typeof item?.slug === 'string') {
+            const m = item.slug.match(/-(\d{4,9})$/);
+            if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
+                tmdb = m[1];
+            }
+        }
         if (tmdb) {
             const s = ep ? (ep.season_number != null ? ep.season_number : (activeSeasonNum || 1)) : (activeSeasonNum || 1);
             const e = ep ? (ep.episode_number || 1) : 1;

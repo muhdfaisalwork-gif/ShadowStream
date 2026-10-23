@@ -358,7 +358,17 @@ async function resolveAnimeSalt(title: string, season = 1, episode = 1): Promise
 }
 
 async function handleResolve(params: URLSearchParams, env: Env): Promise<Response> {
-    const tmdbId = parseInt(params.get("tmdbId") || "0", 10);
+    let tmdbId = parseInt(params.get("tmdbId") || "0", 10);
+    const slugParam = params.get("slug") || "";
+    // Guard: If tmdbId is missing or looks like a 4-digit release year (1900-2099), resolve the REAL tmdbId from catalog
+    if (slugParam && (!tmdbId || (tmdbId >= 1900 && tmdbId <= 2099))) {
+        try {
+            const full = await getFullTitleData(slugParam, env);
+            if (full && (full.tmdbId || full.tmdb_id)) {
+                tmdbId = parseInt(String(full.tmdbId || full.tmdb_id), 10);
+            }
+        } catch (_) {}
+    }
     const type = params.get("type") || "movie";
     const season = params.get("season") ? parseInt(params.get("season")!, 10) : null;
     const episode = params.get("episode") ? parseInt(params.get("episode")!, 10) : null;
@@ -1971,11 +1981,23 @@ export default {
             }
 
             if (normPath === "/stream/resolve" || normPath === "/stream-mirrors") {
-                const tmdbId = params.get("tmdbId") || params.get("id");
+                const rawTmdbId = params.get("tmdbId") || params.get("id");
                 const rawSeason = params.get("season") || params.get("s");
                 const rawEpisode = params.get("episode") || params.get("e");
                 const titleParam = params.get("title") || "";
                 const slugParam = params.get("slug") || "";
+
+                let tmdbId = rawTmdbId;
+                // Guard: If tmdbId is missing or looks like a 4-digit release year (1900-2099), resolve the REAL tmdbId from catalog
+                if (slugParam && (!tmdbId || /^(19\d\d|20\d\d)$/.test(String(tmdbId)))) {
+                    try {
+                        const full = await getFullTitleData(slugParam, env);
+                        if (full && (full.tmdbId || full.tmdb_id)) {
+                            tmdbId = String(full.tmdbId || full.tmdb_id);
+                        }
+                    } catch (_) {}
+                }
+
                 const parsedS = parseInt(rawSeason || "1", 10);
                 const parsedE = parseInt(rawEpisode || "1", 10);
                 const season = (Number.isFinite(parsedS) && parsedS > 0) ? String(parsedS) : "1";

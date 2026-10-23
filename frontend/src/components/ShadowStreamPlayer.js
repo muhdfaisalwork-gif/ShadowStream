@@ -679,29 +679,43 @@ export default function ShadowStreamPlayer({
 
         // 4. Multiembed Alternate Server: If user picked Hindi/regional and Multiembed is available, switch to it
         const multiembedIdx = (mirrorList || []).findIndex(m => m.provider === 'multiembed' || (m.label && m.label.toLowerCase().includes('multiembed')));
-        if (cleanCode === 'hi' && multiembedIdx !== -1 && activeMirrorIdx !== multiembedIdx) {
-            if (onSelectMirror) {
+        if (['hi', 'ta', 'te', 'ml'].includes(cleanCode) && multiembedIdx !== -1) {
+            if (activeMirrorIdx !== multiembedIdx && onSelectMirror) {
                 onSelectMirror(mirrorList[multiembedIdx], multiembedIdx);
             }
-            setDubToast(`⚡ Switched to Multiembed (Check Hindi Dub server inside player)`);
-            setTimeout(() => setDubToast(null), 4000);
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`🎙️ Multiembed Active: Tap "Hindi Dub" or Server 2 inside player (Subtitles paired)`);
+            setTimeout(() => setDubToast(null), 5000);
             setShowDubMenu(false);
             return;
         }
 
-        // 5. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
+        // 5. SmashyStream for Multi-Language audio
+        const smashyIdx = (mirrorList || []).findIndex(m => m.provider === 'smashystream' || (m.label && m.label.toLowerCase().includes('smashystream')));
+        if (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanCode) && smashyIdx !== -1) {
+            if (activeMirrorIdx !== smashyIdx && onSelectMirror) {
+                onSelectMirror(mirrorList[smashyIdx], smashyIdx);
+            }
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`🎙️ SmashyStream Active: Tap ⚙️ settings inside player to choose ${langLabel} audio`);
+            setTimeout(() => setDubToast(null), 5000);
+            setShowDubMenu(false);
+            return;
+        }
+
+        // 6. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
         const subMatch = (subtitles || []).find(s => 
             (s.language && s.language.toLowerCase() === cleanCode) ||
             (s.label && s.label.toLowerCase().includes(langLabel.toLowerCase()))
         );
         if (subMatch) {
             setSelectedSubtitle(subMatch.language || cleanCode);
-            setDubToast(`📝 Audio: Original | Subtitles: ${subMatch.label || langLabel}`);
+            setDubToast(`📝 Subtitles: ${subMatch.label || langLabel} | Audio: Original English (No studio dub available)`);
         } else {
             setSelectedSubtitle(cleanCode);
-            setDubToast(`ℹ️ Audio: Original English | Subtitles: ${langLabel} (Studio dub not yet released)`);
+            setDubToast(`📝 Subtitles: ${langLabel} | Audio: Original English (No studio dub available)`);
         }
-        setTimeout(() => setDubToast(null), 4500);
+        setTimeout(() => setDubToast(null), 5000);
         setShowDubMenu(false);
     }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList, subtitles, activeMirrorIdx]);
 
@@ -2056,7 +2070,9 @@ export default function ShadowStreamPlayer({
                                                 : (isDirect && availableAudioTracks.length > 1
                                                     ? (availableAudioTracks[activeAudioIdx]?.label || 'Original Audio')
                                                     : (activeDubLang && activeDubLang !== 'native' && activeDubLang !== 'en'
-                                                        ? `Original Audio (Subtitles: ${(LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase()})`
+                                                        ? ((sourceName?.toLowerCase().includes('multiembed') && activeDubLang === 'hi')
+                                                            ? '🎙️ Multiembed Active (Select Hindi Dub button inside player)'
+                                                            : `Original Audio (Subtitles: ${(LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase()})`)
                                                         : `Default Stream (${sourceName || 'Provider'})`))}
                                         </Text>
                                     </View>
