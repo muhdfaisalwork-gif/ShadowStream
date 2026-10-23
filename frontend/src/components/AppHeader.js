@@ -91,7 +91,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
             {/* Desktop Navigation Links */}
             {(isDesktop || isTablet) && (
                 <View style={styles.navLinksRow}>
-                    {navItems.slice(0, isTablet ? 5 : navItems.length).map(item => {
+                    {navItems.slice(0, isTablet ? (width < 860 ? 3 : 4) : navItems.length).map(item => {
                         const isActive = activeRoute === item.route;
                         return (
                             <TouchableOpacity

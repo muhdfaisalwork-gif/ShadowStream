@@ -386,6 +386,7 @@ export default function BrowseScreen({ route, navigation }) {
                                 <MediaCard
                                     item={it}
                                     onPress={(item) => navigation.navigate('TitleDetail', { slug: item.slug || String(item.id), item })}
+                                    width="100%"
                                     isLarge={isDesktop}
                                 />
                             </View>

@@ -17,8 +17,11 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
     };
 
     const watchProgress = Storage.get(`progress_${item.id}`, 0);
-    const cardWidth = width || (isLarge ? 170 : 140);
-    const posterHeight = height || Math.round(cardWidth * 1.5);
+    const isFluid = width === '100%' || width === 'fluid';
+    const cardWidth = isFluid ? '100%' : (width || (isLarge ? 170 : 140));
+    const posterStyle = isFluid
+        ? { width: '100%', aspectRatio: 2 / 3 }
+        : { height: height || Math.round((typeof cardWidth === 'number' ? cardWidth : 140) * 1.5) };
 
     // Type badge color and label
     const getTypeInfo = () => {
@@ -78,7 +81,7 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
             // The class is defined globally in index.html (a11y-focus style block).
             className="cv-auto"
         >
-            <View style={[styles.posterContainer, { height: posterHeight }]}>
+            <View style={[styles.posterContainer, posterStyle]}>
                 <Poster
                     url={item.poster}
                     title={item.title}

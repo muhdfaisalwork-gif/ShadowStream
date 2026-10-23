@@ -1327,10 +1327,11 @@ export default function TitleDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: COLORS.bg },
     heroBanner: {
-        height: 400,
+        minHeight: 380,
         position: 'relative',
         justifyContent: 'flex-end',
-        backgroundColor: COLORS.surface
+        backgroundColor: COLORS.surface,
+        paddingBottom: 16
     },
     heroBannerDesktop: {
         height: 480
@@ -1364,7 +1365,9 @@ const styles = StyleSheet.create({
     backBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
     heroContentRow: {
         flexDirection: 'row',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingTop: 48,
+        paddingBottom: 12,
         alignItems: 'flex-end',
         zIndex: 5
     },
@@ -1438,7 +1441,9 @@ const styles = StyleSheet.create({
     actionButtonsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 10
     },
     playBtn: {
         flexDirection: 'row',

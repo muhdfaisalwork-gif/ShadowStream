@@ -1777,6 +1777,15 @@ export default function ShadowStreamPlayer({
                                             )}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
+                                                onPress={() => {
+                                                    setShowMoreMenu(false);
+                                                    setShowDubMenu(true);
+                                                }}
+                                            >
+                                                <Text style={styles.popupMenuText}>🌐 Audio & Dubs: {activeDubLang !== 'native' ? (LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase() : (hasSubAndDubMirrors ? (activeMirrorIdx === dubMirrorIdx ? 'DUB' : 'SUB') : 'Original')} ›</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.popupMenuItem}
                                                 onPress={nextViewMode}
                                             >
                                                 <Text style={styles.popupMenuText}>⬚ Fit / Crop: {VIEW_LABEL[viewMode]}</Text>
@@ -2041,7 +2050,7 @@ export default function ShadowStreamPlayer({
                         carries more than one audio track (direct mode, via the
                         HLS manifest). Embed mode gets the truth instead of a
                         list of languages it cannot act on. */}
-                    <View style={{ position: 'relative' }}>
+                    <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
                         <TouchableOpacity
                             style={[
                                 styles.pillButton,
@@ -2180,9 +2189,9 @@ export default function ShadowStreamPlayer({
                                     )}
 
                                     {/* Universal Regional & Catalog Language Switcher */}
-                                    <Text style={styles.popupMenuSubheader}>🌍 Watch in Regional Language</Text>
+                                    <Text style={styles.popupMenuSubheader}>📝 Pair Subtitles / Regional Audio</Text>
                                     <Text style={styles.popupMenuHint}>
-                                        Select any language below to play dubbed audio or auto-pair synchronized subtitles:
+                                        Choose your language to pair localized subtitles or switch to available dub servers:
                                     </Text>
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 6, paddingHorizontal: 4 }}>
                                         {GLOBAL_WATCH_LANGUAGES.map((l) => (
@@ -2852,8 +2861,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingTop: 12,
+        paddingHorizontal: Platform.OS === 'web' ? 'max(12px, env(safe-area-inset-left, 12px))' : 12,
+        paddingTop: Platform.OS === 'web' ? 'max(10px, env(safe-area-inset-top, 10px))' : 10,
         paddingBottom: 8,
         transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease',
     },
@@ -3044,8 +3053,9 @@ const styles = StyleSheet.create({
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
     },
     audioPopupMenu: {
-        width: 270,
-        maxHeight: 380,
+        width: 290,
+        maxWidth: '92vw',
+        maxHeight: 400,
     },
     audioActiveBox: {
         backgroundColor: 'rgba(255, 255, 255, 0.06)',

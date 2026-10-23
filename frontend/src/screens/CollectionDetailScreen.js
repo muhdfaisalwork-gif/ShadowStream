@@ -310,6 +310,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
                                 <MediaCard
                                     item={t}
                                     onPress={(it) => navigation.navigate('TitleDetail', { slug: it.slug || String(it.id), item: it })}
+                                    width="100%"
                                     isLarge={isDesktop}
                                 />
                             </View>

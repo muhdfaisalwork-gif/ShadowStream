@@ -276,6 +276,7 @@ export default function MoviesScreen({ route, navigation }) {
                                 <MediaCard
                                     item={m}
                                     onPress={(it) => navigation.navigate('TitleDetail', { slug: it.slug || String(it.id), item: it })}
+                                    width="100%"
                                     isLarge={isDesktop}
                                 />
                             </View>

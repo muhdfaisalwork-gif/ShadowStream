@@ -48,28 +48,31 @@ export function getResponsiveLayout(width, height) {
     const isLandscape = width > height;
     const isPortrait = !isLandscape;
 
-    // Physical device form-factor categorization:
-    // Phone: shortest dimension < 600px (e.g. 360-430px)
-    // Tablet: shortest dimension 600px - 899px (e.g. 768-834px iPad/Galaxy Tab)
-    // Desktop: shortest dimension >= 900px OR (width >= 1024px && minDim >= 600px)
-    const isPhone = minDim < 600;
-    const isTablet = minDim >= 600 && minDim < 900;
-    const isDesktop = !isPhone && !isTablet && width >= 1024;
-    const isLargeDesktop = isDesktop && width >= 1440;
+    // Responsive tiers based on current viewport width (seamless, zero gaps):
+    // Phone / Mobile: width < 600
+    // Tablet: width >= 600 && width < 1024
+    // Desktop: width >= 1024
+    // Large Desktop: width >= 1440
+    const isPhone = width < 600;
+    const isTablet = width >= 600 && width < 1024;
+    const isDesktop = width >= 1024;
+    const isLargeDesktop = width >= 1440;
 
     // Mobile viewport classification
-    const isMobile = isPhone || width < 600;
+    const isMobile = isPhone;
     const isMobileLandscape = isPhone && isLandscape;
-    const isSmallMobile = isPhone && minDim < 380;
+    const isSmallMobile = width < 380;
     const isTabletPortrait = isTablet && isPortrait;
     const isTabletLandscape = isTablet && isLandscape;
 
     // Grid columns based on usable width and orientation
     let gridColumns = 2;
-    if (isDesktop) {
-        gridColumns = isLargeDesktop ? 6 : 5;
+    if (isLargeDesktop) {
+        gridColumns = 6;
+    } else if (isDesktop) {
+        gridColumns = 5;
     } else if (isTablet) {
-        gridColumns = isLandscape ? 5 : 4;
+        gridColumns = isLandscape ? 4 : 3;
     } else if (isMobileLandscape) {
         gridColumns = width >= 740 ? 4 : 3;
     } else {
