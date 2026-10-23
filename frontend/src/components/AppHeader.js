@@ -117,7 +117,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                         accessibilityLabel="Search"
                     >
                         <Text style={styles.actionIcon}>🔍</Text>
-                        <Text style={styles.actionBtnLabel}>Search</Text>
+                        {isDesktop && <Text style={styles.actionBtnLabel}>Search</Text>}
                     </TouchableOpacity>
                 )}
 
@@ -137,7 +137,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                                 </View>
                             )}
                         </View>
-                        <Text style={styles.actionBtnLabel}>Watchlist</Text>
+                        {isDesktop && <Text style={styles.actionBtnLabel}>Watchlist</Text>}
                     </TouchableOpacity>
                 )}
 
@@ -151,7 +151,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                 >
                     <Text style={styles.noAdsHeaderIcon}>🛡️</Text>
                     <Text style={[styles.noAdsHeaderLabel, noAdsOn ? styles.noAdsHeaderLabelOn : styles.noAdsHeaderLabelOff]}>
-                        {noAdsOn ? (width < 460 ? 'ON' : 'No Ads: ON') : (width < 460 ? 'OFF' : 'Ads Allowed')}
+                        {noAdsOn ? (width < 800 ? 'ON' : 'No Ads: ON') : (width < 800 ? 'OFF' : 'Ads Allowed')}
                     </Text>
                 </TouchableOpacity>
 
@@ -162,7 +162,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                         accessibilityLabel="History"
                     >
                         <Text style={styles.actionIcon}>🕒</Text>
-                        <Text style={styles.actionBtnLabel}>History</Text>
+                        {isDesktop && <Text style={styles.actionBtnLabel}>History</Text>}
                     </TouchableOpacity>
                 )}
             </View>

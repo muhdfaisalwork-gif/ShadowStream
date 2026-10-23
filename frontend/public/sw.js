@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v24';
+const VERSION = 'v26';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -109,6 +109,7 @@ self.addEventListener('fetch', (event) => {
 
     // Tier 3: network-only. Never cache stream, embed or resolver traffic.
     if (
+        url.pathname === '/sw.js' ||
         url.pathname.startsWith('/api/v1/resolve') ||
         url.pathname.startsWith('/stream/resolve') ||
         url.pathname.startsWith('/health/providers') ||
@@ -127,9 +128,9 @@ self.addEventListener('fetch', (event) => {
     // replaced, so the app 404s its own JS and the visitor sees a white
     // screen. Going to the network first costs one request and makes deploys
     // take effect immediately; the cache is the offline fallback only.
-    if (request.mode === 'navigate') {
+    if (request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
         event.respondWith(
-            fetch(request)
+            fetch(new Request(request, { cache: 'no-store' }))
                 .then((res) => {
                     if (res && res.ok) {
                         const copy = res.clone();

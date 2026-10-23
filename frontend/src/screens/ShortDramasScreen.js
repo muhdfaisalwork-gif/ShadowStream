@@ -145,7 +145,7 @@ export default function ShortDramasScreen({ route, navigation }) {
                         {dramas.map((d, idx) => (
                             <View
                                 key={`${d.id || idx}-${idx}`}
-                                style={{ width: `${100 / numCols - 1.5}%`, marginBottom: 18 }}
+                                style={{ width: `calc(${100 / numCols}% - ${(12 * (numCols - 1)) / numCols}px)`, marginBottom: 16 }}
                             >
                                 <MediaCard
                                     item={d}
@@ -216,7 +216,8 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        gap: 12,
         paddingHorizontal: 16,
         paddingTop: 16
     }

@@ -59,6 +59,39 @@ export default {
             res = await env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request));
           }
         }
+
+        // Cache-control headers:
+        // HTML, Service Worker, and Manifest MUST NEVER be cached by edge or browser.
+        // Content-hashed static JS/CSS can be cached immutably.
+        const isHtmlOrSw = 
+          url.pathname === '/' || 
+          url.pathname === '/index.html' || 
+          url.pathname === '/sw.js' || 
+          url.pathname === '/manifest.webmanifest' ||
+          url.pathname === '/version.json';
+
+        if (isHtmlOrSw && res && res.ok) {
+          const newHeaders = new Headers(res.headers);
+          newHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+          newHeaders.set('Pragma', 'no-cache');
+          newHeaders.set('Expires', '0');
+          return new Response(res.body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: newHeaders
+          });
+        }
+
+        if (url.pathname.startsWith('/_expo/static/') && res && res.ok) {
+          const newHeaders = new Headers(res.headers);
+          newHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
+          return new Response(res.body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: newHeaders
+          });
+        }
+
         return res;
       }
       return new Response('Not found', { status: 404 });

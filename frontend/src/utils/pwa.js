@@ -70,20 +70,31 @@ if (isWeb && 'serviceWorker' in navigator) {
 /**
  * Tell the waiting Service Worker to skipWaiting and activate, triggering an app reload.
  */
-export function applyAppUpdate() {
-    if (!isServiceWorkerSupported()) {
-        if (typeof window !== 'undefined') window.location.reload();
-        return;
-    }
-    navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg && reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        } else {
-            window.location.reload();
+export async function applyAppUpdate() {
+    try {
+        if (typeof window !== 'undefined' && 'caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
         }
-    }).catch(() => {
-        window.location.reload();
-    });
+    } catch (_) {}
+
+    if (isServiceWorkerSupported()) {
+        try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+                await reg.update().catch(() => {});
+            }
+        } catch (_) {}
+    }
+
+    if (typeof window !== 'undefined') {
+        const u = new URL(window.location.href);
+        u.searchParams.set('_v', String(Date.now()));
+        window.location.href = u.toString();
+    }
 }
 
 /**

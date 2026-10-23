@@ -381,7 +381,7 @@ export default function BrowseScreen({ route, navigation }) {
                         {items.map((it, idx) => (
                             <View
                                 key={`${it.id || idx}-${idx}`}
-                                style={{ width: `${100 / numCols - 1.5}%`, marginBottom: 18 }}
+                                style={{ width: `calc(${100 / numCols}% - ${(12 * (numCols - 1)) / numCols}px)`, marginBottom: 16 }}
                             >
                                 <MediaCard
                                     item={it}

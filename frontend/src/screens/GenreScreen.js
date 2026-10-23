@@ -170,7 +170,7 @@ export default function GenreScreen({ route, navigation }) {
                         {titles.map((t, idx) => (
                             <View
                                 key={`${t.id || idx}-${idx}`}
-                                style={{ width: `${100 / numCols - 1.5}%`, marginBottom: 18 }}
+                                style={{ width: `calc(${100 / numCols}% - ${(12 * (numCols - 1)) / numCols}px)`, marginBottom: 16 }}
                             >
                                 <MediaCard
                                     item={t}

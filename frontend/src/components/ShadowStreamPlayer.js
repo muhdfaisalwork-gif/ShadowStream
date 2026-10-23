@@ -583,7 +583,7 @@ export default function ShadowStreamPlayer({
 
     const availableLanguageMirrors = useMemo(() => {
         return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => 
-            (m.isDub || m.isSub || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
+            (m.isDub || m.isSub || m.provider === 'multiembed' || m.provider === 'smashystream' || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
             !m.provider?.startsWith('vidlink_') && !m.provider?.startsWith('vidsrc_')
         );
     }, [mirrorList]);
@@ -710,10 +710,10 @@ export default function ShadowStreamPlayer({
         );
         if (subMatch) {
             setSelectedSubtitle(subMatch.language || cleanCode);
-            setDubToast(`📝 Subtitles: ${subMatch.label || langLabel} | Audio: Original English (No studio dub available)`);
+            setDubToast(`💬 Subtitles: ${subMatch.label || langLabel} | 🔊 Audio: Original Studio Soundtrack`);
         } else {
             setSelectedSubtitle(cleanCode);
-            setDubToast(`📝 Subtitles: ${langLabel} | Audio: Original English (No studio dub available)`);
+            setDubToast(`💬 Subtitles: ${langLabel} | 🔊 Audio: Original Studio Soundtrack`);
         }
         setTimeout(() => setDubToast(null), 5000);
         setShowDubMenu(false);
@@ -2061,9 +2061,11 @@ export default function ShadowStreamPlayer({
                             <Text style={styles.pillButtonText}>
                                 {hasSubAndDubMirrors
                                     ? (activeMirrorIdx === dubMirrorIdx ? '🎙️ DUB' : '🇯🇵 SUB')
-                                    : (isDirect && availableAudioTracks.length > 1
-                                        ? `🌐 Audio (${availableAudioTracks.length})`
-                                        : '🌐 Audio')}
+                                    : (availableLanguageMirrors.length > 0
+                                        ? '🎙️ Dubs'
+                                        : (isDirect && availableAudioTracks.length > 1
+                                            ? `🎙️ Audio (${availableAudioTracks.length})`
+                                            : '💬 Subtitles & Audio'))}
                             </Text>
                         </TouchableOpacity>
                         {showDubMenu && (
@@ -2189,9 +2191,9 @@ export default function ShadowStreamPlayer({
                                     )}
 
                                     {/* Universal Regional & Catalog Language Switcher */}
-                                    <Text style={styles.popupMenuSubheader}>📝 Pair Subtitles / Regional Audio</Text>
+                                    <Text style={styles.popupMenuSubheader}>💬 Watch with Subtitles in Your Language</Text>
                                     <Text style={styles.popupMenuHint}>
-                                        Choose your language to pair localized subtitles or switch to available dub servers:
+                                        Pair instant synchronized subtitles in your language. For titles where the studio never recorded an alternate language voice track, original master audio is preserved.
                                     </Text>
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 6, paddingHorizontal: 4 }}>
                                         {GLOBAL_WATCH_LANGUAGES.map((l) => (
