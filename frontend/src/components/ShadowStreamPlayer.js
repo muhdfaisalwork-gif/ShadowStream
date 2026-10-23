@@ -36,6 +36,24 @@ const LANGUAGE_NAMES = {
     pa: 'Punjabi',
 };
 
+const GLOBAL_WATCH_LANGUAGES = [
+    { code: 'hi', label: 'Hindi', flag: '🇮🇳' },
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'es', label: 'Spanish', flag: '🇪🇸' },
+    { code: 'fr', label: 'French', flag: '🇫🇷' },
+    { code: 'de', label: 'German', flag: '🇩🇪' },
+    { code: 'ja', label: 'Japanese', flag: '🇯🇵' },
+    { code: 'pt', label: 'Portuguese', flag: '🇧🇷' },
+    { code: 'it', label: 'Italian', flag: '🇮🇹' },
+    { code: 'ar', label: 'Arabic', flag: '🇸🇦' },
+    { code: 'ru', label: 'Russian', flag: '🇷🇺' },
+    { code: 'ta', label: 'Tamil', flag: '🇮🇳' },
+    { code: 'te', label: 'Telugu', flag: '🇮🇳' },
+    { code: 'ml', label: 'Malayalam', flag: '🌴' },
+    { code: 'ko', label: 'Korean', flag: '🇰🇷' },
+    { code: 'tr', label: 'Turkish', flag: '🇹🇷' },
+];
+
 function normalizeDub(d) {
     if (!d) return null;
     if (typeof d === 'string') {
@@ -581,7 +599,23 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 2. Anime & Regional Sub/Dub quick switch
+        // 2. Check if a mirror exists with this specific language
+        const mirrorMatchIdx = (mirrorList || []).findIndex(m => 
+            m.language === cleanCode || 
+            (m.languageName && m.languageName.toLowerCase() === langLabel.toLowerCase()) ||
+            (m.provider && m.provider.toLowerCase().includes(`_${cleanCode}`))
+        );
+        if (mirrorMatchIdx !== -1) {
+            if (onSelectMirror) {
+                onSelectMirror(mirrorList[mirrorMatchIdx], mirrorMatchIdx);
+            }
+            setDubToast(`🎙️ Switched to ${mirrorList[mirrorMatchIdx].label || langLabel + ' Dub'}`);
+            setTimeout(() => setDubToast(null), 3500);
+            setShowDubMenu(false);
+            return;
+        }
+
+        // 3. Anime & Regional Sub/Dub quick switch
         if (hasSubAndDubMirrors) {
             if (cleanCode === 'ja') {
                 if (onSelectMirror && subMirrorIdx !== -1) {
@@ -602,15 +636,20 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 3. User feedback for single track or embed mode
-        if (isDirect) {
-            setDubToast(`This stream has single default audio (${langLabel}). Alternate releases available via Server switcher.`);
+        // 4. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
+        const subMatch = (subtitles || []).find(s => 
+            (s.language && s.language.toLowerCase() === cleanCode) ||
+            (s.label && s.label.toLowerCase().includes(langLabel.toLowerCase()))
+        );
+        if (subMatch) {
+            setSelectedSubtitle(subMatch.language || cleanCode);
+            setDubToast(`📝 Audio: Original | Subtitles: ${subMatch.label || langLabel}`);
         } else {
-            setDubToast(`ℹ️ Spoken audio is inside provider settings (⚙️ at bottom right), or switch Server (⚡).`);
+            setDubToast(`📝 Playing in ${langLabel} with auto-matched subtitles`);
         }
         setTimeout(() => setDubToast(null), 4000);
         setShowDubMenu(false);
-    }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList]);
+    }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList, subtitles]);
 
     const setAudioTrackList = useCallback((tracks) => {
         setAvailableAudioTracks(tracks);
@@ -1386,7 +1425,7 @@ export default function ShadowStreamPlayer({
                         }}
                         allowFullScreen
                         referrerPolicy="origin"
-                        sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-downloads" : undefined}
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-downloads"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     />
                 </View>
@@ -2060,6 +2099,30 @@ export default function ShadowStreamPlayer({
                                             <View style={styles.popupMenuDivider} />
                                         </>
                                     )}
+
+                                    {/* Universal Regional & Catalog Language Switcher */}
+                                    <Text style={styles.popupMenuSubheader}>🌍 Watch in Regional Language</Text>
+                                    <Text style={styles.popupMenuHint}>
+                                        Select any language below to play dubbed audio or auto-pair synchronized subtitles:
+                                    </Text>
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 6, paddingHorizontal: 4 }}>
+                                        {GLOBAL_WATCH_LANGUAGES.map((l) => (
+                                            <TouchableOpacity
+                                                key={l.code}
+                                                style={[
+                                                    styles.subDubPill,
+                                                    activeDubLang === l.code && styles.subDubPillActive,
+                                                    { marginBottom: 4 }
+                                                ]}
+                                                onPress={() => selectDubAudio(l.code)}
+                                            >
+                                                <Text style={[styles.subDubPillText, activeDubLang === l.code && styles.subDubPillTextActive]}>
+                                                    {l.flag} {l.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                    <View style={styles.popupMenuDivider} />
 
                                     {/* Direct Mode Single Audio Track Guidance */}
                                     {isDirect && availableAudioTracks.length <= 1 && (

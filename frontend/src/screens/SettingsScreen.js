@@ -21,15 +21,21 @@ export default function SettingsScreen({ navigation }) {
 
     const AUDIO_OPTIONS = [
         { code: 'auto', label: 'Auto (Original)' },
-        { code: 'hi', label: '🇮🇳 Hindi Dub' },
-        { code: 'en', label: '🇺🇸 English Dub' },
-        { code: 'ja', label: '🇯🇵 Japanese Sub' },
-        { code: 'es', label: '🇪🇸 Spanish Dub' },
-        { code: 'ta', label: '🇮🇳 Tamil Dub' },
-        { code: 'te', label: '🇮🇳 Telugu Dub' },
-        { code: 'ml', label: '🌴 Malayalam Dub' },
-        { code: 'fr', label: '🇫🇷 French Dub' },
-        { code: 'de', label: '🇩🇪 German Dub' },
+        { code: 'hi', label: '🇮🇳 Hindi' },
+        { code: 'en', label: '🇺🇸 English' },
+        { code: 'es', label: '🇪🇸 Spanish' },
+        { code: 'fr', label: '🇫🇷 French' },
+        { code: 'de', label: '🇩🇪 German' },
+        { code: 'ja', label: '🇯🇵 Japanese' },
+        { code: 'pt', label: '🇧🇷 Portuguese' },
+        { code: 'it', label: '🇮🇹 Italian' },
+        { code: 'ar', label: '🇸🇦 Arabic' },
+        { code: 'ru', label: '🇷🇺 Russian' },
+        { code: 'ta', label: '🇮🇳 Tamil' },
+        { code: 'te', label: '🇮🇳 Telugu' },
+        { code: 'ml', label: '🌴 Malayalam' },
+        { code: 'ko', label: '🇰🇷 Korean' },
+        { code: 'tr', label: '🇹🇷 Turkish' },
     ];
 
     const handleSelectAudioLang = (code) => {

@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
 
-const CURRENT_VERSION = '2.4.8';
-const CURRENT_CODE = 248;
+const CURRENT_VERSION = '2.4.9';
+const CURRENT_CODE = 249;
 
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);

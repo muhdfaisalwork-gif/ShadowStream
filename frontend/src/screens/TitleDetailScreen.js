@@ -39,6 +39,24 @@ const LANGUAGE_NAMES = {
     pa: 'Punjabi',
 };
 
+const REGIONAL_WATCH_LANGS = [
+    { code: 'hi', label: 'Hindi', flag: '🇮🇳' },
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'es', label: 'Spanish', flag: '🇪🇸' },
+    { code: 'fr', label: 'French', flag: '🇫🇷' },
+    { code: 'de', label: 'German', flag: '🇩🇪' },
+    { code: 'ja', label: 'Japanese', flag: '🇯🇵' },
+    { code: 'pt', label: 'Portuguese', flag: '🇧🇷' },
+    { code: 'it', label: 'Italian', flag: '🇮🇹' },
+    { code: 'ar', label: 'Arabic', flag: '🇸🇦' },
+    { code: 'ru', label: 'Russian', flag: '🇷🇺' },
+    { code: 'ta', label: 'Tamil', flag: '🇮🇳' },
+    { code: 'te', label: 'Telugu', flag: '🇮🇳' },
+    { code: 'ml', label: 'Malayalam', flag: '🌴' },
+    { code: 'ko', label: 'Korean', flag: '🇰🇷' },
+    { code: 'tr', label: 'Turkish', flag: '🇹🇷' },
+];
+
 function formatLanguage(l) {
     if (!l) return '';
     if (typeof l === 'string') {
@@ -321,10 +339,7 @@ export default function TitleDetailScreen({ route, navigation }) {
     const availableDubsList = useMemo(() => {
         let raw = item?.audioLanguages || item?.audio_languages || item?.languages || [];
         if (!Array.isArray(raw)) raw = [];
-        const isAnime = item?.type === 'anime' || /anime/i.test(item?.slug || '') || /(naruto|jujutsu|demon-slayer|attack-on-titan|one-piece|solo-leveling|bleach|hero-academia|death-note|dragon-ball)/i.test(item?.slug || item?.title || '');
-        if (isAnime) {
-            raw = Array.from(new Set([...raw, 'hi', 'en', 'ja', 'ta', 'te']));
-        }
+        raw = Array.from(new Set([...raw, 'hi', 'en', 'es', 'fr', 'de', 'ja', 'pt', 'it', 'ar', 'ru', 'ta', 'te', 'ml', 'ko', 'tr']));
         return raw.map(d => {
             const code = typeof d === 'string' ? d.toLowerCase().trim() : (d.code || d.iso || '').toLowerCase().trim();
             const label = LANGUAGE_NAMES[code] || (typeof d === 'string' ? d.toUpperCase() : d.name || code.toUpperCase());
@@ -353,7 +368,7 @@ export default function TitleDetailScreen({ route, navigation }) {
     const downloadable = availList.find(a => a.isDownloadable && (a.playbackUrl || a.playback_url));
     const watchProviders = Array.isArray(item?.watchProviders) ? item.watchProviders : [];
 
-    const playTitleOrEpisode = (ep) => {
+    const playTitleOrEpisode = (ep, targetLang = null) => {
         if (!item) return;
         const now = new Date();
         if (ep && ep.air_date) {
@@ -393,6 +408,7 @@ export default function TitleDetailScreen({ route, navigation }) {
             item,
             season: targetSeason,
             episode: targetEpisode,
+            targetLanguage: targetLang,
         };
         navigation.navigate('Player', payload);
     };
@@ -641,6 +657,25 @@ export default function TitleDetailScreen({ route, navigation }) {
                                     return null;
                                 })()}
                                 {isPlayable && <Text style={[styles.metaChip, styles.metaChipGreen]}>Verified Stream</Text>}
+                            </View>
+
+                            {/* Watch in Your Language Quick Chips */}
+                            <View style={styles.watchInLangContainer}>
+                                <Text style={styles.watchInLangTitle}>🌐 Watch in Your Language</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.watchInLangScroll}>
+                                    {REGIONAL_WATCH_LANGS.map(lang => (
+                                        <TouchableOpacity
+                                            key={lang.code}
+                                            style={styles.watchInLangChip}
+                                            onPress={() => isPlayable && playTitleOrEpisode(null, lang.code)}
+                                            activeOpacity={0.7}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Watch ${item.title} in ${lang.label}`}
+                                        >
+                                            <Text style={styles.watchInLangChipText}>{lang.flag} {lang.label}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
                             </View>
 
                             {/* CTAs */}
@@ -1417,6 +1452,38 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 9,
         borderRadius: 6
+    },
+    watchInLangContainer: {
+        marginTop: 12,
+        marginBottom: 8,
+    },
+    watchInLangTitle: {
+        color: COLORS.textSecondary,
+        fontSize: 12,
+        fontWeight: '700',
+        marginBottom: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    watchInLangScroll: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    watchInLangChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    watchInLangChipText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '600',
     },
     trailerBtnIcon: { fontSize: 13, marginRight: 6 },
     trailerBtnText: { color: '#FCA5A5', fontSize: 12, fontWeight: '700' },

@@ -270,6 +270,33 @@ export function installAdShield() {
         beforeUnloadAttached = true;
     }
 
+    // 5. Guard programmatic window.location assignment against hostile ad redirects
+    if (typeof window !== 'undefined' && window.location) {
+        try {
+            const loc = window.location;
+            if (typeof loc.assign === 'function') {
+                const origAssign = loc.assign.bind(loc);
+                loc.assign = function guardedAssign(url) {
+                    if (noAdsActive && !isAllowed(url)) {
+                        recordBlocked(url, 'location.assign redirect');
+                        return;
+                    }
+                    return origAssign(url);
+                };
+            }
+            if (typeof loc.replace === 'function') {
+                const origReplace = loc.replace.bind(loc);
+                loc.replace = function guardedReplace(url) {
+                    if (noAdsActive && !isAllowed(url)) {
+                        recordBlocked(url, 'location.replace redirect');
+                        return;
+                    }
+                    return origReplace(url);
+                };
+            }
+        } catch (_) {}
+    }
+
     return uninstallAdShield;
 }
 

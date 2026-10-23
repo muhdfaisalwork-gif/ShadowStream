@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.8",
-    versionCode: 248,
+    version: "2.4.9",
+    versionCode: 249,
     minVersion: "1.0.0",
     name: "ShadowStream",
-    releaseDate: "2026-10-21",
+    releaseDate: "2026-10-23",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Full-spectrum multi-language dubbing engine, AnimeSalt regional dubs (Hindi, Tamil, Telugu, Malayalam), and smart audio preferences.",
+    releaseNotes: "Hardened Triple-Lock AdShield, zero-ad embed protection, native Android ad network blocking, and catalog-wide multi-language dubbing across all movies, TV shows, and anime.",
 };
 
 
@@ -2013,20 +2013,71 @@ export default {
                     }
                 }
 
-                // 2. High-speed global embed mirrors
+                const GLOBAL_CATALOG_LANGUAGES = [
+                    { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+                    { code: 'en', name: 'English', flag: '🇺🇸' },
+                    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+                    { code: 'fr', name: 'French', flag: '🇫🇷' },
+                    { code: 'de', name: 'German', flag: '🇩🇪' },
+                    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+                    { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
+                    { code: 'it', name: 'Italian', flag: '🇮🇹' },
+                    { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+                    { code: 'ta', name: 'Tamil', flag: '🇮🇳' },
+                    { code: 'te', name: 'Telugu', flag: '🇮🇳' },
+                    { code: 'ml', name: 'Malayalam', flag: '🌴' },
+                    { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+                    { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
+                ];
+
+                const requestedLangInfo = GLOBAL_CATALOG_LANGUAGES.find(l => l.code === langParam);
+                if (requestedLangInfo) {
+                    streams.push({
+                        label: `${requestedLangInfo.flag} ${requestedLangInfo.name} Stream (HD)`,
+                        provider: `vidlink_${requestedLangInfo.code}`,
+                        url: `https://vidlink.pro/${tvVidLink}?lang=${requestedLangInfo.code}&multiLang=true`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: requestedLangInfo.code,
+                        languageName: requestedLangInfo.name,
+                        isDub: true,
+                        flag: requestedLangInfo.flag
+                    });
+                }
+
+                // 2. High-speed global embed mirrors with multi-language & regional capability
                 streams.push({
-                    label: "⚡ Vidlink (Ad-Free HD)",
+                    label: "⚡ Vidlink (Ad-Free HD Multi-Audio)",
                     provider: "vidlink",
-                    url: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
+                    url: `https://vidlink.pro/${tvVidLink}?multiLang=true${langParam ? `&lang=${langParam}` : ''}`,
                     format: "embed",
                     quality: "1080p",
                     language: langParam || "en",
-                    languageName: "English"
+                    languageName: requestedLangInfo ? requestedLangInfo.name : "English"
+                });
+                streams.push({
+                    label: "⚡ SmashyStream Multi-Lang (HD)",
+                    provider: "smashystream",
+                    url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
+                    format: "embed",
+                    quality: "1080p",
+                    language: "multi",
+                    languageName: "Multi-Language"
+                });
+                streams.push({
+                    label: "⚡ Multiembed Regional (Multi-Server)",
+                    provider: "multiembed",
+                    url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+                    format: "embed",
+                    quality: "HD",
+                    language: "multi",
+                    languageName: "Multi-Language"
                 });
                 streams.push({
                     label: "⚡ VidSrc HD",
                     provider: "vidsrc",
-                    url: `https://vidsrc.to/embed/${tvVidSrc}${langSuffix}`,
+                    url: `https://vidsrc.to/embed/${tvVidSrc}`,
                     format: "embed",
                     quality: "1080p",
                     language: "en",
@@ -2035,15 +2086,25 @@ export default {
                 streams.push({
                     label: "⚡ 2Embed Multi-Server",
                     provider: "2embed",
-                    url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langSuffix}`,
+                    url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langParam ? `&lang=${langParam}` : ''}`,
                     format: "embed",
                     quality: "HD",
                     language: "en",
                     languageName: "English"
                 });
 
-                // Unique available languages list for UI badges and switcher
+                // Complete catalog-wide available languages list for UI badges and switcher
                 const availableLanguagesMap = new Map<string, any>();
+                GLOBAL_CATALOG_LANGUAGES.forEach(gl => {
+                    const existing = streams.find(s => s.language === gl.code);
+                    availableLanguagesMap.set(gl.code, {
+                        code: gl.code,
+                        name: gl.name,
+                        flag: gl.flag,
+                        dub: existing ? Boolean(existing.isDub) : true,
+                        sub: true
+                    });
+                });
                 streams.forEach(s => {
                     if (s.language && !availableLanguagesMap.has(s.language)) {
                         availableLanguagesMap.set(s.language, {

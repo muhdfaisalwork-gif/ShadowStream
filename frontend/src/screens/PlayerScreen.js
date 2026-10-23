@@ -75,7 +75,7 @@ export function resolveCanonicalSeasonAndEpisode(seasonsList, reqSeason, reqEpis
 }
 
 export default function PlayerScreen({ route, navigation }) {
-    const { item: rawItem, slug: routeSlug, season: routeSeason, episode: routeEpisode } = route.params || {};
+    const { item: rawItem, slug: routeSlug, season: routeSeason, episode: routeEpisode, targetLanguage: routeTargetLang } = route.params || {};
     const initialItem = (rawItem && typeof rawItem === 'object') ? rawItem : null;
     const [item, setItem] = useState(initialItem);
     const slug = routeSlug || initialItem?.slug || (initialItem?.id ? String(initialItem.id) : null);
@@ -380,12 +380,15 @@ export default function PlayerScreen({ route, navigation }) {
             const effectiveTmdb = item.tmdbId || item.tmdb_id || (typeof item.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
             const effectiveImdb = item.imdbId || item.imdb_id;
 
-            // Fetch worker-side multi-language & regional dub streams (AnimeSalt, etc.)
+            // Fetch worker-side multi-language & regional dub streams (SmashyStream, Vidlink, AnimeSalt, etc.)
             let workerMultiLangStreams = [];
             try {
                 const titleStr = encodeURIComponent(item.title || item.name || '');
                 const slugStr = encodeURIComponent(item.slug || '');
-                const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${effectiveTmdb || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}`;
+                const preferredLang = AudioPreferencesAPI.getPreferred();
+                const activeLang = routeTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
+                const langQuery = activeLang ? `&lang=${encodeURIComponent(activeLang)}` : '';
+                const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${effectiveTmdb || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}${langQuery}`;
                 const wRes = await fetch(wUrl);
                 if (wRes.ok) {
                     const wData = await wRes.json();
@@ -480,10 +483,15 @@ export default function PlayerScreen({ route, navigation }) {
                         : 'Playing via the provider’s own player — no direct stream was available to decode.'
                 );
                 const preferredLang = AudioPreferencesAPI.getPreferred();
+                const wantedLang = routeTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
                 let chosenMirror = playable;
                 let chosenIdx = Math.max(0, resolved.indexOf(playable));
-                if (preferredLang && preferredLang !== 'auto') {
-                    const matchIdx = resolved.findIndex(m => m.language === preferredLang || (m.provider && m.provider.includes(preferredLang)));
+                if (wantedLang) {
+                    const matchIdx = resolved.findIndex(m => 
+                        m.language === wantedLang || 
+                        (m.provider && m.provider.toLowerCase().includes(`_${wantedLang}`)) ||
+                        (m.provider && m.provider.toLowerCase().includes(wantedLang))
+                    );
                     if (matchIdx !== -1) {
                         chosenMirror = resolved[matchIdx];
                         chosenIdx = matchIdx;

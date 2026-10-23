@@ -1,10 +1,10 @@
 {
-  "version": "2.4.8",
-  "versionCode": 248,
+  "version": "2.4.9",
+  "versionCode": 249,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-22",
+  "releaseDate": "2026-10-23",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Full-spectrum multi-language dubbing engine, AnimeSalt regional dubs (Hindi, Tamil, Telugu, Malayalam), and smart audio preferences."
+  "releaseNotes": "Hardened Triple-Lock AdShield, zero-ad embed protection, native Android ad network blocking, and catalog-wide multi-language dubbing across all movies, TV shows, and anime."
 }

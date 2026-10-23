@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 248
-VERSION_NAME = "2.4.8"
+VERSION_CODE = 249
+VERSION_NAME = "2.4.9"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -147,11 +147,39 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity {{
+
+    private static final String[] AD_DOMAINS = new String[] {{
+        "sodlessteargas.com", "adsterra.com", "popads.net", "popcash.net",
+        "monetag.com", "propellerads.com", "exoclick.com", "bet365.com",
+        "1xbet.com", "trafficjunky.com", "hilltopads.com", "clickadu.com",
+        "yllix.com", "adcash.com", "pubfuture.com", "richaudience.com",
+        "vdo.ai", "infolinks.com", "onclicktop.com", "poppush.com",
+        "ad-maven.com", "admaven.com", "juicyads.com", "clicksor.com",
+        "zergnet.com", "outbrain.com", "taboola.com", "mgid.com",
+        "revcontent.com", "doubleclick.net", "adnxs.com", "criteo.com",
+        "scorecardresearch.com", "quantserve.com", "googlesyndication.com",
+        "adservice.google.com", "googleadservices.com", "adcolony.com"
+    }};
+
+    private static boolean isAdOrTracker(Uri uri) {{
+        if (uri == null) return false;
+        String host = uri.getHost();
+        if (host == null) return false;
+        host = host.toLowerCase();
+        for (String adDomain : AD_DOMAINS) {{
+            if (host.equals(adDomain) || host.endsWith("." + adDomain)) {{
+                return true;
+            }}
+        }}
+        return false;
+    }}
+
 
     private static final String DOMAIN = "ssmoviestvs.site";
     private static final String HOME_URL = "https://" + DOMAIN + "/";
@@ -225,12 +253,12 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.8";
+            return "2.4.9";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 248;
+            return 249;
         }}
 
         @JavascriptInterface
@@ -342,6 +370,9 @@ public class MainActivity extends Activity {{
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {{
                 if (req == null || req.getUrl() == null) return false;
+                if (isAdOrTracker(req.getUrl())) {{
+                    return true;
+                }}
                 // Only intercept main frame navigation; let embed video players run inside iframes!
                 if (!req.isForMainFrame()) {{
                     return false;
@@ -351,6 +382,11 @@ public class MainActivity extends Activity {{
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {{
+                if (req != null && req.getUrl() != null) {{
+                    if (isAdOrTracker(req.getUrl())) {{
+                        return new WebResourceResponse("text/plain", "UTF-8", 200, "OK", null, new ByteArrayInputStream(new byte[0]));
+                    }}
+                }}
                 return interceptLocalAsset(req);
             }}
 
