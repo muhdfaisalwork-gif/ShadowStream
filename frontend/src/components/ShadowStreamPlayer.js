@@ -123,6 +123,7 @@ export default function ShadowStreamPlayer({
     posterUrl = null,
     renditions = [],
     onSelectRendition,
+    targetLanguage = null,
 }) {
     const { width, height } = useWindowDimensions();
     const isMobile = width < 768;
@@ -188,6 +189,28 @@ export default function ShadowStreamPlayer({
     const [fullscreenNote, setFullscreenNote] = useState(null);
     const [activeDubLang, setActiveDubLang] = useState('native'); // 'native' | lang code like 'hi', 'en', 'ar'
     const [dubToast, setDubToast] = useState(null);
+
+    // Auto-apply targetLanguage on initial load
+    const hasAppliedTargetLangRef = useRef(false);
+    useEffect(() => {
+        if (!targetLanguage || targetLanguage === 'auto' || hasAppliedTargetLangRef.current) return;
+        hasAppliedTargetLangRef.current = true;
+        const cleanLang = String(targetLanguage).toLowerCase().trim();
+        setActiveDubLang(cleanLang);
+
+        if (cleanLang === 'en') return;
+
+        // Check if current stream is already a verified dub:
+        const currentMirror = mirrorList && mirrorList[activeMirrorIdx];
+        const isDubMirror = currentMirror && (currentMirror.isDub || currentMirror.provider?.includes('animesalt'));
+
+        if (!isDubMirror) {
+            setSelectedSubtitle(cleanLang);
+            const langLabel = LANGUAGE_NAMES[cleanLang] || cleanLang.toUpperCase();
+            setDubToast(`ℹ️ Audio: Original English | Subtitles: ${langLabel} (Studio dub not yet released)`);
+            setTimeout(() => setDubToast(null), 5000);
+        }
+    }, [targetLanguage, mirrorList, activeMirrorIdx]);
 
     // No Ads & 3rd-Party Link Blocker State
     const [noAdsEnabled, setNoAdsEnabled] = useState(isNoAdsActive());
@@ -559,7 +582,10 @@ export default function ShadowStreamPlayer({
     const hasSubAndDubMirrors = subMirrorIdx !== -1 && dubMirrorIdx !== -1;
 
     const availableLanguageMirrors = useMemo(() => {
-        return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => m.language || m.languageName || (m.label && (m.label.includes('Dub') || m.label.includes('Sub'))));
+        return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => 
+            (m.isDub || m.isSub || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
+            !m.provider?.startsWith('vidlink_') && !m.provider?.startsWith('vidsrc_')
+        );
     }, [mirrorList]);
 
     const activeLanguageMirror = useMemo(() => {
@@ -611,11 +637,14 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 2. Check if a mirror exists with this specific language
+        // 2. Check if a mirror exists with this specific language (real dub/regional only)
         const mirrorMatchIdx = (mirrorList || []).findIndex(m => 
-            m.language === cleanCode || 
-            (m.languageName && m.languageName.toLowerCase() === langLabel.toLowerCase()) ||
-            (m.provider && m.provider.toLowerCase().includes(`_${cleanCode}`))
+            (m.isDub || (m.provider && (m.provider.includes('animesalt') || m.provider.includes('multiembed')))) &&
+            (
+                m.language === cleanCode || 
+                (m.languageName && m.languageName.toLowerCase() === langLabel.toLowerCase()) ||
+                (m.provider && m.provider.toLowerCase().includes(`_${cleanCode}`))
+            )
         );
         if (mirrorMatchIdx !== -1) {
             if (onSelectMirror) {
@@ -648,7 +677,19 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 4. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
+        // 4. Multiembed Alternate Server: If user picked Hindi/regional and Multiembed is available, switch to it
+        const multiembedIdx = (mirrorList || []).findIndex(m => m.provider === 'multiembed' || (m.label && m.label.toLowerCase().includes('multiembed')));
+        if (cleanCode === 'hi' && multiembedIdx !== -1 && activeMirrorIdx !== multiembedIdx) {
+            if (onSelectMirror) {
+                onSelectMirror(mirrorList[multiembedIdx], multiembedIdx);
+            }
+            setDubToast(`⚡ Switched to Multiembed (Check Hindi Dub server inside player)`);
+            setTimeout(() => setDubToast(null), 4000);
+            setShowDubMenu(false);
+            return;
+        }
+
+        // 5. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
         const subMatch = (subtitles || []).find(s => 
             (s.language && s.language.toLowerCase() === cleanCode) ||
             (s.label && s.label.toLowerCase().includes(langLabel.toLowerCase()))
@@ -657,11 +698,12 @@ export default function ShadowStreamPlayer({
             setSelectedSubtitle(subMatch.language || cleanCode);
             setDubToast(`📝 Audio: Original | Subtitles: ${subMatch.label || langLabel}`);
         } else {
-            setDubToast(`📝 Playing in ${langLabel} with auto-matched subtitles`);
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`ℹ️ Audio: Original English | Subtitles: ${langLabel} (Studio dub not yet released)`);
         }
-        setTimeout(() => setDubToast(null), 4000);
+        setTimeout(() => setDubToast(null), 4500);
         setShowDubMenu(false);
-    }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList, subtitles]);
+    }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList, subtitles, activeMirrorIdx]);
 
     const setAudioTrackList = useCallback((tracks) => {
         setAvailableAudioTracks(tracks);
@@ -2013,7 +2055,9 @@ export default function ShadowStreamPlayer({
                                                 ? (activeMirrorIdx === dubMirrorIdx ? '🎙️ English Dubbed Audio' : '🇯🇵 Original Japanese (Subtitled)')
                                                 : (isDirect && availableAudioTracks.length > 1
                                                     ? (availableAudioTracks[activeAudioIdx]?.label || 'Original Audio')
-                                                    : `Default Stream (${sourceName || 'Provider'})`)}
+                                                    : (activeDubLang && activeDubLang !== 'native' && activeDubLang !== 'en'
+                                                        ? `Original Audio (Subtitles: ${(LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase()})`
+                                                        : `Default Stream (${sourceName || 'Provider'})`))}
                                         </Text>
                                     </View>
 
@@ -2156,18 +2200,18 @@ export default function ShadowStreamPlayer({
                                     {/* Provider Embed Stream Notice & Guide */}
                                     {!isDirect && (
                                         <View style={styles.embedAudioInfoBox}>
-                                            <Text style={styles.embedAudioInfoTitle}>🎛️ Provider Audio Controls</Text>
+                                            <Text style={styles.embedAudioInfoTitle}>🎛️ Provider Audio & Subtitle Controls</Text>
                                             <Text style={styles.embedAudioInfoText}>
                                                 Loaded via {sourceName || 'external server'}. The provider stream includes embedded audio settings inside its player.
                                             </Text>
                                             <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚙️ In-Player Settings:</Text> Click the ⚙️ Gear icon in the bottom-right corner of the video player to switch audio languages and subtitles.
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚙️ In-Player Settings:</Text> Click the ⚙️ Gear icon or 💬/CC icon in the bottom-right corner of the video player to switch audio languages and subtitles.
                                             </Text>
                                             <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚡ Server Switcher:</Text> Tap ⚡ Server in the top bar to try other servers that may offer localized releases.
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚡ Regional Dub Servers:</Text> Switch to Multiembed using the ⚡ Server menu to access alternate servers (including Hindi Dub server for supported titles).
                                             </Text>
                                             <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⏏️ External Players:</Text> Tap ⬇ Download → Copy Stream Link to play in VLC or MX Player with full multi-audio channel control.
+                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>ℹ️ Studio Dubs:</Text> For movies without an official studio audio dub (like 2026 unreleased titles), audio plays in original English with localized subtitles.
                                             </Text>
                                         </View>
                                     )}

@@ -97,6 +97,8 @@ export default function PlayerScreen({ route, navigation }) {
         }
     }, []);
 
+    const effectiveTargetLang = routeTargetLang || (webQuery.get ? (webQuery.get('targetLanguage') || webQuery.get('lang')) : null);
+
     const initialSeason = routeSeason != null ? routeSeason : (webQuery.get ? webQuery.get('season') : null);
     const initialEpisode = routeEpisode != null ? routeEpisode : (webQuery.get ? webQuery.get('episode') : null);
 
@@ -402,7 +404,7 @@ export default function PlayerScreen({ route, navigation }) {
                 const titleStr = encodeURIComponent(item.title || item.name || '');
                 const slugStr = encodeURIComponent(item.slug || '');
                 const preferredLang = AudioPreferencesAPI.getPreferred();
-                const activeLang = routeTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
+                const activeLang = effectiveTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
                 const langQuery = activeLang ? `&lang=${encodeURIComponent(activeLang)}` : '';
                 const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${effectiveTmdb || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}${langQuery}`;
                 const wRes = await fetch(wUrl);
@@ -499,14 +501,15 @@ export default function PlayerScreen({ route, navigation }) {
                         : 'Playing via the provider’s own player — no direct stream was available to decode.'
                 );
                 const preferredLang = AudioPreferencesAPI.getPreferred();
-                const wantedLang = routeTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
+                const wantedLang = effectiveTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
                 let chosenMirror = playable;
                 let chosenIdx = Math.max(0, resolved.indexOf(playable));
                 if (wantedLang) {
+                    // Match a mirror if it actually provides a dub for wantedLang (e.g. anime dub or regional server)
                     const matchIdx = resolved.findIndex(m => 
-                        m.language === wantedLang || 
-                        (m.provider && m.provider.toLowerCase().includes(`_${wantedLang}`)) ||
-                        (m.provider && m.provider.toLowerCase().includes(wantedLang))
+                        (m.isDub && m.language === wantedLang) ||
+                        (m.language === wantedLang && m.provider && m.provider.includes('animesalt')) ||
+                        (wantedLang === 'hi' && m.provider === 'multiembed')
                     );
                     if (matchIdx !== -1) {
                         chosenMirror = resolved[matchIdx];
@@ -675,6 +678,7 @@ export default function PlayerScreen({ route, navigation }) {
                     mediaId={item?.id || item?.slug}
                     renditions={renditions}
                     notice={resolveNote}
+                    targetLanguage={effectiveTargetLang || (AudioPreferencesAPI.getPreferred() !== 'auto' ? AudioPreferencesAPI.getPreferred() : null)}
                 />
             </SafeAreaView>
         );

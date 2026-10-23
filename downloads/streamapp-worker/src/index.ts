@@ -1078,8 +1078,8 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
                 sourceIsLegal: false,
                 kind: "embed",
                 status: "available",
-                url: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
-                playbackUrl: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
+                url: `https://vidlink.pro/${tvVidLink}`,
+                playbackUrl: `https://vidlink.pro/${tvVidLink}`,
             });
             list.push({
                 source: "vidlink_dub",
@@ -1087,8 +1087,8 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
                 sourceIsLegal: false,
                 kind: "embed",
                 status: "available",
-                url: `https://vidlink.pro/${tvVidLink}?fallback=true${langSuffix}`,
-                playbackUrl: `https://vidlink.pro/${tvVidLink}?fallback=true${langSuffix}`,
+                url: `https://vidlink.pro/${tvVidLink}?fallback=true`,
+                playbackUrl: `https://vidlink.pro/${tvVidLink}?fallback=true`,
             });
         } else {
             // 1. Vidlink Pro (Ad-Free HD Server) - Primary Default
@@ -1098,34 +1098,53 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
                 sourceIsLegal: false,
                 kind: "embed",
                 status: "available",
-                url: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
-                playbackUrl: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
+                url: `https://vidlink.pro/${tvVidLink}`,
+                playbackUrl: `https://vidlink.pro/${tvVidLink}`,
             });
         }
 
-        // 2. VidSrc HD Server
-        // NOTE: EmbedSu was mirror #2 until 2026-09-28, when embed.su stopped
-        // resolving in DNS. It was removed here because shipping a mirror that
-        // cannot resolve is a broken server in the user's face.
+        // 2. Multiembed Regional (Multi-Server & Dubs)
+        list.push({
+            source: "multiembed",
+            sourceName: "Multiembed (Multi-Server & Dubs)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+            playbackUrl: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+        });
+
+        // 3. SmashyStream Multi-Lang (HD)
+        list.push({
+            source: "smashystream",
+            sourceName: "SmashyStream Multi-Lang (HD)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
+            playbackUrl: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
+        });
+
+        // 4. VidSrc HD Server
         list.push({
             source: "vidsrc",
             sourceName: "VidSrc HD",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: `https://vidsrc.to/embed/${tvVidSrc}${langSuffix}`,
-            playbackUrl: `https://vidsrc.to/embed/${tvVidSrc}${langSuffix}`,
+            url: `https://vidsrc.to/embed/${tvVidSrc}`,
+            playbackUrl: `https://vidsrc.to/embed/${tvVidSrc}`,
         });
 
-        // 3. 2Embed Multi-Server
+        // 5. 2Embed Multi-Server
         list.push({
             source: "2embed",
             sourceName: "2Embed Multi-Server",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langSuffix}`,
-            playbackUrl: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langSuffix}`,
+            url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
+            playbackUrl: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
         });
     }
 
@@ -2036,31 +2055,30 @@ export default {
                     { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
                 ];
 
-                const requestedLangInfo = GLOBAL_CATALOG_LANGUAGES.find(l => l.code === langParam);
-                if (requestedLangInfo) {
-                    streams.push({
-                        label: `${requestedLangInfo.flag} ${requestedLangInfo.name} Stream (HD)`,
-                        provider: `vidlink_${requestedLangInfo.code}`,
-                        url: `https://vidlink.pro/${tvVidLink}?lang=${requestedLangInfo.code}&multiLang=true`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: requestedLangInfo.code,
-                        languageName: requestedLangInfo.name,
-                        isDub: true,
-                        flag: requestedLangInfo.flag
-                    });
-                }
-
-                // 2. High-speed global embed mirrors with multi-language & regional capability
+                // 1. Vidlink (Ad-Free 1080p HD Server) - Primary Default
                 streams.push({
-                    label: "⚡ Vidlink (Ad-Free HD Multi-Audio)",
+                    label: "⚡ Vidlink (Ad-Free 1080p HD)",
                     provider: "vidlink",
-                    url: `https://vidlink.pro/${tvVidLink}?multiLang=true${langParam ? `&lang=${langParam}` : ''}`,
+                    url: `https://vidlink.pro/${tvVidLink}`,
                     format: "embed",
                     quality: "1080p",
-                    language: langParam || "en",
-                    languageName: requestedLangInfo ? requestedLangInfo.name : "English"
+                    language: "en",
+                    languageName: "English"
                 });
+
+                // 2. Multiembed Regional (Multi-Server & Dubs) - provides alternate servers including Hindi Dub server
+                const isHindiReq = langParam === 'hi';
+                streams.push({
+                    label: isHindiReq ? "⚡ Multiembed (Hindi Dub & Multi-Server)" : "⚡ Multiembed (Multi-Server & Regional Dubs)",
+                    provider: "multiembed",
+                    url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+                    format: "embed",
+                    quality: "HD",
+                    language: isHindiReq ? "hi" : "multi",
+                    languageName: isHindiReq ? "Hindi / Multi" : "Multi-Language"
+                });
+
+                // 3. SmashyStream Multi-Lang (HD)
                 streams.push({
                     label: "⚡ SmashyStream Multi-Lang (HD)",
                     provider: "smashystream",
@@ -2070,15 +2088,8 @@ export default {
                     language: "multi",
                     languageName: "Multi-Language"
                 });
-                streams.push({
-                    label: "⚡ Multiembed Regional (Multi-Server)",
-                    provider: "multiembed",
-                    url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
-                    format: "embed",
-                    quality: "HD",
-                    language: "multi",
-                    languageName: "Multi-Language"
-                });
+
+                // 4. VidSrc HD
                 streams.push({
                     label: "⚡ VidSrc HD",
                     provider: "vidsrc",
@@ -2088,53 +2099,28 @@ export default {
                     language: "en",
                     languageName: "English"
                 });
+
+                // 5. 2Embed Multi-Server
                 streams.push({
                     label: "⚡ 2Embed Multi-Server",
                     provider: "2embed",
-                    url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langParam ? `&lang=${langParam}` : ''}`,
+                    url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
                     format: "embed",
                     quality: "HD",
                     language: "en",
                     languageName: "English"
                 });
 
-                const TOP_REGIONAL_DUB_LANGS = [
-                    { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-                    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-                    { code: 'fr', name: 'French', flag: '🇫🇷' },
-                    { code: 'de', name: 'German', flag: '🇩🇪' },
-                    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-                    { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-                    { code: 'it', name: 'Italian', flag: '🇮🇹' },
-                    { code: 'ta', name: 'Tamil', flag: '🇮🇳' },
-                    { code: 'te', name: 'Telugu', flag: '🇮🇳' },
-                ];
-                for (const reg of TOP_REGIONAL_DUB_LANGS) {
-                    if (reg.code !== langParam && !streams.some(s => s.language === reg.code)) {
-                        streams.push({
-                            label: `${reg.flag} ${reg.name} Audio / Dub (HD)`,
-                            provider: `vidlink_${reg.code}`,
-                            url: `https://vidlink.pro/${tvVidLink}?lang=${reg.code}&multiLang=true`,
-                            format: "embed",
-                            quality: "1080p",
-                            language: reg.code,
-                            languageName: reg.name,
-                            isDub: true,
-                            flag: reg.flag
-                        });
-                    }
-                }
-
-                // Complete catalog-wide available languages list for UI badges and switcher
+                // Available languages list for UI badges and switcher
                 const availableLanguagesMap = new Map<string, any>();
                 GLOBAL_CATALOG_LANGUAGES.forEach(gl => {
-                    const existing = streams.find(s => s.language === gl.code);
+                    const existingDub = streams.some(s => s.language === gl.code && s.isDub);
+                    const isDefaultAudio = gl.code === 'en';
                     availableLanguagesMap.set(gl.code, {
                         code: gl.code,
                         name: gl.name,
                         flag: gl.flag,
-                        dub: existing ? Boolean(existing.isDub) : true,
+                        dub: Boolean(existingDub || isDefaultAudio),
                         sub: true
                     });
                 });
