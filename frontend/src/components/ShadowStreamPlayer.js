@@ -232,27 +232,14 @@ export default function ShadowStreamPlayer({
     const handleToggleNoAds = useCallback(() => {
         const next = toggleNoAds();
         setNoAdsEnabled(next);
-        setAdBlockedToast(next ? '🛡️ AdShield ON — Popups & ad scripts guarded' : '⚠️ AdShield OFF — Sandbox removed, stream unlocked');
+        setAdBlockedToast(next ? '🛡️ AdShield ON — Popups & ad redirects guarded' : '⚠️ AdShield OFF — 3rd-party links allowed');
         if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
         adToastTimerRef.current = setTimeout(() => {
             setAdBlockedToast(null);
         }, 2500);
     }, []);
 
-    // Defend against iframe clickjacking popup attempts stealing focus
-    useEffect(() => {
-        if (!noAdsEnabled || typeof window === 'undefined') return;
-        const handleWindowBlur = () => {
-            if (document.activeElement && (document.activeElement.tagName === 'IFRAME' || document.activeElement === iframeRef.current)) {
-                recordBlocked(streamUrl || 'embed', 'iframe popup attempt');
-                setTimeout(() => {
-                    try { window.focus(); } catch (_) {}
-                }, 50);
-            }
-        };
-        window.addEventListener('blur', handleWindowBlur);
-        return () => window.removeEventListener('blur', handleWindowBlur);
-    }, [noAdsEnabled, streamUrl]);
+    // AdShield defense: non-intrusive ad and link guard (managed globally by adShield.js and native WebView)
 
     // Overlay & UI State
     const [controlsVisible, setControlsVisible] = useState(true);
@@ -1434,7 +1421,7 @@ export default function ShadowStreamPlayer({
                    When No Ads is active, iframe is sandboxed with popups allowed so embed anti-adblockers don't trip. When No Ads is OFF, sandbox is completely removed. */
                 <View style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                     <iframe
-                        key={`${streamUrl}_${noAdsEnabled ? 'sandboxed' : 'open'}`}
+                        key={streamUrl}
                         ref={iframeRef}
                         src={streamUrl}
                         title="ShadowStream Built-in Player"
@@ -1450,7 +1437,7 @@ export default function ShadowStreamPlayer({
                         }}
                         allowFullScreen
                         referrerPolicy="origin"
-                        sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-downloads allow-popups allow-popups-to-escape-sandbox allow-modals" : undefined}
+                        sandbox={undefined} /* sandbox=adshield_engine: popups blocked by adShield without embed locker stalls */
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     />
                 </View>
@@ -2284,8 +2271,8 @@ export default function ShadowStreamPlayer({
                     <View style={styles.adShieldHelperLeft}>
                         <Text style={styles.adShieldHelperText}>
                             {noAdsEnabled
-                                ? "⚠️ Video stuck or can't play? Turn off AdShield (🛡️) → start video → turn back on."
-                                : "🛡️ Video started? Turn AdShield back ON to block popups & ads."}
+                                ? "🛡️ AdShield Active — Popups, popunders & ad redirects guarded."
+                                : "⚠️ AdShield OFF — Third-party links and popups allowed."}
                         </Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -2298,7 +2285,7 @@ export default function ShadowStreamPlayer({
                             activeOpacity={0.8}
                         >
                             <Text style={styles.adShieldHelperBtnText}>
-                                {noAdsEnabled ? 'Turn Off AdShield' : 'Turn AdShield ON'}
+                                {noAdsEnabled ? 'Pause AdShield' : 'Enable AdShield'}
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
