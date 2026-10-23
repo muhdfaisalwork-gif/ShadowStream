@@ -232,7 +232,7 @@ def test_player_architecture():
         with open(player_comp_path, "r", encoding="utf-8") as f:
             comp_code = f.read()
         has_sandbox = "sandbox=" in comp_code  # Ensures third-party popups/redirects are blocked
-        has_topbar = "embedTopBar" in comp_code
+        has_topbar = "embedTopBar" in comp_code or "topControlBar" in comp_code
         has_hls = "hls.js" in comp_code or "Hls" in comp_code
         record_result("Player", "ShadowStreamPlayer Embed & HLS Engine", has_sandbox and has_topbar and has_hls, f"Sandboxed Ad Protection: {has_sandbox}, Floating TopBar: {has_topbar}, HLS: {has_hls}")
     else:

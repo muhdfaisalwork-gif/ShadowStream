@@ -1,10 +1,10 @@
 {
-  "version": "2.4.9",
-  "versionCode": 249,
+  "version": "2.4.10",
+  "versionCode": 250,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-23",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Hardened Triple-Lock AdShield, zero-ad embed protection, native Android ad network blocking, and catalog-wide multi-language dubbing across all movies, TV shows, and anime."
+  "releaseNotes": "Resolved embed player sandbox blocker detection across all mirrors and dub servers (Vidlink, Multiembed, Hindi Dub), reactive AdShield bypass remount, and seamless cross-platform ad protection."
 }
