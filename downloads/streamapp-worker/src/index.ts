@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.7",
-    versionCode: 247,
+    version: "2.4.8",
+    versionCode: 248,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-21",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Enhanced mobile download modal, 1DM & Torrent downloader integration, drilldown controls, and magnet protocol support.",
+    releaseNotes: "Full-spectrum multi-language dubbing engine, AnimeSalt regional dubs (Hindi, Tamil, Telugu, Malayalam), and smart audio preferences.",
 };
 
 
@@ -275,6 +275,81 @@ async function loadProviderRegistry(env: Env) {
         // fall through to compiled defaults
     }
     return DEFAULT_PROVIDERS;
+}
+
+
+// =========================================================================
+// Multi-Language Regional & Anime Dubbing Resolver (AnimeSalt & Multi-Audio)
+// =========================================================================
+function slugifyAnime(text: string): string {
+    return text
+        .toString()
+        .toLowerCase()
+        .replace(/:s*/g, '-')
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+}
+
+const ANIME_ALIASES: Record<string, string> = {
+    'demon-slayer-kimetsu-no-yaiba': 'demon-slayer',
+    'shingeki-no-kyojin': 'attack-on-titan',
+    'boku-no-hero-academia': 'my-hero-academia',
+    'jujutsu-kaisen-tv': 'jujutsu-kaisen',
+    'chainsaw-man-tv': 'chainsaw-man',
+};
+
+async function resolveAnimeSalt(title: string, season = 1, episode = 1): Promise<Array<{ language: string; link: string }> | null> {
+    if (!title) return null;
+    let slug = slugifyAnime(title);
+    if (ANIME_ALIASES[slug]) slug = ANIME_ALIASES[slug];
+
+    let epUrl = `https://animesalt.cx/episode/${slug}-${season}x${episode}/`;
+    try {
+        const timeoutCtrl = new AbortController();
+        const timeoutId = setTimeout(() => timeoutCtrl.abort(), 4000);
+
+        let res = await fetch(epUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            },
+            signal: timeoutCtrl.signal
+        });
+
+        if (res.status === 404) {
+            const cleanTitle = title.split(':')[0].trim();
+            const searchUrl = `https://animesalt.cx/?s=${encodeURIComponent(cleanTitle)}`;
+            const sRes = await fetch(searchUrl, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                signal: timeoutCtrl.signal
+            });
+            if (sRes.ok) {
+                const sHtml = await sRes.text();
+                const seriesMatch = sHtml.match(/href="https:\/\/animesalt\.cx\/series\/([^"\/]+)\//);
+                if (seriesMatch) {
+                    slug = seriesMatch[1];
+                    epUrl = `https://animesalt.cx/episode/${slug}-${season}x${episode}/`;
+                    res = await fetch(epUrl, {
+                        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                        signal: timeoutCtrl.signal
+                    });
+                }
+            }
+        }
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+            const html = await res.text();
+            const match = html.match(/player\.php\?data=([^"']+)/);
+            if (match) {
+                const b64 = decodeURIComponent(match[1]);
+                const rawJson = atob(b64);
+                return JSON.parse(rawJson);
+            }
+        }
+    } catch (_) {}
+    return null;
 }
 
 async function handleResolve(params: URLSearchParams, env: Env): Promise<Response> {
@@ -1873,10 +1948,12 @@ export default {
                 return streamR2("titles-lite.json", env);
             }
 
-            if (normPath === "/stream/resolve") {
+            if (normPath === "/stream/resolve" || normPath === "/stream-mirrors") {
                 const tmdbId = params.get("tmdbId") || params.get("id");
                 const rawSeason = params.get("season") || params.get("s");
                 const rawEpisode = params.get("episode") || params.get("e");
+                const titleParam = params.get("title") || "";
+                const slugParam = params.get("slug") || "";
                 const parsedS = parseInt(rawSeason || "1", 10);
                 const parsedE = parseInt(rawEpisode || "1", 10);
                 const season = (Number.isFinite(parsedS) && parsedS > 0) ? String(parsedS) : "1";
@@ -1884,44 +1961,118 @@ export default {
                 const hasExplicitEpisode = (params.has("season") || params.has("s")) && params.get("isMovie") !== "1";
                 const type = params.get("type") || (hasExplicitEpisode ? "tv" : "movie");
                 const isTv = type === "tv" || type === "short_drama" || (type === "anime" && hasExplicitEpisode);
+                const isAnime = type === "anime" || /anime/i.test(slugParam) || /anime/i.test(params.get("genre") || "") || /(naruto|jujutsu|demon-slayer|attack-on-titan|one-piece|solo-leveling|bleach|hero-academia|death-note|dragon-ball)/i.test(slugParam || titleParam);
+
+                // Cache key for edge performance
+                const cacheKey = `stream-res:${type}:${tmdbId || slugParam}:${season}:${episode}:${langParam || ''}`;
+                if (memCache.has(cacheKey)) {
+                    return jsonResponse(memCache.get(cacheKey));
+                }
+
                 const tvVidLink = isTv ? `tv/${tmdbId}/${season}/${episode}` : `movie/${tmdbId}`;
                 const tvVidSrc = isTv ? `tv/${tmdbId}/${season}/${episode}` : `movie/${tmdbId}`;
                 const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${season}&e=${episode}` : `movie?id=${tmdbId}`;
 
-                // EmbedSu and SuperEmbed were removed from this list on
-                // 2026-09-28: embed.su no longer resolves in DNS and
-                // multiembed.mov was unreachable. Keep the enabled set aligned
-                // with src/providers.ts.
-                return jsonResponse({
+                const streams: Array<Record<string, any>> = [];
+
+                // 1. If Anime or title has multi-dub: query AnimeSalt for regional dubs (Hindi, Tamil, Telugu, English, Japanese, Malayalam)
+                if (isAnime || titleParam) {
+                    const searchTitle = titleParam || slugParam.replace(/-(\d{4,9})$/, '').replace(/-/g, ' ');
+                    const animeDubs = await resolveAnimeSalt(searchTitle, parseInt(season, 10), parseInt(episode, 10));
+                    if (Array.isArray(animeDubs) && animeDubs.length > 0) {
+                        for (const item of animeDubs) {
+                            const langName = item.language || 'Multi';
+                            const langLower = langName.toLowerCase();
+                            const isSub = langLower === 'japanese';
+                            const code = langLower === 'hindi' ? 'hi'
+                                : langLower === 'tamil' ? 'ta'
+                                : langLower === 'telugu' ? 'te'
+                                : langLower === 'malayalam' ? 'ml'
+                                : langLower === 'english' ? 'en'
+                                : langLower === 'japanese' ? 'ja'
+                                : langLower === 'spanish' ? 'es'
+                                : 'en';
+                            const flag = langLower === 'hindi' ? '🇮🇳'
+                                : (langLower === 'tamil' || langLower === 'telugu' || langLower === 'malayalam') ? '🇮🇳'
+                                : langLower === 'english' ? '🇺🇸'
+                                : langLower === 'japanese' ? '🇯🇵'
+                                : langLower === 'spanish' ? '🇪🇸'
+                                : '🎙️';
+
+                            streams.push({
+                                label: `${flag} ${langName} ${isSub ? '(Original Sub)' : 'Dub'}`,
+                                provider: `animesalt_${code}`,
+                                url: item.link,
+                                format: 'embed',
+                                quality: '1080p',
+                                language: code,
+                                languageName: langName,
+                                isDub: !isSub,
+                                isSub: isSub,
+                                flag
+                            });
+                        }
+                    }
+                }
+
+                // 2. High-speed global embed mirrors
+                streams.push({
+                    label: "⚡ Vidlink (Ad-Free HD)",
+                    provider: "vidlink",
+                    url: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
+                    format: "embed",
+                    quality: "1080p",
+                    language: langParam || "en",
+                    languageName: "English"
+                });
+                streams.push({
+                    label: "⚡ VidSrc HD",
+                    provider: "vidsrc",
+                    url: `https://vidsrc.to/embed/${tvVidSrc}${langSuffix}`,
+                    format: "embed",
+                    quality: "1080p",
+                    language: "en",
+                    languageName: "English"
+                });
+                streams.push({
+                    label: "⚡ 2Embed Multi-Server",
+                    provider: "2embed",
+                    url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langSuffix}`,
+                    format: "embed",
+                    quality: "HD",
+                    language: "en",
+                    languageName: "English"
+                });
+
+                // Unique available languages list for UI badges and switcher
+                const availableLanguagesMap = new Map<string, any>();
+                streams.forEach(s => {
+                    if (s.language && !availableLanguagesMap.has(s.language)) {
+                        availableLanguagesMap.set(s.language, {
+                            code: s.language,
+                            name: s.languageName || s.language.toUpperCase(),
+                            flag: s.flag || '🌐',
+                            dub: Boolean(s.isDub),
+                            sub: Boolean(s.isSub)
+                        });
+                    }
+                });
+                const availableLanguages = Array.from(availableLanguagesMap.values());
+
+                const responseData = {
                     status: "success",
                     tmdbId,
                     type,
                     season: parseInt(season, 10),
                     episode: parseInt(episode, 10),
-                    streams: [
-                        {
-                            label: "Vidlink (Ad-Free HD)",
-                            provider: "vidlink",
-                            url: `https://vidlink.pro/${tvVidLink}${langSuffix}`,
-                            format: "embed",
-                            quality: "1080p"
-                        },
-                        {
-                            label: "VidSrc HD",
-                            provider: "vidsrc",
-                            url: `https://vidsrc.to/embed/${tvVidSrc}${langSuffix}`,
-                            format: "embed",
-                            quality: "1080p"
-                        },
-                        {
-                            label: "2Embed Multi-Server",
-                            provider: "2embed",
-                            url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}${langSuffix}`,
-                            format: "embed",
-                            quality: "HD"
-                        }
-                    ]
-                });
+                    availableLanguages,
+                    streams
+                };
+
+                // Cache in memory for 12 hours (43200 seconds)
+                memCache.set(cacheKey, responseData);
+
+                return jsonResponse(responseData);
             }
 
             const availMatch = normPath.match(/^\/titles?\/([^/]+)\/availability$/);

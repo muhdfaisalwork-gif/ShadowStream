@@ -8,6 +8,7 @@ import Poster from '../components/Poster';
 import ShadowStreamPlayer from '../components/ShadowStreamPlayer';
 import { getApiBase } from '../utils/api';
 import { resolveMirrors, toPlayerProps } from '../utils/resolver';
+import { AudioPreferencesAPI } from '../utils/storage';
 import { WatchlistAPI, HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 
@@ -379,7 +380,40 @@ export default function PlayerScreen({ route, navigation }) {
             const effectiveTmdb = item.tmdbId || item.tmdb_id || (typeof item.slug === 'string' ? item.slug.match(/-(\d{4,9})$/)?.[1] : null);
             const effectiveImdb = item.imdbId || item.imdb_id;
 
-            if (sourcesToUse.length === 0 && (effectiveTmdb || effectiveImdb)) {
+            // Fetch worker-side multi-language & regional dub streams (AnimeSalt, etc.)
+            let workerMultiLangStreams = [];
+            try {
+                const titleStr = encodeURIComponent(item.title || item.name || '');
+                const slugStr = encodeURIComponent(item.slug || '');
+                const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${effectiveTmdb || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}`;
+                const wRes = await fetch(wUrl);
+                if (wRes.ok) {
+                    const wData = await wRes.json();
+                    if (Array.isArray(wData.streams) && wData.streams.length > 0) {
+                        workerMultiLangStreams = wData.streams.map(s => ({
+                            source: s.provider,
+                            sourceName: s.label,
+                            kind: s.format === 'video' ? 'playback' : 'embed',
+                            playbackUrl: s.url,
+                            language: s.language,
+                            languageName: s.languageName,
+                            isDub: s.isDub,
+                            isSub: s.isSub,
+                            flag: s.flag
+                        }));
+                    }
+                    if (Array.isArray(wData.availableLanguages) && wData.availableLanguages.length > 0) {
+                        const newDubs = wData.availableLanguages.map(l => l.code);
+                        setDubs(prev => Array.from(new Set([...(prev || []), ...newDubs])));
+                    }
+                }
+            } catch (wErr) {
+                console.warn('[PlayerScreen] Multi-language worker fetch error:', wErr.message);
+            }
+
+            if (workerMultiLangStreams.length > 0) {
+                sourcesToUse = [...workerMultiLangStreams, ...sourcesToUse];
+            } else if (sourcesToUse.length === 0 && (effectiveTmdb || effectiveImdb)) {
                 const isMovie = item.type === 'movie';
                 const dyn = [];
                 if (effectiveTmdb) {
@@ -405,7 +439,7 @@ export default function PlayerScreen({ route, navigation }) {
 
             if (sourcesToUse.length > 0) {
                 const PROVIDER_RANK = ['vidlink_sub', 'vidlink_dub', 'vidlink', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
-                const MAX_MIRRORS = 4;
+                const MAX_MIRRORS = 10;
 
                 const byProvider = new Map();
                 for (const a of sourcesToUse) {
@@ -424,7 +458,12 @@ export default function PlayerScreen({ route, navigation }) {
                     provider: a.source || 'embed',
                     url: a.kind === 'playback' ? (a.playbackUrl || a.url) : (a.url || a.external_url || a.playbackUrl),
                     format: a.kind === 'playback' ? 'video' : 'embed',
-                    quality: 'HD'
+                    quality: 'HD',
+                    language: a.language,
+                    languageName: a.languageName,
+                    isDub: a.isDub,
+                    isSub: a.isSub,
+                    flag: a.flag
                 }));
 
                 const { playable, mirrors: resolved, anyDirect } = await resolveMirrors(mirrors, {
@@ -440,8 +479,17 @@ export default function PlayerScreen({ route, navigation }) {
                         ? null
                         : 'Playing via the provider’s own player — no direct stream was available to decode.'
                 );
-                const idx = Math.max(0, resolved.indexOf(playable));
-                applyMirror(playable, idx);
+                const preferredLang = AudioPreferencesAPI.getPreferred();
+                let chosenMirror = playable;
+                let chosenIdx = Math.max(0, resolved.indexOf(playable));
+                if (preferredLang && preferredLang !== 'auto') {
+                    const matchIdx = resolved.findIndex(m => m.language === preferredLang || (m.provider && m.provider.includes(preferredLang)));
+                    if (matchIdx !== -1) {
+                        chosenMirror = resolved[matchIdx];
+                        chosenIdx = matchIdx;
+                    }
+                }
+                applyMirror(chosenMirror, chosenIdx);
                 setLoading(false);
                 return;
             }

@@ -238,3 +238,13 @@ export const HistoryAPI = {
         }
     }
 };
+
+
+export const AudioPreferencesAPI = {
+    getPreferred() {
+        return Storage.get('preferred_audio_language', 'auto');
+    },
+    setPreferred(langCode) {
+        Storage.set('preferred_audio_language', langCode);
+    }
+};

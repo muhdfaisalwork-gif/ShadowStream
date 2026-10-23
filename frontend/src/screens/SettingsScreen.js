@@ -7,16 +7,35 @@ import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
 import MobileTabBar from '../components/MobileTabBar';
 import { getApiBase } from '../utils/api';
-import { HistoryAPI, Storage } from '../utils/storage';
+import { HistoryAPI, Storage, AudioPreferencesAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount } from '../utils/adShield';
 
-const CURRENT_VERSION = '2.4.7';
+const CURRENT_VERSION = '2.4.8';
 
 export default function SettingsScreen({ navigation }) {
     useRouteMeta('Settings');
     const [checkingUpdate, setCheckingUpdate] = useState(false);
     const [updateMessage, setUpdateMessage] = useState(null);
+    const [preferredAudio, setPreferredAudio] = useState(AudioPreferencesAPI.getPreferred());
+
+    const AUDIO_OPTIONS = [
+        { code: 'auto', label: 'Auto (Original)' },
+        { code: 'hi', label: '🇮🇳 Hindi Dub' },
+        { code: 'en', label: '🇺🇸 English Dub' },
+        { code: 'ja', label: '🇯🇵 Japanese Sub' },
+        { code: 'es', label: '🇪🇸 Spanish Dub' },
+        { code: 'ta', label: '🇮🇳 Tamil Dub' },
+        { code: 'te', label: '🇮🇳 Telugu Dub' },
+        { code: 'ml', label: '🌴 Malayalam Dub' },
+        { code: 'fr', label: '🇫🇷 French Dub' },
+        { code: 'de', label: '🇩🇪 German Dub' },
+    ];
+
+    const handleSelectAudioLang = (code) => {
+        AudioPreferencesAPI.setPreferred(code);
+        setPreferredAudio(code);
+    };
 
     const handleCheckUpdate = async () => {
         setCheckingUpdate(true);
@@ -138,6 +157,36 @@ export default function SettingsScreen({ navigation }) {
                     </View>
                 </View>
 
+                {/* Audio Language & Dubbing Preferences */}
+                <View style={styles.card}>
+                    <Text style={styles.cardHeader}>AUDIO LANGUAGE & DUBBING PREFERENCES</Text>
+                    <Text style={styles.complianceNotice}>
+                        Choose your default audio language for Anime, Movies, and TV Shows. When available, ShadowStream automatically loads this language dub first.
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                        {AUDIO_OPTIONS.map((opt) => (
+                            <TouchableOpacity
+                                key={opt.code}
+                                style={[
+                                    styles.audioPrefChip,
+                                    preferredAudio === opt.code && styles.audioPrefChipActive
+                                ]}
+                                onPress={() => handleSelectAudioLang(opt.code)}
+                                activeOpacity={0.8}
+                            >
+                                <Text
+                                    style={[
+                                        styles.audioPrefChipText,
+                                        preferredAudio === opt.code && styles.audioPrefChipTextActive
+                                    ]}
+                                >
+                                    {opt.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
                 {/* Privacy & AdShield Card */}
                 <View style={styles.card}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -233,6 +282,27 @@ const styles = StyleSheet.create({
     hubHero: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
     hubTitle: { color: COLORS.textPrimary, fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
     hubSub: { color: COLORS.textMuted, fontSize: 13, marginTop: 4 },
+    audioPrefChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+    },
+    audioPrefChipActive: {
+        backgroundColor: COLORS.accent,
+        borderColor: COLORS.accent,
+    },
+    audioPrefChipText: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    audioPrefChipTextActive: {
+        color: '#FFFFFF',
+        fontWeight: '800',
+    },
     card: {
         marginHorizontal: 16,
         marginBottom: 16,

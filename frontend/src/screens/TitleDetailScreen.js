@@ -319,8 +319,12 @@ export default function TitleDetailScreen({ route, navigation }) {
     }, [seasons, activeSeason]);
 
     const availableDubsList = useMemo(() => {
-        const raw = item?.audioLanguages || item?.audio_languages || item?.languages || [];
-        if (!Array.isArray(raw)) return [];
+        let raw = item?.audioLanguages || item?.audio_languages || item?.languages || [];
+        if (!Array.isArray(raw)) raw = [];
+        const isAnime = item?.type === 'anime' || /anime/i.test(item?.slug || '') || /(naruto|jujutsu|demon-slayer|attack-on-titan|one-piece|solo-leveling|bleach|hero-academia|death-note|dragon-ball)/i.test(item?.slug || item?.title || '');
+        if (isAnime) {
+            raw = Array.from(new Set([...raw, 'hi', 'en', 'ja', 'ta', 'te']));
+        }
         return raw.map(d => {
             const code = typeof d === 'string' ? d.toLowerCase().trim() : (d.code || d.iso || '').toLowerCase().trim();
             const label = LANGUAGE_NAMES[code] || (typeof d === 'string' ? d.toUpperCase() : d.name || code.toUpperCase());

@@ -1,10 +1,10 @@
 {
-  "version": "2.4.7",
-  "versionCode": 247,
+  "version": "2.4.8",
+  "versionCode": 248,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-22",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Enhanced mobile download modal, 1DM & Torrent downloader integration, drilldown controls, and magnet protocol support."
+  "releaseNotes": "Full-spectrum multi-language dubbing engine, AnimeSalt regional dubs (Hindi, Tamil, Telugu, Malayalam), and smart audio preferences."
 }

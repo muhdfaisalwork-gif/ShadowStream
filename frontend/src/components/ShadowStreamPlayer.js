@@ -517,6 +517,28 @@ export default function ShadowStreamPlayer({
 
     const hasSubAndDubMirrors = subMirrorIdx !== -1 && dubMirrorIdx !== -1;
 
+    const availableLanguageMirrors = useMemo(() => {
+        return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => m.language || m.languageName || (m.label && (m.label.includes('Dub') || m.label.includes('Sub'))));
+    }, [mirrorList]);
+
+    const activeLanguageMirror = useMemo(() => {
+        return (mirrorList && mirrorList[activeMirrorIdx]) || null;
+    }, [mirrorList, activeMirrorIdx]);
+
+    const hasLanguageDubOptions = availableLanguageMirrors.length > 0 || hasSubAndDubMirrors || (isDirect && availableAudioTracks.length > 1) || (Array.isArray(dubs) && dubs.length > 0);
+
+    const selectLanguageMirror = useCallback((mirror, idx) => {
+        if (!mirror) return;
+        if (onSelectMirror) {
+            onSelectMirror(mirror, idx);
+        }
+        setDubToast(`🎙️ Switched to ${mirror.label || mirror.languageName || 'Selected Audio'}`);
+        setTimeout(() => setDubToast(null), 3500);
+        setShowDubMenu(false);
+        setShowMoreMenu(false);
+        setMoreSubmenu(null);
+    }, [onSelectMirror]);
+
     const selectDubAudio = useCallback((dubCode) => {
         if (!dubCode || dubCode === 'native') {
             setActiveDubLang('native');
@@ -1649,12 +1671,14 @@ export default function ShadowStreamPlayer({
                                                     <Text style={styles.popupMenuText}>💬 Subtitles ({selectedSubtitle === 'off' ? 'Off' : selectedSubtitle}) ›</Text>
                                                 </TouchableOpacity>
                                             )}
-                                            {(hasSubAndDubMirrors || (isDirect && availableAudioTracks.length > 1)) && (
+                                            {hasLanguageDubOptions && (
                                                 <TouchableOpacity
                                                     style={styles.popupMenuItem}
                                                     onPress={() => setMoreSubmenu('dub')}
                                                 >
-                                                    <Text style={styles.popupMenuText}>🌐 Audio & Dubbing ›</Text>
+                                                    <Text style={styles.popupMenuText}>
+                                                        🌐 Audio & Dubbing {activeLanguageMirror?.languageName ? `(${activeLanguageMirror.languageName})` : ''} ›
+                                                    </Text>
                                                 </TouchableOpacity>
                                             )}
                                             {streamUrl ? (
@@ -1752,7 +1776,19 @@ export default function ShadowStreamPlayer({
                                                 <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
                                             </TouchableOpacity>
                                             <Text style={styles.popupMenuHeader}>Audio & Dubbing</Text>
-                                            {hasSubAndDubMirrors && (
+                                            {/* Regional & Anime Multi-Language Dubs (AnimeSalt / Regional) */}
+                                            {availableLanguageMirrors.length > 0 && availableLanguageMirrors.map((m) => (
+                                                <TouchableOpacity
+                                                    key={m.originalIdx}
+                                                    style={[styles.popupMenuItem, activeMirrorIdx === m.originalIdx && styles.popupMenuItemActive]}
+                                                    onPress={() => selectLanguageMirror(m, m.originalIdx)}
+                                                >
+                                                    <Text style={[styles.popupMenuText, activeMirrorIdx === m.originalIdx && styles.popupMenuTextActive]}>
+                                                        {activeMirrorIdx === m.originalIdx ? '▶ ' : ''}{m.flag ? `${m.flag} ` : ''}{m.label || m.languageName}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                            {availableLanguageMirrors.length === 0 && hasSubAndDubMirrors && (
                                                 <>
                                                     <TouchableOpacity
                                                         style={[styles.popupMenuItem, activeMirrorIdx === subMirrorIdx && styles.popupMenuItemActive]}
@@ -1801,7 +1837,8 @@ export default function ShadowStreamPlayer({
                             )}
                         </View>
                     )}
-{/* Crop / stretch — cycles Fit → Crop → Stretch */}
+
+                    {/* Crop / stretch — cycles Fit → Crop → Stretch */}
                     <TouchableOpacity
                         style={[styles.pillButton, viewMode !== 'fit' && styles.pillButtonActive, isCompactTopBar && { display: 'none' }]}
                         onPress={nextViewMode}
@@ -1910,6 +1947,24 @@ export default function ShadowStreamPlayer({
                                                     : `Default Stream (${sourceName || 'Provider'})`)}
                                         </Text>
                                     </View>
+
+                                    {/* Multi-Language Dubs List (AnimeSalt & Regional) */}
+                                    {availableLanguageMirrors.length > 0 && (
+                                        <>
+                                            <Text style={styles.popupMenuSubheader}>Regional & Anime Language Dubs</Text>
+                                            {availableLanguageMirrors.map((m) => (
+                                                <TouchableOpacity
+                                                    key={m.originalIdx}
+                                                    style={[styles.popupMenuItem, activeMirrorIdx === m.originalIdx && styles.popupMenuItemActive]}
+                                                    onPress={() => selectLanguageMirror(m, m.originalIdx)}
+                                                >
+                                                    <Text style={[styles.popupMenuText, activeMirrorIdx === m.originalIdx && styles.popupMenuTextActive]}>
+                                                        {activeMirrorIdx === m.originalIdx ? '▶ ' : ''}{m.flag ? `${m.flag} ` : ''}{m.label || m.languageName}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
+                                    )}
 
                                     {/* Sub / Dub Quick Switcher (Anime & Series) */}
                                     {hasSubAndDubMirrors && (
