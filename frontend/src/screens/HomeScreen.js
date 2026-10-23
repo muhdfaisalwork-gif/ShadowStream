@@ -323,6 +323,21 @@ export default function HomeScreen({ navigation }) {
                         </View>
                         <Text style={styles.surpriseArrow}>›</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.surpriseCard, { marginTop: 10, borderColor: 'rgba(34, 211, 238, 0.35)', backgroundColor: 'rgba(15, 23, 42, 0.7)' }]}
+                        onPress={() => navigation.navigate('Movies', { filter: 'dual_audio' })}
+                        accessibilityRole="button"
+                        accessibilityLabel="Explore Dual Audio & Dubbed Movies & Anime"
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.surpriseDice}>🎙️</Text>
+                        <View style={styles.surpriseTextCol}>
+                            <Text style={[styles.surpriseEyebrow, { color: '#22d3ee' }]}>LOCALIZED AUDIO</Text>
+                            <Text style={styles.surpriseTitle}>Dual Audio & Dubs</Text>
+                            <Text style={styles.surpriseSub}>Browse Hollywood, Anime & Global cinema in Hindi & Regional Dubs</Text>
+                        </View>
+                        <Text style={[styles.surpriseArrow, { color: '#22d3ee' }]}>›</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Continue Watching Section */}

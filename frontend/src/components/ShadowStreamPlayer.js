@@ -8,6 +8,7 @@ import { COLORS } from '../theme/colors';
 import { availablePlayers } from '../utils/externalPlayer';
 import { getApiBase } from '../utils/api';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount, recordBlocked } from '../utils/adShield';
+import { AudioPreferencesAPI } from '../utils/storage';
 
 // Common ISO 639-1 language code to readable name mapping
 const LANGUAGE_NAMES = {
@@ -202,12 +203,28 @@ export default function ShadowStreamPlayer({
 
         // Check if current stream is already a verified dub:
         const currentMirror = mirrorList && mirrorList[activeMirrorIdx];
-        const isDubMirror = currentMirror && (currentMirror.isDub || currentMirror.provider?.includes('animesalt'));
+        const isDubMirror = currentMirror && (
+            currentMirror.isDub ||
+            currentMirror.provider?.includes('animesalt') ||
+            (cleanLang === 'hi' && (currentMirror.provider === 'multiembed' || currentMirror.label?.toLowerCase().includes('multiembed'))) ||
+            (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanLang) && (currentMirror.provider === 'smashystream' || currentMirror.label?.toLowerCase().includes('smashystream')))
+        );
 
-        if (!isDubMirror) {
+        const langLabel = LANGUAGE_NAMES[cleanLang] || cleanLang.toUpperCase();
+        if (isDubMirror) {
+            if (currentMirror.provider === 'multiembed' || currentMirror.label?.toLowerCase().includes('multiembed')) {
+                setDubToast(`🎙️ MultiEmbed Dual Audio Server: Tap "Server 2 (Hindi Dub)" inside player for Hindi voice.`);
+                setTimeout(() => setDubToast(null), 6000);
+            } else if (currentMirror.provider?.includes('animesalt')) {
+                setDubToast(`🎙️ Playing ${currentMirror.label || 'Dubbed Audio'} (${langLabel})`);
+                setTimeout(() => setDubToast(null), 4000);
+            } else {
+                setDubToast(`🎙️ Playing ${currentMirror.label || langLabel + ' Dub'}`);
+                setTimeout(() => setDubToast(null), 4000);
+            }
+        } else {
             setSelectedSubtitle(cleanLang);
-            const langLabel = LANGUAGE_NAMES[cleanLang] || cleanLang.toUpperCase();
-            setDubToast(`ℹ️ Audio: Original English | Subtitles: ${langLabel} (Studio dub not yet released)`);
+            setDubToast(`💬 Subtitles: ${langLabel} | 🔊 Audio: Original Studio Soundtrack`);
             setTimeout(() => setDubToast(null), 5000);
         }
     }, [targetLanguage, mirrorList, activeMirrorIdx]);
@@ -599,6 +616,10 @@ export default function ShadowStreamPlayer({
         if (onSelectMirror) {
             onSelectMirror(mirror, idx);
         }
+        if (mirror.language && mirror.language !== 'multi') {
+            AudioPreferencesAPI.setPreferred(mirror.language);
+            setActiveDubLang(mirror.language);
+        }
         setDubToast(`🎙️ Switched to ${mirror.label || mirror.languageName || 'Selected Audio'}`);
         setTimeout(() => setDubToast(null), 3500);
         setShowDubMenu(false);
@@ -609,6 +630,7 @@ export default function ShadowStreamPlayer({
     const selectDubAudio = useCallback((dubCode) => {
         if (!dubCode || dubCode === 'native') {
             setActiveDubLang('native');
+            AudioPreferencesAPI.setPreferred('auto');
             if (isDirect && availableAudioTracks.length > 0) {
                 selectAudioTrack(0);
             }
@@ -620,6 +642,7 @@ export default function ShadowStreamPlayer({
 
         const cleanCode = String(dubCode).toLowerCase().trim();
         setActiveDubLang(cleanCode);
+        AudioPreferencesAPI.setPreferred(cleanCode);
         const langLabel = LANGUAGE_NAMES[cleanCode] || cleanCode.toUpperCase();
 
         // 1. Direct Mode with multiple embedded tracks: match track by language

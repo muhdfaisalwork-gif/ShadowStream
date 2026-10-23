@@ -39,6 +39,7 @@ export default function MoviesScreen({ route, navigation }) {
 
     const tabs = [
         { id: 'popular', label: '🌟 Popular' },
+        { id: 'dual_audio', label: '🎙️ Dual Audio (Hindi Dub)' },
         { id: 'latest', label: '🎬 Latest Releases' },
         { id: 'top_rated', label: '⭐ Top Rated' },
         { id: 'free_legal', label: '✨ Free Stream' },
@@ -104,7 +105,9 @@ export default function MoviesScreen({ route, navigation }) {
         try {
             let url = `${getApiBase()}/titles?type=movie&page=${pageNum}&page_size=24`;
 
-            if (tab === 'latest') {
+            if (tab === 'dual_audio') {
+                url += `&audio_language=hi&sort=${sort}`;
+            } else if (tab === 'latest') {
                 url += `&sort=newest&year_min=2020&year_max=${new Date().getFullYear()}`;
             } else if (tab === 'top_rated') {
                 url += `&sort=rating&min_rating=7.5`;

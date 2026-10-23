@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v26';
+const VERSION = 'v27';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
