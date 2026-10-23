@@ -176,6 +176,17 @@ export default function ShadowStreamPlayer({
             unsubToggle();
             unsubBlocked();
             if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+            // Unlock orientation on unmount so phone returns to natural system rotation
+            try {
+                if (typeof window !== 'undefined') {
+                    if (window.ShadowStreamNative && typeof window.ShadowStreamNative.unlockOrientation === 'function') {
+                        window.ShadowStreamNative.unlockOrientation();
+                    }
+                    if (window.screen && window.screen.orientation && typeof window.screen.orientation.unlock === 'function') {
+                        window.screen.orientation.unlock();
+                    }
+                }
+            } catch (_) {}
         };
     }, []);
 
@@ -1819,15 +1830,15 @@ export default function ShadowStreamPlayer({
                                             {isDirect && availableAudioTracks.length > 1 && availableAudioTracks.map((tr, idx) => (
                                                 <TouchableOpacity
                                                     key={idx}
-                                                    style={[styles.popupMenuItem, selectedAudioTrack === idx && styles.popupMenuItemActive]}
+                                                    style={[styles.popupMenuItem, activeAudioIdx === idx && styles.popupMenuItemActive]}
                                                     onPress={() => {
                                                         selectAudioTrack(idx);
                                                         setShowMoreMenu(false);
                                                         setMoreSubmenu(null);
                                                     }}
                                                 >
-                                                    <Text style={[styles.popupMenuText, selectedAudioTrack === idx && styles.popupMenuTextActive]}>
-                                                        {selectedAudioTrack === idx ? '▶ ' : ''}{tr.label || tr.language || `Track ${idx + 1}`}
+                                                    <Text style={[styles.popupMenuText, activeAudioIdx === idx && styles.popupMenuTextActive]}>
+                                                        {activeAudioIdx === idx ? '▶ ' : ''}{tr.label || tr.language || `Track ${idx + 1}`}
                                                     </Text>
                                                 </TouchableOpacity>
                                             ))}

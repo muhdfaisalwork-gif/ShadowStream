@@ -239,14 +239,15 @@ export function installAdShield() {
     }
 
     // 2. Intercept programmatic HTMLAnchorElement.click
-    if (typeof HTMLAnchorElement !== 'undefined' && HTMLAnchorElement.prototype) {
-        originalAnchorClick = HTMLAnchorElement.prototype.click;
-        HTMLAnchorElement.prototype.click = function guardedClick() {
+    const AnchorCls = (typeof window !== 'undefined' && window.HTMLAnchorElement) ? window.HTMLAnchorElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLAnchorElement) ? globalThis.HTMLAnchorElement : null);
+    if (AnchorCls && AnchorCls.prototype) {
+        originalAnchorClick = AnchorCls.prototype.click;
+        AnchorCls.prototype.click = function guardedClick(...args) {
             if (noAdsActive && this && this.href && !isAllowed(this.href)) {
                 recordBlocked(this.href, 'programmatic anchor click');
                 return;
             }
-            return originalAnchorClick.apply(this, arguments);
+            return originalAnchorClick ? originalAnchorClick.apply(this, args) : undefined;
         };
     }
 
@@ -281,10 +282,12 @@ export function uninstallAdShield() {
         window.open = originalOpen;
         originalOpen = null;
     }
-    if (typeof HTMLAnchorElement !== 'undefined' && originalAnchorClick) {
-        HTMLAnchorElement.prototype.click = originalAnchorClick;
+    const AnchorCls = (typeof window !== 'undefined' && window.HTMLAnchorElement) ? window.HTMLAnchorElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLAnchorElement) ? globalThis.HTMLAnchorElement : null);
+    if (AnchorCls && AnchorCls.prototype && originalAnchorClick) {
+        AnchorCls.prototype.click = originalAnchorClick;
         originalAnchorClick = null;
     }
+
     if (typeof document !== 'undefined' && document.removeEventListener && clickInterceptorAttached) {
         document.removeEventListener('click', globalCaptureClickHandler, true);
         clickInterceptorAttached = false;

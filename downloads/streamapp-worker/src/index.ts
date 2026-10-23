@@ -1938,11 +1938,9 @@ export default {
             // Accept a `?lang=xx` query param. When set, the embed URLs are
             // rewritten so the provider defaults to the user's chosen audio.
             // Most major embeds (Vidlink, VidSrc, 2Embed, etc.) accept this.
-            const langParam = params.get("lang");
-            if (langParam && !/^[a-z]{2,3}$/i.test(langParam)) {
-                return errorResponse("invalid lang parameter", 400);
-            }
-            const langSuffix = langParam ? `&lang=${langParam.toLowerCase()}` : "";
+            const rawLang = params.get("lang");
+            const langParam = rawLang ? rawLang.split(/[-_]/)[0].toLowerCase().trim() : null;
+            const langSuffix = (langParam && /^[a-z]{2,3}$/.test(langParam)) ? `&lang=${langParam}` : "";
 
             if (normPath === "/titles-lite" || normPath === "/titles-lite.json") {
                 return streamR2("titles-lite.json", env);
