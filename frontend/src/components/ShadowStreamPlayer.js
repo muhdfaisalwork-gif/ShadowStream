@@ -314,7 +314,20 @@ export default function ShadowStreamPlayer({
         }, 2500);
     }, []);
 
-    // AdShield defense: non-intrusive ad and link guard (managed globally by adShield.js and native WebView)
+    // AdShield iframe blur trap: if focus shifts to the embed iframe due to a popunder/popup click attempt, immediately pull focus back to the player
+    useEffect(() => {
+        if (!noAdsEnabled || typeof window === 'undefined') return;
+        const handleWindowBlur = () => {
+            if (document.activeElement && (document.activeElement.tagName === 'IFRAME' || document.activeElement === iframeRef.current)) {
+                recordBlocked(streamUrl || 'embed', 'background popup/popunder');
+                setTimeout(() => {
+                    try { window.focus(); } catch (_) {}
+                }, 50);
+            }
+        };
+        window.addEventListener('blur', handleWindowBlur);
+        return () => window.removeEventListener('blur', handleWindowBlur);
+    }, [noAdsEnabled, streamUrl]);
 
     // Overlay & UI State
     const [controlsVisible, setControlsVisible] = useState(true);
@@ -1556,7 +1569,7 @@ export default function ShadowStreamPlayer({
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
-                                sandbox={undefined}
+                                sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation" : undefined}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             />
                         </View>

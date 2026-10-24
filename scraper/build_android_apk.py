@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 258
-VERSION_NAME = "2.4.18"
+VERSION_CODE = 259
+VERSION_NAME = "2.4.19"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -168,7 +168,37 @@ public class MainActivity extends Activity {{
         "zergnet.com", "outbrain.com", "taboola.com", "mgid.com",
         "revcontent.com", "doubleclick.net", "adnxs.com", "criteo.com",
         "scorecardresearch.com", "quantserve.com", "googlesyndication.com",
-        "adservice.google.com", "googleadservices.com", "adcolony.com"
+        "adservice.google.com", "googleadservices.com", "adcolony.com",
+        "highperformancegate.com", "effectivegate.com", "al5sm.com",
+        "whomeverwhistle.com", "profitablegatetocontent.com", "onclickperformance.com",
+        "deloton.com", "glispa.com", "adkeep.net", "creativecdn.com",
+        "cpmstar.com", "adtrue.com", "inpagepush.com", "pushame.com",
+        "propellerclick.com", "propu.sh", "onclickalgo.com", "onclkds.com",
+        "ad-delivery.net", "trafficstars.com", "bidgear.com", "adsco.re",
+        "adexc.net", "adkernel.com", "galaksion.com", "adxadserv.com",
+        "rollerads.com", "clickaine.com", "evadav.com", "richpush.co",
+        "coinhive.com", "coin-hive.com", "cryptoloot.pro", "jscache.com",
+        "adpushup.com", "ezoic.com", "a-ads.com", "realsrv.com",
+        "tsyndicate.com", "serving-sys.com", "adnxs-simple.com", "media.net",
+        "amazon-adsystem.com", "rubiconproject.com", "openx.net", "pubmatic.com",
+        "casalemedia.com", "smartadserver.com", "spotxchange.com", "spotx.tv",
+        "tremorhub.com", "sovrn.com", "lijit.com", "yieldmo.com",
+        "sharethrough.com", "teads.tv", "unruly.co", "triplelift.com",
+        "gumgum.com", "undertone.com", "kargo.com", "inmobi.com",
+        "ironsrc.com", "applovin.com", "vungle.com", "chartboost.com",
+        "fyber.com", "mintegral.com", "tapjoy.com", "flurry.com",
+        "adjust.com", "appsflyer.com", "branch.io", "singular.net",
+        "kochava.com", "melbet.com", "mostbet.com", "parimatch.com",
+        "dafabet.com", "stake.com"
+    }};
+
+    private static final String[] AD_PATTERNS = new String[] {{
+        "adserver", "adservice", "adsystem", "popcash", "popads", "propeller",
+        "monetag", "clickadu", "hilltop", "adsterra", "exoclick", "trafficjunky",
+        "juicyads", "onclick", "highperformancegate", "profitablegate",
+        "effectivegate", "al5sm", "whomeverwhistle", "deloton", "galaksion",
+        "richpush", "evadav", "rollerads", "tsyndicate", "realsrv", "bet365",
+        "1xbet", "melbet", "mostbet", "parimatch", "dafabet", "stake"
     }};
 
     private static boolean isAdOrTracker(Uri uri) {{
@@ -180,6 +210,18 @@ public class MainActivity extends Activity {{
             if (host.equals(adDomain) || host.endsWith("." + adDomain)) {{
                 return true;
             }}
+        }}
+        for (String pat : AD_PATTERNS) {{
+            if (host.contains(pat)) {{
+                return true;
+            }}
+        }}
+        String fullUrl = uri.toString().toLowerCase();
+        if (fullUrl.contains("zoneid=") || fullUrl.contains("bannerid=") ||
+            fullUrl.contains("ad_id=") || fullUrl.contains("campaignid=") ||
+            fullUrl.contains("aff_id=") || fullUrl.contains("/popunder") ||
+            fullUrl.contains("/pop/") || fullUrl.contains("adsterra")) {{
+            return true;
         }}
         return false;
     }}
@@ -369,7 +411,7 @@ public class MainActivity extends Activity {{
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        s.setSupportMultipleWindows(false);
+        s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {{
             s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
@@ -389,14 +431,32 @@ public class MainActivity extends Activity {{
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {{
                 if (req == null || req.getUrl() == null) return false;
-                if (isAdOrTracker(req.getUrl())) {{
+                Uri uri = req.getUrl();
+                if (isAdOrTracker(uri)) {{
                     return true;
                 }}
-                // Only intercept main frame navigation; let embed video players run inside iframes!
-                if (!req.isForMainFrame()) {{
-                    return false;
+                String scheme = uri.getScheme();
+                if (scheme == null) return true;
+                scheme = scheme.toLowerCase();
+                // Intercept non-web schemes (intent:, market:, vlc:, etc.)
+                if (!scheme.equals("http") && !scheme.equals("https") && !scheme.equals("about") && !scheme.equals("data") && !scheme.equals("blob")) {{
+                    return handleUrl(uri);
                 }}
-                return handleUrl(req.getUrl());
+                // Subframes (embed player iframes)
+                if (!req.isForMainFrame()) {{
+                    return isAdOrTracker(uri);
+                }}
+                // Main frame navigation
+                return handleUrl(uri);
+            }}
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {{
+                if (url == null) return false;
+                Uri uri = Uri.parse(url);
+                if (isAdOrTracker(uri)) return true;
+                return handleUrl(uri);
             }}
 
             @Override
@@ -698,28 +758,48 @@ public class MainActivity extends Activity {{
         String scheme = uri.getScheme();
         String host = uri.getHost();
 
-        // Let our app domain and workers load directly in WebView
+        // 1. Drop ad/tracker URLs immediately
+        if (isAdOrTracker(uri)) {{
+            return true;
+        }}
+
+        // 2. Let our app domain and workers load directly in WebView
         if (host != null && (host.endsWith(DOMAIN) || host.endsWith("workers.dev"))) {{
             return false;
         }}
 
-        // Allow media stream CDNs and first-party services to load in WebView
+        // 3. Allow media stream CDNs and first-party services to load in WebView
         if (host != null && (host.contains("archive.org") || host.contains("cloudflare") || host.contains("google"))) {{
             return false;
         }}
 
-        // Handle external player schemes (VLC, MX Player, market links, intents)
-        if (scheme != null && (scheme.equals("vlc") || scheme.equals("vlc-x-callback") || scheme.equals("intent") || scheme.equals("market") || scheme.equals("magnet"))) {{
+        // 4. Handle external player schemes (VLC only)
+        if (scheme != null && (scheme.equals("vlc") || scheme.equals("vlc-x-callback"))) {{
             try {{
-                Intent intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME);
-                if (intent != null) {{
-                    startActivity(intent);
-                    return true;
-                }}
+                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                return true;
             }} catch (Throwable ignored) {{}}
         }}
 
-        // Only launch external browser for explicit trusted links (github, tmdb, imdb)
+        // 5. Guard intent:// URIs: only permit intents targeting video players (VLC, MX Player)
+        // Block rogue ad networks trying to launch Google Play, gambling, or ad apps
+        if (scheme != null && scheme.equals("intent")) {{
+            try {{
+                Intent intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME);
+                if (intent != null) {{
+                    String pkg = intent.getPackage();
+                    String type = intent.getType();
+                    if ((pkg != null && (pkg.contains("videolan") || pkg.contains("mxtech"))) ||
+                        ("video/*".equals(type))) {{
+                        startActivity(intent);
+                        return true;
+                    }}
+                }}
+            }} catch (Throwable ignored) {{}}
+            return true; // Block unauthorized intent!
+        }}
+
+        // 6. Only launch external browser for explicit trusted links (github, tmdb, imdb)
         if (host != null && (host.contains("github.com") || host.contains("themoviedb.org") || host.contains("imdb.com"))) {{
             try {{
                 startActivity(new Intent(Intent.ACTION_VIEW, uri));
@@ -729,7 +809,7 @@ public class MainActivity extends Activity {{
             return true;
         }}
 
-        // Silently block 3rd-party ad redirects and popups from hijacking the app
+        // 7. Silently block all other 3rd-party ad redirects and popups from hijacking the app
         return true;
     }}
 

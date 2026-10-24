@@ -1,10 +1,10 @@
 {
-  "version": "2.4.18",
-  "versionCode": 258,
+  "version": "2.4.19",
+  "versionCode": 259,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-24",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "16:9 letterbox video aspect ratio (zero oval distortion), collision-free mobile player top bar, automatic orientation restoration, and responsive mobile/tablet scaling."
+  "releaseNotes": "Airtight AdShield popup and link defense: HTML5 smart embed sandboxing, Android native multiple-window popup disarming, intent filter guards, and background popunder blur traps."
 }
