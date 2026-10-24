@@ -161,6 +161,41 @@ export default function ShadowStreamPlayer({
         return { transform: `scale(${sx}, ${sy})` };
     }, [isDirect, viewMode, frameSize]);
 
+    // Responsive 16:9 Viewport Fitting (Never distort into an oval!)
+    const playerViewportStyle = useMemo(() => {
+        if (viewMode !== 'fit' || !frameSize.w || !frameSize.h) {
+            return {
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                backgroundColor: '#000000',
+                overflow: 'hidden',
+            };
+        }
+        const targetRatio = 16 / 9;
+        const currentRatio = frameSize.w / frameSize.h;
+        let w = frameSize.w;
+        let h = frameSize.h;
+        if (currentRatio > targetRatio) {
+            // Container is wider than 16:9 (e.g. wide phone landscape) -> Pillarbox (bars left/right)
+            h = frameSize.h;
+            w = Math.round(frameSize.h * targetRatio);
+        } else {
+            // Container is taller than 16:9 (e.g. phone portrait) -> Letterbox (bars top/bottom)
+            w = frameSize.w;
+            h = Math.round(frameSize.w / targetRatio);
+        }
+        return {
+            width: w,
+            height: h,
+            maxWidth: '100%',
+            maxHeight: '100%',
+            position: 'relative',
+            backgroundColor: '#000000',
+            overflow: 'hidden',
+        };
+    }, [viewMode, frameSize]);
+
     const videoObjectFit = viewMode === 'fill' ? 'cover' : viewMode === 'stretch' ? 'fill' : 'contain';
 
     const nextViewMode = useCallback(() => {
@@ -300,7 +335,7 @@ export default function ShadowStreamPlayer({
     // Screen orientation & mobile landscape state
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [moreSubmenu, setMoreSubmenu] = useState(null); // null | 'server' | 'subtitles' | 'dub'
-    const isCompactTopBar = width < 680;
+    const isCompactTopBar = width < 960;
     const isPortrait = height > width;
 
     const [adHelperDismissed, setAdHelperDismissed] = useState(false);
@@ -1044,31 +1079,39 @@ export default function ShadowStreamPlayer({
             if (typeof window.ShadowStreamNative.toggleOrientation === 'function') {
                 try {
                     window.ShadowStreamNative.toggleOrientation();
-                    setDubToast('📱 Orientation Toggled');
+                    setDubToast(isPortrait ? '📱 Switching to Landscape' : '📱 Switching to Portrait');
                     setTimeout(() => setDubToast(null), 2500);
                     return;
                 } catch (_) {}
             }
         }
 
-        // 2. Screen Orientation API (Android Chrome, Edge, PWA)
-        if (typeof window !== 'undefined' && window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+        // 2. Screen Orientation API (requires fullscreen on web browsers)
+        if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
             try {
-                const currentType = window.screen.orientation.type || '';
-                if (currentType.includes('landscape') || !isPortrait) {
-                    window.screen.orientation.lock('portrait').catch(() => {});
-                    setDubToast('📱 Rotated to Portrait');
-                } else {
-                    window.screen.orientation.lock('landscape').catch(() => {});
+                const isCurrentlyLandscape = window.innerWidth > window.innerHeight;
+                if (!isCurrentlyLandscape) {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        toggleFullscreen();
+                    }
+                    if (typeof window.screen.orientation.lock === 'function') {
+                        window.screen.orientation.lock('landscape').catch(() => {});
+                    }
                     setDubToast('📱 Rotated to Landscape');
+                } else {
+                    if (typeof window.screen.orientation.unlock === 'function') {
+                        window.screen.orientation.unlock();
+                    }
+                    if (document.fullscreenElement) {
+                        toggleFullscreen();
+                    }
+                    setDubToast('📱 Rotated to Portrait');
                 }
                 setTimeout(() => setDubToast(null), 2500);
                 return;
             } catch (_) {}
         }
 
-        // 3. Fallback on iOS Safari / Desktop / browsers without screen.orientation.lock:
-        // Toggle fullscreen, which naturally aligns orientation on mobile
         toggleFullscreen();
     }, [isPortrait, toggleFullscreen]);
 
@@ -1466,61 +1509,60 @@ export default function ShadowStreamPlayer({
                 setFrameSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
             }}
         >
-            {/* Playback Area */}
-            {isDirect ? (
-                <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000000' }}>
-                    <video
-                        ref={videoRef}
-                        playsInline
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: videoObjectFit,
-                            backgroundColor: '#000000',
-                            display: 'block',
-                        }}
-                    >
-                        {/* Real subtitle tracks. These are what the Subtitles
-                            menu switches between — previously the menu existed
-                            and did nothing, because no <track> was ever added. */}
-                        {normalizedSubtitles.filter((s) => Boolean(s.url && s.url.trim())).map((s) => (
-                            <track
-                                key={s.id || s.language}
-                                kind="subtitles"
-                                src={s.url}
-                                srcLang={s.language}
-                                label={s.label || s.language}
-                                default={selectedSubtitle === s.language}
+            {/* Playback Area: Centered Letterbox/Pillarbox preserving true 16:9 ratio */}
+            <View style={styles.playbackContainer}>
+                <View style={playerViewportStyle}>
+                    {isDirect ? (
+                        <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                            <video
+                                ref={videoRef}
+                                playsInline
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: videoObjectFit,
+                                    backgroundColor: '#000000',
+                                    display: 'block',
+                                }}
+                            >
+                                {normalizedSubtitles.filter((s) => Boolean(s.url && s.url.trim())).map((s) => (
+                                    <track
+                                        key={s.id || s.language}
+                                        kind="subtitles"
+                                        src={s.url}
+                                        srcLang={s.language}
+                                        label={s.label || s.language}
+                                        default={selectedSubtitle === s.language}
+                                    />
+                                ))}
+                            </video>
+                        </div>
+                    ) : (
+                        <View style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                            <iframe
+                                key={streamUrl}
+                                ref={iframeRef}
+                                src={streamUrl}
+                                title="ShadowStream Built-in Player"
+                                onLoad={handleEmbedLoaded}
+                                onError={handleEmbedFailed}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                    backgroundColor: '#000000',
+                                    transform: embedTransform ? embedTransform.transform : 'none',
+                                    transformOrigin: viewMode === 'fit' ? 'center center' : 'center bottom',
+                                }}
+                                allowFullScreen
+                                referrerPolicy="origin"
+                                sandbox={undefined}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             />
-                        ))}
-                    </video>
-                </div>
-            ) : (
-                /* Embed Mode: the provider decodes, we keep the chrome.
-                   When No Ads is active, iframe is sandboxed with popups allowed so embed anti-adblockers don't trip. When No Ads is OFF, sandbox is completely removed. */
-                <View style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                    <iframe
-                        key={streamUrl}
-                        ref={iframeRef}
-                        src={streamUrl}
-                        title="ShadowStream Built-in Player"
-                        onLoad={handleEmbedLoaded}
-                        onError={handleEmbedFailed}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            border: 'none',
-                            backgroundColor: '#000000',
-                            transform: embedTransform ? embedTransform.transform : 'none',
-                            transformOrigin: viewMode === 'fit' ? 'center center' : 'center bottom',
-                        }}
-                        allowFullScreen
-                        referrerPolicy="origin"
-                        sandbox={undefined} /* sandbox=adshield_engine: popups blocked by adShield without embed locker stalls */
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    />
+                        </View>
+                    )}
                 </View>
-            )}
+            </View>
 
             {/* In-Player Episode Drawer */}
             {showEpisodeDrawer && (
@@ -1723,30 +1765,32 @@ export default function ShadowStreamPlayer({
                     {season ? (
                         <Text style={styles.episodeBadge}>S{season}:E{episode}</Text>
                     ) : null}
-                    <TouchableOpacity
-                        style={[
-                            styles.noAdsToggleBtn,
-                            noAdsEnabled ? styles.noAdsToggleBtnOn : styles.noAdsToggleBtnOff
-                        ]}
-                        onPress={handleToggleNoAds}
-                        activeOpacity={0.7}
-                        accessibilityRole="switch"
-                        accessibilityState={{ checked: noAdsEnabled }}
-                        accessibilityLabel={`Toggle No Ads protection, currently ${noAdsEnabled ? 'ON' : 'OFF'}`}
-                    >
-                        <Text style={styles.noAdsToggleIcon}>🛡️</Text>
-                        <Text style={[
-                            styles.noAdsToggleText,
-                            noAdsEnabled ? styles.noAdsToggleTextOn : styles.noAdsToggleTextOff
-                        ]}>
-                            {noAdsEnabled ? 'No Ads: ON' : 'No Ads: OFF'}
-                        </Text>
-                        {blockedCount > 0 && noAdsEnabled && (
-                            <View style={styles.blockedBadge}>
-                                <Text style={styles.blockedBadgeText}>{blockedCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    {!isCompactTopBar && (
+                        <TouchableOpacity
+                            style={[
+                                styles.noAdsToggleBtn,
+                                noAdsEnabled ? styles.noAdsToggleBtnOn : styles.noAdsToggleBtnOff
+                            ]}
+                            onPress={handleToggleNoAds}
+                            activeOpacity={0.7}
+                            accessibilityRole="switch"
+                            accessibilityState={{ checked: noAdsEnabled }}
+                            accessibilityLabel={`Toggle No Ads protection, currently ${noAdsEnabled ? 'ON' : 'OFF'}`}
+                        >
+                            <Text style={styles.noAdsToggleIcon}>🛡️</Text>
+                            <Text style={[
+                                styles.noAdsToggleText,
+                                noAdsEnabled ? styles.noAdsToggleTextOn : styles.noAdsToggleTextOff
+                            ]}>
+                                {noAdsEnabled ? 'No Ads: ON' : 'No Ads: OFF'}
+                            </Text>
+                            {blockedCount > 0 && noAdsEnabled && (
+                                <View style={styles.blockedBadge}>
+                                    <Text style={styles.blockedBadgeText}>{blockedCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 <View style={styles.topRightControls}>
@@ -1790,6 +1834,12 @@ export default function ShadowStreamPlayer({
                                     {moreSubmenu === null ? (
                                         <>
                                             <Text style={styles.popupMenuHeader}>Playback Options</Text>
+                                            <TouchableOpacity
+                                                style={styles.popupMenuItem}
+                                                onPress={handleToggleNoAds}
+                                            >
+                                                <Text style={styles.popupMenuText}>🛡️ AdShield Protection: {noAdsEnabled ? 'ON' : 'OFF'}</Text>
+                                            </TouchableOpacity>
                                             {mirrorList && mirrorList.length > 0 && (
                                                 <TouchableOpacity
                                                     style={styles.popupMenuItem}
@@ -2319,12 +2369,12 @@ export default function ShadowStreamPlayer({
                         </View>
                     ) : null}
 {/* Episodes Drawer */}
-                    {seasons.length > 0 && (
+                    {seasons.length > 0 && width >= 520 && (
                         <TouchableOpacity
                             style={styles.pillButton}
                             onPress={() => setShowEpisodeDrawer(true)}
                         >
-                            <Text style={styles.pillButtonText}>📑 Episodes</Text>
+                            <Text style={styles.pillButtonText}>{width < 700 ? '📑 Ep' : '📑 Episodes'}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -2753,6 +2803,15 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
     },
+    playbackContainer: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#000000',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+    },
     containerFullscreen: {
         /* position:fixed is the point of this rule — the player normally sits inside
            several overflow:hidden navigation wrappers, so 100vw/100vh alone would be
@@ -2948,13 +3007,12 @@ const styles = StyleSheet.create({
     },
     titleInfo: {
         flex: 1,
-        /* Without minWidth:0 a long title refuses to shrink below its content
-           width in a flex row and pushes the right-hand controls off. */
         minWidth: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        gap: 8,
+        paddingHorizontal: 10,
+        gap: 6,
+        overflow: 'hidden',
     },
     titleText: {
         color: '#FFFFFF',

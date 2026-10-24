@@ -356,6 +356,7 @@ export default function HomeScreen({ navigation }) {
                                 <View key={`${item.id}-${idx}`} style={styles.continueCardSlot}>
                                     <MediaCard
                                         item={item}
+                                        width={responsive.cardWidth}
                                         onPress={(it) => navigation.navigate('Player', {
                                             slug: it.slug || String(it.id),
                                             item: it,

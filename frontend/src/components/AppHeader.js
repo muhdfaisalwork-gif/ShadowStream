@@ -55,8 +55,9 @@ export default function AppHeader({ navigation, activeRoute, title }) {
         { label: 'Apps', route: 'Apps' }
     ];
 
+    const headerHeight = isMobileLandscape ? 50 : 64;
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, { height: headerHeight }]}>
             <View style={styles.leftSection}>
                 {!isDesktop && (
                     <TouchableOpacity
@@ -76,7 +77,7 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                 >
                     <Image
                         source={require('../../assets/shadowstream-banner.png')}
-                        style={isDesktop ? styles.brandBannerDesktop : styles.brandBannerMobile}
+                        style={isDesktop ? styles.brandBannerDesktop : (isMobileLandscape ? styles.brandBannerLandscape : styles.brandBannerMobile)}
                         resizeMode="contain"
                     />
                 </TouchableOpacity>
@@ -206,6 +207,10 @@ const styles = StyleSheet.create({
     brandBannerMobile: {
         width: 120,
         height: 32
+    },
+    brandBannerLandscape: {
+        width: 105,
+        height: 26
     },
     screenTag: {
         marginLeft: 12,

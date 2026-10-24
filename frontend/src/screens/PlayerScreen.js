@@ -628,7 +628,29 @@ export default function PlayerScreen({ route, navigation }) {
         }
     }, [seasons, currentSeason, currentEpisode]);
 
+    // Restore orientation to unspecified / portrait when leaving PlayerScreen
+    useEffect(() => {
+        return () => {
+            if (typeof window !== 'undefined') {
+                if (window.ShadowStreamNative && typeof window.ShadowStreamNative.unlockOrientation === 'function') {
+                    try { window.ShadowStreamNative.unlockOrientation(); } catch (_) {}
+                }
+                if (window.screen && window.screen.orientation && typeof window.screen.orientation.unlock === 'function') {
+                    try { window.screen.orientation.unlock(); } catch (_) {}
+                }
+            }
+        };
+    }, []);
+
     const handleBack = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            if (window.ShadowStreamNative && typeof window.ShadowStreamNative.unlockOrientation === 'function') {
+                try { window.ShadowStreamNative.unlockOrientation(); } catch (_) {}
+            }
+            if (window.screen && window.screen.orientation && typeof window.screen.orientation.unlock === 'function') {
+                try { window.screen.orientation.unlock(); } catch (_) {}
+            }
+        }
         if (navigation.canGoBack()) {
             navigation.goBack();
         } else if (item?.slug || slug || item?.id) {

@@ -37,8 +37,8 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.17",
-    versionCode: 257,
+    version: "2.4.18",
+    versionCode: 258,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-24",

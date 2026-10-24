@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
 
-const CURRENT_VERSION = '2.4.17';
-const CURRENT_CODE = 257;
+const CURRENT_VERSION = '2.4.18';
+const CURRENT_CODE = 258;
 
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);
