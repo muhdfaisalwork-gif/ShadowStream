@@ -105,7 +105,7 @@ export default function TitleDetailScreen({ route, navigation }) {
                 const safeUrl = trailerUrl.replace(/"/g, '&quot;');
                 const safeTitle = (item?.title || 'Trailer').replace(/"/g, '&quot;');
                 trailerHostRef.current.innerHTML =
-                    `<iframe src="${safeUrl}" style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000" allow="autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="${safeTitle} — YouTube embed"></iframe>`;
+                    `<iframe src="${safeUrl}" style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000" allow="autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="${safeTitle} — YouTube embed"></iframe>`;
             } else {
                 trailerHostRef.current.innerHTML = '';
             }
@@ -512,15 +512,12 @@ export default function TitleDetailScreen({ route, navigation }) {
             setCopyToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setCopyToast(null), 3000);
         } else {
-            // For HLS streams & embeds: open in external downloader tab AND copy stream link
-            if (typeof window !== 'undefined') {
-                window.open(rawUrl, '_blank');
-            }
+            // For HLS streams & embeds: copy stream link directly to clipboard without opening 3rd-party tab
             if (typeof navigator !== 'undefined' && navigator.clipboard) {
                 navigator.clipboard.writeText(rawUrl);
-                setCopyToast('📋 Stream opened & link copied for 1DM, ADM, or VLC.');
-                setTimeout(() => setCopyToast(null), 4000);
             }
+            setCopyToast('📋 Stream link copied! Paste into 1DM, ADM, or VLC to download.');
+            setTimeout(() => setCopyToast(null), 4000);
         }
         setDownloadModalVisible(false);
     };
@@ -536,12 +533,12 @@ export default function TitleDetailScreen({ route, navigation }) {
         if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
             window.ShadowStreamNative.openExternalDownloader(rawUrl, filename);
             setCopyToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
-        } else if (typeof window !== 'undefined') {
-            window.open(rawUrl, '_blank');
+        } else {
+            // For web: copy stream link directly to clipboard for external downloaders without opening 3rd-party tab
             if (typeof navigator !== 'undefined' && navigator.clipboard) {
                 navigator.clipboard.writeText(rawUrl);
             }
-            setCopyToast('🚀 Opened external stream tab & copied link!');
+            setCopyToast('🚀 Stream link copied! Open 1DM, ADM, or VLC and paste to download.');
         }
         setTimeout(() => setCopyToast(null), 3500);
         setDownloadModalVisible(false);
@@ -555,7 +552,7 @@ export default function TitleDetailScreen({ route, navigation }) {
             setCopyToast('Stream link copied! Paste into IDM, 1DM, or VLC.');
             setTimeout(() => setCopyToast(null), 3500);
         } else {
-            Linking.openURL(rawUrl);
+            setCopyToast('📋 Stream link ready.');
         }
     };
 
@@ -788,7 +785,23 @@ export default function TitleDetailScreen({ route, navigation }) {
                                         <TouchableOpacity
                                             key={`${p.slug}-${p.type}-${idx}`}
                                             style={styles.metaChip}
-                                            onPress={() => p.deepLink && Linking.openURL(p.deepLink)}
+                                            onPress={() => {
+                                                if (!p.deepLink) return;
+                                                if (typeof window !== 'undefined' && window.confirm) {
+                                                    if (window.confirm(`Open external streaming service: ${p.name}?`)) {
+                                                        Linking.openURL(p.deepLink);
+                                                    }
+                                                } else {
+                                                    Alert.alert(
+                                                        `Open ${p.name}`,
+                                                        `This will open the licensed stream on ${p.name} in your browser.`,
+                                                        [
+                                                            { text: 'Cancel', style: 'cancel' },
+                                                            { text: 'Open', onPress: () => Linking.openURL(p.deepLink) }
+                                                        ]
+                                                    );
+                                                }
+                                            }}
                                         >
                                             <Text style={{ color: COLORS.text }}>
                                                 {p.name}{p.type === 'subscription' ? '' : ` (${p.type})`}

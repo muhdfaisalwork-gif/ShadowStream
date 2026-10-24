@@ -586,15 +586,12 @@ export default function ShadowStreamPlayer({
             setDubToast(`⬇ Downloading ${cleanTitle}${epSuffix}...`);
             setTimeout(() => setDubToast(null), 3500);
         } else {
-            // For HLS streams & embeds: open in external downloader tab AND copy stream link
-            if (typeof window !== 'undefined') {
-                window.open(streamUrl, '_blank');
-            }
+            // For HLS streams & embeds: copy direct stream link without opening vulnerable 3rd-party tabs
             if (typeof navigator !== 'undefined' && navigator.clipboard) {
                 navigator.clipboard.writeText(streamUrl);
-                setDubToast('📋 Stream opened & link copied for 1DM, ADM, or VLC.');
-                setTimeout(() => setDubToast(null), 4000);
             }
+            setDubToast('📋 Direct stream link copied! Paste into 1DM, ADM, or VLC to download.');
+            setTimeout(() => setDubToast(null), 4000);
         }
         setShowDownloadMenu(false);
     }, [streamUrl, title, season, episode]);
@@ -608,12 +605,13 @@ export default function ShadowStreamPlayer({
         if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.openExternalDownloader === 'function') {
             window.ShadowStreamNative.openExternalDownloader(streamUrl, filename);
             setDubToast('🚀 Opening in external downloader (1DM / ADM / VLC)...');
-        } else if (typeof window !== 'undefined') {
-            window.open(streamUrl, '_blank');
+        } else {
+            // For web: copy stream link directly to clipboard for external downloaders without opening 3rd-party tab
             if (typeof navigator !== 'undefined' && navigator.clipboard) {
                 navigator.clipboard.writeText(streamUrl);
             }
-            setDubToast('🚀 Opened external stream & copied link!');
+            setDubToast('🚀 Stream link copied! Open 1DM, ADM, or VLC and paste to download.');
+            setTimeout(() => setDubToast(null), 4000);
         }
         setShowDownloadMenu(false);
     }, [streamUrl, title, season, episode]);
@@ -960,9 +958,15 @@ export default function ShadowStreamPlayer({
             const opt = (renditions || [])[idx];
             if (!opt) return;
             if (opt.browserPlayable === false) {
-                // e.g. an .mkv original — a browser cannot decode it, so this
-                // is a download, not a playback switch.
-                if (typeof window !== 'undefined' && opt.url) window.open(opt.url, '_blank');
+                // e.g. an .mkv original — trigger clean download anchor rather than opening blank tab
+                if (typeof document !== 'undefined' && opt.url) {
+                    const a = document.createElement('a');
+                    a.href = opt.url;
+                    a.download = `${(title || 'Video').replace(/[^a-zA-Z0-9_\- ]/g, '')}.mkv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { if (document.body.contains(a)) document.body.removeChild(a); }, 300);
+                }
                 setShowQualityMenu(false);
                 return;
             }

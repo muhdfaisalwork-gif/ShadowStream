@@ -247,23 +247,28 @@ export function installAdShield() {
 
     installed = true;
 
-    // 1. Intercept window.open
+    // 1. Intercept window.open and lock it so hostile ad scripts cannot delete or override it
     if (typeof window.open === 'function') {
         originalOpen = window.open;
-        window.open = function shadowStreamWindowOpen(url, target, features) {
-            // When No Ads is disabled, pass through
+        const guardedOpen = function shadowStreamWindowOpen(url, target, features) {
             if (!noAdsActive) {
                 return originalOpen.call(window, url, target, features);
             }
-
             if (isAllowed(url)) {
                 return originalOpen.call(window, url, target, features);
             }
-
             recordBlocked(url, 'popup attempt');
-            // Return mock closed window to satisfy ad script checks without opening any tab
             return createMockWindow();
         };
+        try {
+            Object.defineProperty(window, 'open', {
+                value: guardedOpen,
+                configurable: false,
+                writable: true,
+            });
+        } catch (_) {
+            window.open = guardedOpen;
+        }
     }
 
     // 2. Intercept programmatic HTMLAnchorElement.click
@@ -276,6 +281,27 @@ export function installAdShield() {
                 return;
             }
             return originalAnchorClick ? originalAnchorClick.apply(this, args) : undefined;
+        };
+    }
+
+    // 2b. Intercept programmatic HTMLFormElement.submit (used by ad networks to bypass window.open)
+    const FormCls = (typeof window !== 'undefined' && window.HTMLFormElement) ? window.HTMLFormElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLFormElement) ? globalThis.HTMLFormElement : null);
+    if (FormCls && FormCls.prototype) {
+        const originalFormSubmit = FormCls.prototype.submit;
+        FormCls.prototype.submit = function guardedFormSubmit(...args) {
+            if (noAdsActive && this) {
+                const targetAction = this.action || this.getAttribute('action') || '';
+                const targetAttr = this.target || this.getAttribute('target') || '';
+                if (targetAction && !isAllowed(targetAction)) {
+                    recordBlocked(targetAction, 'ad form submission');
+                    return;
+                }
+                if (targetAttr === '_blank' && !isAllowed(targetAction)) {
+                    recordBlocked(targetAction || 'form_blank', 'popup form submission');
+                    return;
+                }
+            }
+            return originalFormSubmit.apply(this, args);
         };
     }
 

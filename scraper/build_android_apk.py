@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 259
-VERSION_NAME = "2.4.19"
+VERSION_CODE = 260
+VERSION_NAME = "2.4.20"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -147,6 +147,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.graphics.Bitmap;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -222,6 +223,42 @@ public class MainActivity extends Activity {{
             fullUrl.contains("aff_id=") || fullUrl.contains("/popunder") ||
             fullUrl.contains("/pop/") || fullUrl.contains("adsterra")) {{
             return true;
+        }}
+        return false;
+    }}
+
+    private static final String[] ALLOWED_MEDIA_HOSTS = new String[] {{
+        "ssmoviestvs.site", "workers.dev", "localhost", "127.0.0.1",
+        "archive.org", "cloudflare", "google", "googleapis.com", "googleusercontent.com",
+        "github.com", "themoviedb.org", "tmdb.org", "imdb.com",
+        "vidlink.pro", "vidsrc.to", "vidsrc.me", "vidsrc.net", "vidsrc.in", "vidsrc.pm",
+        "vidsrc.xyz", "vidsrc.cc", "2embed.cc", "2embed.to", "2embed.skin",
+        "smashystream.xyz", "smashystream.com", "multiembed.mov", "embed.su",
+        "superembed.stream", "moviesapi.club", "autoembed.co",
+        "animesalt.cc", "animesalt.com", "moviebox.ng",
+        "cloudorchestranova.com", "playercdn.net", "rabbitstream.net", "megacloud.tv",
+        "dokicloud.one", "youtube.com", "googlevideo.com"
+    }};
+
+    private static boolean isAllowedMediaHost(Uri uri) {{
+        if (uri == null) return false;
+        String host = uri.getHost();
+        if (host == null) return false;
+        host = host.toLowerCase();
+        for (String allowed : ALLOWED_MEDIA_HOSTS) {{
+            if (host.equals(allowed) || host.endsWith("." + allowed) || host.contains(allowed)) {{
+                return true;
+            }}
+        }}
+        String path = uri.getPath();
+        if (path != null) {{
+            String lowerPath = path.toLowerCase();
+            if (lowerPath.endsWith(".m3u8") || lowerPath.endsWith(".mp4") ||
+                lowerPath.endsWith(".mpd") || lowerPath.endsWith(".ts") ||
+                lowerPath.endsWith(".m4s") || lowerPath.contains("/hls/") ||
+                lowerPath.contains("/stream/")) {{
+                return true;
+            }}
         }}
         return false;
     }}
@@ -442,9 +479,14 @@ public class MainActivity extends Activity {{
                 if (!scheme.equals("http") && !scheme.equals("https") && !scheme.equals("about") && !scheme.equals("data") && !scheme.equals("blob")) {{
                     return handleUrl(uri);
                 }}
-                // Subframes (embed player iframes)
+                // Subframes (embed player iframes and nested frames):
+                // Whitelist ONLY verified video providers and media CDNs.
+                // Any other domain attempting to navigate the subframe is an ad redirect and is BLOCKED!
                 if (!req.isForMainFrame()) {{
-                    return isAdOrTracker(uri);
+                    if (isAllowedMediaHost(uri)) {{
+                        return false;
+                    }}
+                    return true; // Block unauthorized 3rd-party ad redirect in subframe
                 }}
                 // Main frame navigation
                 return handleUrl(uri);
@@ -467,6 +509,12 @@ public class MainActivity extends Activity {{
                     }}
                 }}
                 return interceptLocalAsset(req);
+            }}
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {{
+                super.onPageStarted(view, url, favicon);
+                injectNativeHooks(view);
             }}
 
             @Override
@@ -498,7 +546,29 @@ public class MainActivity extends Activity {{
         web.setWebChromeClient(new WebChromeClient() {{
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {{
-                // Block all popup windows requested by pages or ad scripts
+                // Trap and silently absorb all popup requests (window.open, target="_blank")
+                // By providing a dummy invisible WebView and returning true, we prevent Android
+                // from falling back to dispatching an ACTION_VIEW intent to the system browser!
+                try {{
+                    if (resultMsg != null && resultMsg.obj instanceof WebView.WebViewTransport) {{
+                        WebView dummy = new WebView(MainActivity.this);
+                        dummy.setWebViewClient(new WebViewClient() {{
+                            @Override
+                            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {{
+                                return true; // Discard completely
+                            }}
+                            @SuppressWarnings("deprecation")
+                            @Override
+                            public boolean shouldOverrideUrlLoading(WebView v, String url) {{
+                                return true; // Discard completely
+                            }}
+                        }});
+                        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                        transport.setWebView(dummy);
+                        resultMsg.sendToTarget();
+                        return true;
+                    }}
+                }} catch (Throwable ignored) {{}}
                 return false;
             }}
 
@@ -883,6 +953,10 @@ public class MainActivity extends Activity {{
     private void injectNativeHooks(WebView view) {{
         try {{
             String js = "(function() {{"
+                    + "  try {{"
+                    + "    var dummyWin = {{ closed: true, close: function(){{}}, focus: function(){{}}, blur: function(){{}}, postMessage: function(){{}} }};"
+                    + "    window.open = function() {{ return dummyWin; }};"
+                    + "  }} catch(e) {{}}"
                     + "  function bindVideoEvents() {{"
                     + "    var vids = document.querySelectorAll('video');"
                     + "    for (var i = 0; i < vids.length; i++) {{"
