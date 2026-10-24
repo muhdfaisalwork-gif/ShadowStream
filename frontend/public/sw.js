@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v27';
+const VERSION = 'v28';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -114,7 +114,9 @@ self.addEventListener('fetch', (event) => {
         url.pathname.startsWith('/stream/resolve') ||
         url.pathname.startsWith('/health/providers') ||
         url.pathname.startsWith('/version.json') ||
+        url.pathname.startsWith('/api/v1/version.json') ||
         url.pathname.startsWith('/app-version') ||
+        url.pathname.startsWith('/api/v1/app-version') ||
         url.pathname.startsWith('/latest.yml') ||
         /\.(m3u8|ts|m4s|mp4|webm|mkv|apk|exe|zip|dmg)(\?|$)/i.test(url.pathname) ||
         url.pathname.startsWith('/downloads')

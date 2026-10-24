@@ -38,7 +38,24 @@ export default {
       ) {
         const targetUrl = new URL(url.pathname + url.search, 'https://streamapp-catalog.muhd-faisal-work.workers.dev');
         const proxyRequest = new Request(targetUrl.toString(), request);
-        return await fetch(proxyRequest);
+        const proxyResponse = await fetch(proxyRequest);
+        if (
+          url.pathname === '/version.json' ||
+          url.pathname === '/app-version' ||
+          url.pathname === '/api/v1/app-version' ||
+          url.pathname === '/api/v1/version.json'
+        ) {
+          const freshHeaders = new Headers(proxyResponse.headers);
+          freshHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+          freshHeaders.set('Pragma', 'no-cache');
+          freshHeaders.set('Expires', '0');
+          return new Response(proxyResponse.body, {
+            status: proxyResponse.status,
+            statusText: proxyResponse.statusText,
+            headers: freshHeaders,
+          });
+        }
+        return proxyResponse;
       }
       if (env.ASSETS) {
         let res = await env.ASSETS.fetch(request);

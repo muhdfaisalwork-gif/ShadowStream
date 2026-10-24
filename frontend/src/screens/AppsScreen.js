@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Linking, Alert, Platform
+    View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Linking, Alert, Platform, useWindowDimensions
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
 import MobileTabBar from '../components/MobileTabBar';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { getApiBase } from '../utils/api';
+import { applyAppUpdate } from '../utils/pwa';
 
 export function getReleaseBase() {
     const api = getApiBase();
@@ -16,24 +17,42 @@ export function getReleaseBase() {
     return 'https://ssmoviestvs.site/downloads';
 }
 
-// Where the desktop launcher binaries are hosted.
 const RELEASE_BASE = 'https://ssmoviestvs.site/downloads';
-
-// 2.4.1 / current live build identifier.
-const BUILD_VERSION = '2.4.9';
 
 const APPS = [
     {
         id: 'android',
         platform: 'Android (APK)',
         icon: '📱',
-        arch: 'ARM64 & x86_64 (Phones, Tablets & Android TV)',
-        size: '2.42 MB',
+        arch: 'ARM64 & x86_64 (Phones, Tablets & TV)',
+        size: '2.85 MB',
         fileName: 'ShadowStream.apk',
         url: `${RELEASE_BASE}/ShadowStream.apk`,
         status: 'ready',
-        notes: 'Installable Android APK with crisp new brand icon, offline UI bundling, hardware acceleration, Picture-in-Picture (PiP), and Android TV support.',
+        notes: 'Standalone installable Android APK with in-app auto-installer, PiP, hardware acceleration, and full TV remote control support.',
         recommended: true,
+    },
+    {
+        id: 'web',
+        platform: 'Web App (PWA)',
+        icon: '🌐',
+        arch: 'Any modern browser (Chrome, Safari, Edge)',
+        size: '0 MB',
+        fileName: 'ShadowStream Web App',
+        url: 'https://ssmoviestvs.site',
+        status: 'ready',
+        notes: 'Zero install needed. Tap "Install" or "Add to Home Screen" in your browser address bar for full offline caching.',
+    },
+    {
+        id: 'windows',
+        platform: 'Windows (Desktop App)',
+        icon: '🪟',
+        arch: 'x64 (Windows 10 / 11)',
+        size: '~115 MB',
+        fileName: 'ShadowStream-Setup-x64.exe',
+        url: `${RELEASE_BASE}/ShadowStream-Setup-x64.exe`,
+        status: 'ready',
+        notes: 'Native Windows desktop launcher with embedded media engine, shortcuts, and direct mirror streaming.',
     },
     {
         id: 'apple-xtool',
@@ -44,24 +63,13 @@ const APPS = [
         fileName: 'ShadowStream-xtool',
         url: 'https://github.com/xtool-org/xtool',
         status: 'ready',
-        notes: 'Native Swift/SwiftUI application built with xtool (Xcode-free SwiftPM CLI) featuring PiP, safe-area gestures, and hardware video playback.',
-    },
-    {
-        id: 'windows',
-        platform: 'Windows (Desktop App)',
-        icon: '🪟',
-        arch: 'x64 (Windows 10/11)',
-        size: '~115 MB',
-        fileName: 'ShadowStream-Setup-x64.exe',
-        url: `${RELEASE_BASE}/ShadowStream-Setup-x64.exe`,
-        status: 'ready',
-        notes: 'Native Electron desktop application with embedded media engine, shortcuts, and direct mirror streaming.',
+        notes: 'Native Swift/SwiftUI application built with xtool featuring PiP, safe-area gestures, and hardware video playback.',
     },
     {
         id: 'linux-x64',
         platform: 'Linux x64',
         icon: '🐧',
-        arch: 'x64 (Ubuntu/Debian/Arch/Fedora)',
+        arch: 'x64 (Ubuntu / Debian / Arch / Fedora)',
         size: '~46 MB',
         fileName: 'StreamApp-linux-x64',
         url: `${RELEASE_BASE}/StreamApp-linux-x64`,
@@ -72,7 +80,7 @@ const APPS = [
         id: 'linux-arm64',
         platform: 'Linux ARM64',
         icon: '🐧',
-        arch: 'arm64 (Raspberry Pi/Linux ARM)',
+        arch: 'arm64 (Raspberry Pi / Linux ARM)',
         size: '~45 MB',
         fileName: 'StreamApp-linux-arm64',
         url: `${RELEASE_BASE}/StreamApp-linux-arm64`,
@@ -83,7 +91,7 @@ const APPS = [
         id: 'macos-arm64',
         platform: 'macOS Apple Silicon',
         icon: '🍎',
-        arch: 'arm64 (M1/M2/M3/M4)',
+        arch: 'arm64 (M1 / M2 / M3 / M4)',
         size: '~46 MB',
         fileName: 'StreamApp-macos-arm64',
         url: `${RELEASE_BASE}/StreamApp-macos-arm64`,
@@ -100,17 +108,6 @@ const APPS = [
         url: `${RELEASE_BASE}/StreamApp-macos-x64`,
         status: 'ready',
         notes: 'Native Intel x64 binary for macOS 10.15+.',
-    },
-    {
-        id: 'web',
-        platform: 'Web App (PWA)',
-        icon: '🌐',
-        arch: 'Any modern browser',
-        size: '0 MB',
-        fileName: 'ShadowStream Web (this site)',
-        url: 'https://ssmoviestvs.site',
-        status: 'ready',
-        notes: 'No install required. Tap "Install" in your browser address bar to add as a desktop app.',
     },
 ];
 
@@ -135,6 +132,33 @@ function StatusBadge({ status }) {
 
 export default function AppsScreen({ navigation }) {
     useRouteMeta('Apps');
+    const { width } = useWindowDimensions();
+
+    const [liveRelease, setLiveRelease] = useState({
+        version: '2.4.17',
+        versionCode: 257,
+        releaseDate: '2026-10-24',
+        releaseNotes: 'Direct APK in-app installer prompt, background download receiver, zero-cache version sync, and responsive global scaling.',
+    });
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/v1/app-version?_t=' + Date.now(), { cache: 'no-store' })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.version) {
+                    setLiveRelease(data);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    // Responsive grid column calculation
+    const numCols = width >= 1024 ? 3 : (width >= 640 ? 2 : 1);
+    const gap = 12;
+    const cardWidthStyle = numCols === 1
+        ? { width: '100%' }
+        : { width: `calc(${100 / numCols}% - ${(gap * (numCols - 1)) / numCols}px)` };
 
     const onDownload = async (app) => {
         if (app.status === 'broken') {
@@ -155,40 +179,46 @@ export default function AppsScreen({ navigation }) {
             }
             return;
         }
+
         const targetUrl = (app.fileName && !app.url?.startsWith('http'))
             ? `${getReleaseBase()}/${app.fileName}`
             : (app.url || `${getReleaseBase()}/${app.fileName}`);
 
         try {
-            // If running inside Android APK and downloading an update
+            // If running inside Android APK wrapper
             if (typeof window !== 'undefined' && window.ShadowStreamNative && typeof window.ShadowStreamNative.downloadUpdate === 'function') {
                 window.ShadowStreamNative.downloadUpdate(targetUrl);
-                Alert.alert('Downloading', `Downloading ${app.fileName || 'ShadowStream.apk'} to your notification shade.`);
+                if (typeof alert !== 'undefined') {
+                    alert('ShadowStream update is downloading. When finished, the package installer will open automatically.');
+                } else {
+                    Alert.alert('Download Started', 'Downloading ShadowStream update. When download completes, the package installer will open automatically.');
+                }
                 return;
             }
 
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                // Direct navigation ensures mobile browsers (Chrome, Safari) trigger native file download prompt
-                if (typeof document !== 'undefined') {
-                    const a = document.createElement('a');
-                    a.href = targetUrl;
-                    a.download = app.fileName || 'ShadowStream.apk';
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => { if (document.body.contains(a)) document.body.removeChild(a); }, 300);
-                    return;
-                }
+            // Web/Browser: direct navigation triggers native browser download prompt cleanly without popup blocker interference
+            if (typeof window !== 'undefined') {
                 window.location.href = targetUrl;
                 return;
             }
+
             const supported = await Linking.canOpenURL(targetUrl);
             if (supported) {
                 await Linking.openURL(targetUrl);
             }
         } catch (e) {
             Alert.alert('Download failed', String(e?.message || e));
+        }
+    };
+
+    const handleForceRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await applyAppUpdate();
+        } catch (_) {
+            if (typeof window !== 'undefined') {
+                window.location.reload();
+            }
         }
     };
 
@@ -200,51 +230,75 @@ export default function AppsScreen({ navigation }) {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.hero}>
-                    <Text style={styles.heroTitle}>📦  Install ShadowStream</Text>
-                    <Text style={styles.heroSub}>
-                        Native mobile + desktop apps. Pick your platform — same catalog, same player, zero ads.
-                    </Text>
-                    <Text style={styles.heroMeta}>
-                        Build {BUILD_VERSION} · {APPS.filter(a => a.status === 'ready').length} of {APPS.length} platforms verified
-                    </Text>
-                </View>
-
-                {APPS.map((app) => (
-                    <View key={app.id} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardIcon}>{app.icon}</Text>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.cardPlatform}>{app.platform}</Text>
-                                <Text style={styles.cardArch}>{app.arch} · {app.size}</Text>
-                            </View>
-                            <StatusBadge status={app.status} />
+                    <View style={styles.heroHeaderRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.heroTitle}>📦  Install ShadowStream</Text>
+                            <Text style={styles.heroSub}>
+                                Native mobile + desktop apps. Pick your platform — same catalog, same player, zero ads.
+                            </Text>
+                            <Text style={styles.heroMeta}>
+                                Current Live Build v{liveRelease.version} (Code {liveRelease.versionCode}) · Updated {liveRelease.releaseDate}
+                            </Text>
+                            {liveRelease.releaseNotes ? (
+                                <Text style={styles.heroNotes}>
+                                    ✨ What's new: {liveRelease.releaseNotes}
+                                </Text>
+                            ) : null}
                         </View>
-                        <Text style={styles.cardNotes}>{app.notes}</Text>
-                        <Text style={styles.cardFile}>{app.fileName}</Text>
                         <TouchableOpacity
-                            style={[styles.downloadBtn, app.status === 'broken' && styles.downloadBtnDisabled]}
-                            onPress={() => onDownload(app)}
-                            disabled={app.status === 'broken'}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Download ${app.platform}`}
+                            style={[styles.refreshCacheBtn, refreshing && styles.refreshCacheBtnActive]}
+                            onPress={handleForceRefresh}
+                            disabled={refreshing}
                         >
-                            <Text style={styles.downloadBtnText}>
-                                {app.status === 'broken' ? 'Unavailable' :
-                                 app.id === 'web' ? 'Open Web App →' :
-                                 app.id === 'apple-xtool' ? 'View Guide on GitHub →' :
-                                 `Download ${app.fileName?.endsWith('.apk') ? 'APK' : app.fileName?.endsWith('.exe') ? 'Installer' : 'App'} →`}
+                            <Text style={styles.refreshCacheText}>
+                                {refreshing ? 'Purging Cache...' : '🔄 Refresh Cache'}
                             </Text>
                         </TouchableOpacity>
                     </View>
-                ))}
+                </View>
+
+                {/* Responsive Grid for mobile, tablet, and desktop */}
+                <View style={[styles.grid, { gap }]}>
+                    {APPS.map((app) => (
+                        <View key={app.id} style={[styles.card, cardWidthStyle]}>
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.cardIcon}>{app.icon}</Text>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.cardPlatform}>{app.platform}</Text>
+                                    <Text style={styles.cardArch}>{app.arch} · {app.size}</Text>
+                                </View>
+                                <StatusBadge status={app.status} />
+                            </View>
+                            <Text style={styles.cardNotes}>{app.notes}</Text>
+                            <Text style={styles.cardFile}>{app.fileName}</Text>
+                            <TouchableOpacity
+                                style={[styles.downloadBtn, app.status === 'broken' && styles.downloadBtnDisabled]}
+                                onPress={() => onDownload(app)}
+                                disabled={app.status === 'broken'}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Download ${app.platform}`}
+                            >
+                                <Text style={styles.downloadBtnText}>
+                                    {app.status === 'broken' ? 'Unavailable' :
+                                     app.id === 'web' ? 'Open Web App →' :
+                                     app.id === 'apple-xtool' ? 'View Guide on GitHub →' :
+                                     `Download ${app.fileName?.endsWith('.apk') ? 'APK' : app.fileName?.endsWith('.exe') ? 'Installer' : 'App'} →`}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                </View>
 
                 <View style={styles.footerBox}>
-                    <Text style={styles.footerTitle}>BUILD INFO</Text>
+                    <Text style={styles.footerTitle}>AUTOMATIC UPDATER & CACHE SYNC</Text>
                     <Text style={styles.footerText}>
-                        All launchers are thin wrappers — they open the deployed web app in your default browser and pin it to your system tray / Start Menu / dock. No backend bundled. Your catalog and player update automatically with the site.
+                        • Android APK includes automatic download notifications and direct installer prompts upon completion.
                     </Text>
                     <Text style={styles.footerText}>
-                        Issues? Open the web app — it works on every device with a browser.
+                        • Web App (PWA) auto-updates with network-first version synchronization. Tap "Refresh Cache" above at any time to purge stale browser caches.
+                    </Text>
+                    <Text style={styles.footerText}>
+                        • Desktop launchers stream the newest live build seamlessly.
                     </Text>
                 </View>
             </ScrollView>
@@ -267,7 +321,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        marginBottom: 14,
+        marginBottom: 16,
+    },
+    heroHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12,
     },
     heroTitle: {
         color: COLORS.textPrimary,
@@ -281,11 +342,39 @@ const styles = StyleSheet.create({
         lineHeight: 19,
     },
     heroMeta: {
-        color: COLORS.textMuted,
+        color: COLORS.brandSecondary,
         fontSize: 11,
         marginTop: 8,
         fontWeight: '700',
         letterSpacing: 0.4,
+    },
+    heroNotes: {
+        color: COLORS.textMuted,
+        fontSize: 11,
+        marginTop: 4,
+        lineHeight: 16,
+    },
+    refreshCacheBtn: {
+        backgroundColor: COLORS.surfaceAlt,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+    },
+    refreshCacheBtnActive: {
+        opacity: 0.6,
+    },
+    refreshCacheText: {
+        color: COLORS.textPrimary,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'stretch',
     },
     card: {
         backgroundColor: COLORS.surfaceCard,
@@ -294,6 +383,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 14,
         marginBottom: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
     cardHeader: {
         flexDirection: 'row',
@@ -333,12 +425,13 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 17,
         marginTop: 6,
+        flex: 1,
     },
     cardFile: {
         color: COLORS.textMuted,
         fontSize: 10,
         fontFamily: 'monospace',
-        marginTop: 6,
+        marginTop: 8,
     },
     downloadBtn: {
         marginTop: 12,

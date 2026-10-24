@@ -1,10 +1,10 @@
 {
-  "version": "2.4.16",
-  "versionCode": 256,
+  "version": "2.4.17",
+  "versionCode": 257,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-24",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Auto-dub server prioritization, persistent audio preference, dedicated Dual Audio hub, and mobile/tablet responsive polish."
+  "releaseNotes": "In-app APK auto-installer, zero-stale version sync, background download receiver, and responsive mobile & tablet scaling."
 }

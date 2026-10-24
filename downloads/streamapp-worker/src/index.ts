@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.11",
-    versionCode: 251,
+    version: "2.4.17",
+    versionCode: 257,
     minVersion: "1.0.0",
     name: "ShadowStream",
-    releaseDate: "2026-10-23",
+    releaseDate: "2026-10-24",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Guaranteed accurate title audio dubs across all movies/series, zero-interruption AdShield toggle during playback, and non-blocking ad defense.",
+    releaseNotes: "Direct APK in-app installer prompt, background download receiver, zero-cache version sync, and responsive global scaling.",
 };
 
 

@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 256
-VERSION_NAME = "2.4.16"
+VERSION_CODE = 257
+VERSION_NAME = "2.4.17"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -120,6 +120,10 @@ JAVA_SOURCE = r'''package {pkg};
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.database.Cursor;
+import android.provider.Settings;
 import android.app.PictureInPictureParams;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -193,6 +197,9 @@ public class MainActivity extends Activity {{
     private boolean isVideoPlaying = false;
     private boolean forceOfflineFallback = false;
     private long lastBackPress = 0L;
+    private long updateDownloadId = -1L;
+    private Uri pendingInstallUri = null;
+    private BroadcastReceiver downloadReceiver = null;
 
     public class NativeBridge {{
         @JavascriptInterface
@@ -253,12 +260,12 @@ public class MainActivity extends Activity {{
 
         @JavascriptInterface
         public String getAppVersion() {{
-            return "2.4.14";
+            return "{version_name}";
         }}
 
         @JavascriptInterface
         public int getAppVersionCode() {{
-            return 254;
+            return {version_code};
         }}
 
         @JavascriptInterface
@@ -277,8 +284,20 @@ public class MainActivity extends Activity {{
             runOnUiThread(new Runnable() {{
                 @Override
                 public void run() {{
-                    String ua = web != null ? web.getSettings().getUserAgentString() : null;
-                    handleNativeDownload(downloadUrl, ua, "attachment; filename=\"ShadowStream.apk\"", "application/vnd.android.package-archive");
+                    try {{
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {{
+                            Toast.makeText(getApplicationContext(), "Please allow ShadowStream to install updates", Toast.LENGTH_SHORT).show();
+                            Intent manageIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                            manageIntent.setData(Uri.parse("package:" + getPackageName()));
+                            manageIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(manageIntent);
+                        }}
+                        String ua = web != null ? web.getSettings().getUserAgentString() : null;
+                        updateDownloadId = handleNativeDownload(downloadUrl, ua, "attachment; filename=\"ShadowStream.apk\"", "application/vnd.android.package-archive");
+                        Toast.makeText(getApplicationContext(), "⬇ Downloading update... Installer will open automatically when finished.", Toast.LENGTH_LONG).show();
+                    }} catch (Throwable t) {{
+                        Toast.makeText(getApplicationContext(), "Download error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }}
                 }}
             }});
         }}
@@ -460,6 +479,74 @@ public class MainActivity extends Activity {{
         }});
 
         web.loadUrl(HOME_URL);
+
+        downloadReceiver = new BroadcastReceiver() {{
+            @Override
+            public void onReceive(Context context, Intent intent) {{
+                String action = intent != null ? intent.getAction() : null;
+                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {{
+                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                    if (id != -1L && id == updateDownloadId) {{
+                        handleDownloadCompleted(id);
+                    }}
+                }}
+            }}
+        }};
+        try {{
+            registerReceiver(downloadReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        }} catch (Throwable ignored) {{}}
+    }}
+
+
+
+    private void handleDownloadCompleted(long id) {{
+        try {{
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (dm == null) return;
+            DownloadManager.Query query = new DownloadManager.Query();
+            query.setFilterById(id);
+            Cursor c = dm.query(query);
+            if (c != null && c.moveToFirst()) {{
+                int statusIdx = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                if (statusIdx != -1) {{
+                    int status = c.getInt(statusIdx);
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {{
+                        Uri apkUri = dm.getUriForDownloadedFile(id);
+                        if (apkUri != null) {{
+                            promptInstallApk(apkUri);
+                        }}
+                    }} else if (status == DownloadManager.STATUS_FAILED) {{
+                        Toast.makeText(getApplicationContext(), "Update download failed. Please retry.", Toast.LENGTH_LONG).show();
+                    }}
+                }}
+                c.close();
+            }}
+        }} catch (Throwable t) {{
+            Toast.makeText(getApplicationContext(), "Error checking download: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+        }}
+    }}
+
+    private void promptInstallApk(Uri apkUri) {{
+        try {{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {{
+                if (!getPackageManager().canRequestPackageInstalls()) {{
+                    pendingInstallUri = apkUri;
+                    Toast.makeText(this, "Please allow ShadowStream to install updates", Toast.LENGTH_LONG).show();
+                    Intent manageIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                    manageIntent.setData(Uri.parse("package:" + getPackageName()));
+                    manageIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(manageIntent);
+                    return;
+                }}
+            }}
+            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(installIntent);
+        }} catch (Throwable t) {{
+            Toast.makeText(this, "Could not open installer: " + t.getMessage(), Toast.LENGTH_LONG).show();
+        }}
     }}
 
     
@@ -543,13 +630,22 @@ public class MainActivity extends Activity {{
         return "application/octet-stream";
     }}
 
-    private void handleNativeDownload(String url, String userAgent, String contentDisposition, String mimeType) {{
+    private long handleNativeDownload(String url, String userAgent, String contentDisposition, String mimeType) {{
         try {{
-            if (url == null || url.isEmpty()) return;
+            if (url == null || url.isEmpty()) return -1L;
             Uri uri = Uri.parse(url);
             String fileName = URLUtil.guessFileName(url, contentDisposition, mimeType);
             if (fileName == null || fileName.isEmpty() || fileName.endsWith(".bin")) {{
                 fileName = (mimeType != null && mimeType.contains("package-archive")) ? "ShadowStream.apk" : "ShadowStream_Download.mp4";
+            }}
+
+            if (fileName.endsWith(".apk")) {{
+                try {{
+                    java.io.File oldApk = new java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
+                    if (oldApk.exists()) {{
+                        oldApk.delete();
+                    }}
+                }} catch (Throwable ignored) {{}}
             }}
 
             DownloadManager.Request request = new DownloadManager.Request(uri);
@@ -576,8 +672,9 @@ public class MainActivity extends Activity {{
 
             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
             if (dm != null) {{
-                dm.enqueue(request);
+                long id = dm.enqueue(request);
                 Toast.makeText(getApplicationContext(), "⬇ Downloading: " + fileName, Toast.LENGTH_SHORT).show();
+                return id;
             }}
         }} catch (Throwable t) {{
             try {{
@@ -593,6 +690,7 @@ public class MainActivity extends Activity {{
                 }}
             }}
         }}
+        return -1L;
     }}
 
     private boolean handleUrl(Uri uri) {{
@@ -760,10 +858,23 @@ public class MainActivity extends Activity {{
         if (web != null) {{
             web.onResume();
         }}
+        if (pendingInstallUri != null) {{
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls()) {{
+                Uri uriToInstall = pendingInstallUri;
+                pendingInstallUri = null;
+                promptInstallApk(uriToInstall);
+            }}
+        }}
     }}
 
     @Override
     protected void onDestroy() {{
+        if (downloadReceiver != null) {{
+            try {{
+                unregisterReceiver(downloadReceiver);
+            }} catch (Throwable ignored) {{}}
+            downloadReceiver = null;
+        }}
         if (web != null) {{
             web.loadUrl("about:blank");
             web.destroy();
@@ -853,6 +964,7 @@ def build():
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- External video players & downloaders handoff -->
     <queries>
@@ -898,7 +1010,7 @@ def build():
 """, encoding="utf-8")
 
     java_path = BUILD / "java" / PACKAGE.replace(".", "/") / "MainActivity.java"
-    java_path.write_text(JAVA_SOURCE.format(pkg=PACKAGE), encoding="utf-8")
+    java_path.write_text(JAVA_SOURCE.format(pkg=PACKAGE, version_name=VERSION_NAME, version_code=VERSION_CODE), encoding="utf-8")
 
     print("  1/5  aapt2 compile resources")
     flat = BUILD / "out" / "resources.zip"

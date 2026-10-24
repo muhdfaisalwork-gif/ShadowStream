@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
 
-const CURRENT_VERSION = '2.4.16';
-const CURRENT_CODE = 256;
+const CURRENT_VERSION = '2.4.17';
+const CURRENT_CODE = 257;
 
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);
     const [dismissed, setDismissed] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -20,7 +21,10 @@ export default function UpdateBanner() {
                 version: 'Latest',
                 title: 'New Web Update Available',
                 subtitle: 'Tap update to reload and apply the newest player and catalog fixes.',
-                action: () => applyAppUpdate(),
+                action: () => {
+                    setDownloading(true);
+                    applyAppUpdate();
+                },
             });
         };
         window.addEventListener('shadowstream:update-available', handlePwaUpdate);
@@ -28,7 +32,7 @@ export default function UpdateBanner() {
         // 2. Dynamic check against remote version API for ALL platforms
         const checkRemoteVersion = async () => {
             try {
-                const res = await fetch('/api/v1/app-version', { cache: 'no-store' });
+                const res = await fetch('/api/v1/app-version?_t=' + Date.now(), { cache: 'no-store' });
                 if (!res.ok) return;
                 const remote = await res.json();
 
@@ -41,13 +45,19 @@ export default function UpdateBanner() {
                     if (remote.versionCode && currentCode < remote.versionCode) {
                         setUpdateInfo({
                             type: 'apk',
-                            version: remote.version || '2.4.4',
-                            title: `Update Available (v${remote.version || '2.4.4'})`,
+                            version: remote.version || '2.4.17',
+                            title: `Update Available (v${remote.version || '2.4.17'})`,
                             subtitle: remote.releaseNotes || 'Install the newest version for player fixes & performance improvements.',
                             action: () => {
                                 const dlUrl = remote.apkUrl || 'https://ssmoviestvs.site/downloads/ShadowStream.apk';
+                                setDownloading(true);
                                 if (typeof window.ShadowStreamNative.downloadUpdate === 'function') {
                                     window.ShadowStreamNative.downloadUpdate(dlUrl);
+                                    if (typeof alert !== 'undefined') {
+                                        alert('ShadowStream update is downloading. When finished, the package installer will open automatically.');
+                                    } else {
+                                        Alert.alert('Downloading Update', 'ShadowStream update is downloading. When finished, the package installer will open automatically.');
+                                    }
                                 } else {
                                     window.location.href = dlUrl;
                                 }
@@ -64,7 +74,10 @@ export default function UpdateBanner() {
                         version: remote.version,
                         title: `ShadowStream v${remote.version} Available`,
                         subtitle: remote.releaseNotes || 'Tap to reload and apply the latest update.',
-                        action: () => applyAppUpdate(),
+                        action: () => {
+                            setDownloading(true);
+                            applyAppUpdate();
+                        },
                     });
                 }
             } catch (_) {}
@@ -85,12 +98,19 @@ export default function UpdateBanner() {
                 <Text style={styles.icon}>🚀</Text>
                 <View style={styles.textWrap}>
                     <Text style={styles.title}>{updateInfo.title}</Text>
-                    <Text style={styles.subtitle}>{updateInfo.subtitle}</Text>
+                    <Text style={styles.subtitle} numberOfLines={2}>{updateInfo.subtitle}</Text>
                 </View>
             </View>
             <View style={styles.actions}>
-                <TouchableOpacity style={styles.updateBtn} onPress={updateInfo.action} activeOpacity={0.8}>
-                    <Text style={styles.updateBtnText}>Update Now</Text>
+                <TouchableOpacity
+                    style={[styles.updateBtn, downloading && styles.updateBtnActive]}
+                    onPress={updateInfo.action}
+                    disabled={downloading}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.updateBtnText}>
+                        {downloading ? 'Updating...' : 'Update Now'}
+                    </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.dismissBtn} onPress={() => setDismissed(true)}>
                     <Text style={styles.dismissBtnText}>✕</Text>
@@ -120,7 +140,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         flex: 1,
-        minWidth: 220,
+        minWidth: 200,
     },
     icon: {
         fontSize: 18,
@@ -147,6 +167,9 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 6,
+    },
+    updateBtnActive: {
+        backgroundColor: '#7f1d1d',
     },
     updateBtnText: {
         color: '#FFFFFF',

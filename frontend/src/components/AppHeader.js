@@ -81,9 +81,9 @@ export default function AppHeader({ navigation, activeRoute, title }) {
                     />
                 </TouchableOpacity>
 
-                {title && (
+                {title && width >= 420 && (
                     <View style={styles.screenTag}>
-                        <Text style={styles.screenTagText}>{title}</Text>
+                        <Text style={styles.screenTagText} numberOfLines={1}>{title}</Text>
                     </View>
                 )}
             </View>
