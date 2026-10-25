@@ -25,6 +25,7 @@ export default function HomeScreen({ navigation }) {
     const [heroSlides, setHeroSlides] = useState([]);
     const [heroIndex, setHeroIndex] = useState(0);
     const [continueWatching, setContinueWatching] = useState([]);
+    const [airingToday, setAiringToday] = useState([]);
     const [featured, setFeatured] = useState([]); // bundled picks used when API is unreachable
     const [loading, setLoading] = useState(true);
     const [apiStatus, setApiStatus] = useState('loading'); // 'loading' | 'ok' | 'unreachable'
@@ -86,6 +87,25 @@ export default function HomeScreen({ navigation }) {
         } finally {
             setLoading(false);
         }
+
+        // Load live broadcast & streaming schedule for Airing Today
+        try {
+            const airingRes = await fetch(`${getApiBase()}/schedule/today`);
+            if (airingRes.ok) {
+                const airingData = await airingRes.json();
+                if (Array.isArray(airingData.items)) {
+                    setAiringToday(airingData.items);
+                }
+            } else {
+                const staticRes = await fetch('/airing_today.json');
+                if (staticRes.ok) {
+                    const staticData = await staticRes.json();
+                    if (Array.isArray(staticData.items)) {
+                        setAiringToday(staticData.items);
+                    }
+                }
+            }
+        } catch (_) {}
     }, []);
 
     // Load continue watching entries
@@ -339,6 +359,37 @@ export default function HomeScreen({ navigation }) {
                         <Text style={[styles.surpriseArrow, { color: '#22d3ee' }]}>›</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* 🔴 Airing Today — Live TV Broadcast & Streaming Schedule */}
+                {airingToday.length > 0 && (
+                    <View style={styles.airingSection}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.airingTitleRow}>
+                                <View style={styles.livePulseDot} />
+                                <Text style={styles.sectionTitle}>Airing Today</Text>
+                                <View style={styles.liveTagBadge}>
+                                    <Text style={styles.liveTagBadgeText}>LIVE GUIDE</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.sectionMeta}>{airingToday.length} live broadcasts</Text>
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.continueList}
+                        >
+                            {airingToday.map((item, idx) => (
+                                <View key={`airing-${item.id || idx}`} style={styles.continueCardSlot}>
+                                    <MediaCard
+                                        item={item}
+                                        width={responsive.cardWidth}
+                                        onPress={handleSelectMedia}
+                                    />
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
                 {/* Continue Watching Section */}
                 {continueWatching.length > 0 && (
@@ -631,6 +682,34 @@ const styles = StyleSheet.create({
     heroDotActive: {
         width: 22,
         backgroundColor: COLORS.brand
+    },
+    airingSection: {
+        marginBottom: 24,
+    },
+    airingTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    livePulseDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#EF4444',
+    },
+    liveTagBadge: {
+        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        borderColor: '#EF4444',
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+    },
+    liveTagBadgeText: {
+        color: '#EF4444',
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
     continueSection: {
         marginBottom: 28

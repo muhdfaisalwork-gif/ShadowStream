@@ -1,10 +1,10 @@
 {
-  "version": "2.4.20",
-  "versionCode": 260,
+  "version": "2.4.21",
+  "versionCode": 261,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-24",
+  "releaseDate": "2026-10-25",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Airtight popup & 3rd-party link defense: Android native dummy-transport popup sink, subframe media host whitelist, form submit interceptors, embed download safety, and trailer sandboxing."
+  "releaseNotes": "AniList GraphQL triple-title anime matching & episode countdowns, TVMaze live broadcast & streaming schedule guide, and OpenSubtitles 100+ language subtitle engine."
 }

@@ -11,6 +11,8 @@ import { resolveMirrors, toPlayerProps } from '../utils/resolver';
 import { AudioPreferencesAPI } from '../utils/storage';
 import { WatchlistAPI, HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { fetchOpenSubtitles } from '../utils/subtitleFetcher';
+import { resolveAnimeInfo } from '../utils/animeResolver';
 
 export function resolveCanonicalSeasonAndEpisode(seasonsList, reqSeason, reqEpisode) {
     if (!Array.isArray(seasonsList) || seasonsList.length === 0) {
@@ -135,6 +137,7 @@ export default function PlayerScreen({ route, navigation }) {
     const [activeMirrorIdx, setActiveMirrorIdx] = useState(0);
     const [resolveNote, setResolveNote] = useState(null);
     const [renditions, setRenditions] = useState([]);
+    const [animeInfo, setAnimeInfo] = useState(null);
 
     // Sync route.params when PlayerScreen stays mounted in Drawer.Navigator
     useEffect(() => {
@@ -453,6 +456,42 @@ export default function PlayerScreen({ route, navigation }) {
                 }
             } catch (wErr) {
                 console.warn('[PlayerScreen] Multi-language worker fetch error:', wErr.message);
+            }
+
+            // 2. Fetch synchronized multi-language subtitles from OpenSubtitles via worker
+            try {
+                const openSubs = await fetchOpenSubtitles({
+                    imdbId: effectiveImdb,
+                    tmdbId: effectiveTmdb,
+                    title: item.title || item.name,
+                    season: activeS,
+                    episode: activeE,
+                });
+                if (Array.isArray(openSubs) && openSubs.length > 0) {
+                    setSubtitles(prev => {
+                        const existingUrls = new Set((prev || []).map(s => s.url).filter(Boolean));
+                        const merged = [...(prev || [])];
+                        for (const s of openSubs) {
+                            if (!existingUrls.has(s.url)) {
+                                merged.push(s);
+                            }
+                        }
+                        return merged;
+                    });
+                }
+            } catch (subErr) {
+                console.warn('[PlayerScreen] fetchOpenSubtitles error:', subErr.message);
+            }
+
+            // 3. Resolve AniList anime metadata (Romaji, English, airing countdown)
+            const isAnime = item.type === 'anime' || /anime/i.test(item.slug || '') || /anime/i.test(item.genres?.map(g => g.name || g.slug).join(' ') || '');
+            if (isAnime) {
+                try {
+                    const aInfo = await resolveAnimeInfo(item.title || item.name || '');
+                    if (aInfo) {
+                        setAnimeInfo(aInfo);
+                    }
+                } catch (_) {}
             }
 
             if (workerMultiLangStreams.length > 0) {

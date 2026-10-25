@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.18",
-    versionCode: 258,
+    version: "2.4.21",
+    versionCode: 261,
     minVersion: "1.0.0",
     name: "ShadowStream",
-    releaseDate: "2026-10-24",
+    releaseDate: "2026-10-25",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Direct APK in-app installer prompt, background download receiver, zero-cache version sync, and responsive global scaling.",
+    releaseNotes: "AniList GraphQL triple-title anime resolver & airing countdowns, TVMaze live broadcast schedule, and OpenSubtitles multi-lingual subtitle engine.",
 };
 
 
@@ -318,6 +318,44 @@ async function resolveAnimeSalt(title: string, season = 1, episode = 1): Promise
         });
 
         if (res.status === 404) {
+            // Try resolving AniList titles (romaji, english, synonyms)
+            try {
+                const aniPayload = JSON.stringify({
+                    query: "query ($s: String) { Media(search: $s, type: ANIME, sort: POPULARITY_DESC) { title { romaji english } synonyms } }",
+                    variables: { s: title.split(':')[0].trim() }
+                });
+                const aniRes = await fetch("https://graphql.anilist.co", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: aniPayload,
+                    signal: timeoutCtrl.signal
+                });
+                if (aniRes.ok) {
+                    const aniJson: any = await aniRes.json();
+                    const media = aniJson.data?.Media;
+                    const candidates: string[] = [
+                        media?.title?.romaji,
+                        media?.title?.english,
+                        ...(media?.synonyms || [])
+                    ].filter(Boolean);
+
+                    for (const cand of candidates) {
+                        const candSlug = slugifyAnime(cand);
+                        if (candSlug === slug) continue;
+                        const altUrl = `https://animesalt.cx/episode/${candSlug}-${season}x${episode}/`;
+                        const altRes = await fetch(altUrl, {
+                            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                            signal: timeoutCtrl.signal
+                        });
+                        if (altRes.ok) {
+                            res = altRes;
+                            slug = candSlug;
+                            break;
+                        }
+                    }
+                }
+            } catch (_) {}
+
             const cleanTitle = title.split(':')[0].trim();
             const searchUrl = `https://animesalt.cx/?s=${encodeURIComponent(cleanTitle)}`;
             const sRes = await fetch(searchUrl, {
@@ -1978,6 +2016,233 @@ export default {
 
             if (normPath === "/titles-lite" || normPath === "/titles-lite.json") {
                 return streamR2("titles-lite.json", env);
+            }
+
+            // -------------------------------------------------------------
+            // OpenSubtitles API & Subtitle Download / WebVTT Converter
+            // -------------------------------------------------------------
+            if (normPath === "/subtitles" || normPath === "/subtitles/") {
+                const imdbId = params.get("imdbId") || params.get("imdb");
+                const season = params.get("season") || params.get("s");
+                const episode = params.get("episode") || params.get("e");
+                const title = params.get("title") || "";
+
+                const cleanImdb = String(imdbId || "").replace(/^tt/, "").trim();
+                let osUrl = "";
+                if (cleanImdb) {
+                    if (season != null && episode != null && Number(season) > 0 && Number(episode) > 0) {
+                        osUrl = `https://rest.opensubtitles.org/search/episode-${episode}/imdbid-${cleanImdb}/season-${season}`;
+                    } else {
+                        osUrl = `https://rest.opensubtitles.org/search/imdbid-${cleanImdb}`;
+                    }
+                } else if (title) {
+                    const cleanTitle = encodeURIComponent(String(title).replace(/\(\d{4}\)/, "").trim());
+                    osUrl = `https://rest.opensubtitles.org/search/query-${cleanTitle}`;
+                }
+
+                if (!osUrl) {
+                    return jsonResponse({ ok: true, subtitles: [] });
+                }
+
+                try {
+                    const osRes = await fetch(osUrl, {
+                        headers: { "User-Agent": "TemporaryUserAgent", "Accept": "application/json" }
+                    });
+                    if (!osRes.ok) return jsonResponse({ ok: true, subtitles: [] });
+                    const osData = await osRes.json();
+                    if (!Array.isArray(osData)) return jsonResponse({ ok: true, subtitles: [] });
+
+                    const ISO3_TO_ISO2: Record<string, string> = {
+                        eng: "en", spa: "es", fre: "fr", fra: "fr", ger: "de", deu: "de",
+                        ita: "it", por: "pt", pob: "pt", hin: "hi", ara: "ar", rus: "ru",
+                        jpn: "ja", kor: "ko", chi: "zh", zho: "zh", tur: "tr", urd: "ur",
+                        ind: "id", pol: "pl", dut: "nl", nld: "nl", swe: "sv", nor: "no",
+                        dan: "da", fin: "fi", ell: "el", gre: "el", heb: "he", tha: "th",
+                        vie: "vi", ces: "cs", cze: "cs", hun: "hu", ron: "ro", rum: "ro",
+                        ukr: "uk", tam: "ta", tel: "te", mal: "ml", kan: "kn", ben: "bn",
+                        fil: "fil", tag: "tl", msa: "ms", may: "ms", fas: "fa", per: "fa"
+                    };
+
+                    const byLang = new Map<string, any>();
+                    for (const item of osData as any[]) {
+                        const rawLang = String(item.SubLanguageID || "").toLowerCase();
+                        const lang2 = ISO3_TO_ISO2[rawLang] || rawLang.slice(0, 2);
+                        if (!lang2 || byLang.has(lang2)) continue;
+                        if (!item.SubDownloadLink) continue;
+
+                        const baseOrigin = "https://ssmoviestvs.site";
+                        const downloadVttUrl = `${baseOrigin}/api/v1/subtitles/download?link=${encodeURIComponent(item.SubDownloadLink)}`;
+
+                        byLang.set(lang2, {
+                            id: `os_${lang2}`,
+                            language: lang2,
+                            label: item.LanguageName || lang2.toUpperCase(),
+                            format: "vtt",
+                            url: downloadVttUrl,
+                            fileName: item.SubFileName || `${lang2}.vtt`
+                        });
+                    }
+
+                    return jsonResponse({
+                        ok: true,
+                        totalFound: osData.length,
+                        subtitles: Array.from(byLang.values())
+                    });
+                } catch (e: any) {
+                    return jsonResponse({ ok: false, error: e?.message, subtitles: [] });
+                }
+            }
+
+            if (normPath === "/subtitles/download" || normPath === "/subtitles/download/") {
+                const link = params.get("link");
+                if (!link || !link.startsWith("https://dl.opensubtitles.org/")) {
+                    return new Response("Invalid or disallowed subtitle link", { status: 400 });
+                }
+                try {
+                    const subRes = await fetch(link, {
+                        headers: { "User-Agent": "TemporaryUserAgent" }
+                    });
+                    if (!subRes.ok) {
+                        return new Response("Failed to download subtitle from upstream", { status: 502 });
+                    }
+
+                    let text = "";
+                    const isGz = link.endsWith(".gz") || subRes.headers.get("content-type")?.includes("gzip") || subRes.headers.get("content-type")?.includes("force-download");
+                    if (isGz && typeof DecompressionStream !== "undefined") {
+                        try {
+                            const ds = new DecompressionStream("gzip");
+                            const decompressedStream = subRes.body!.pipeThrough(ds);
+                            text = await new Response(decompressedStream).text();
+                        } catch (_) {
+                            text = await subRes.text();
+                        }
+                    } else {
+                        text = await subRes.text();
+                    }
+
+                    const vtt = "WEBVTT\n\n" + text
+                        .replace(/\r\n|\r/g, "\n")
+                        .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
+
+                    return new Response(vtt, {
+                        status: 200,
+                        headers: {
+                            "Content-Type": "text/vtt; charset=utf-8",
+                            ...CORS,
+                            "Cache-Control": "public, max-age=86400"
+                        }
+                    });
+                } catch (err: any) {
+                    return new Response(`Subtitle proxy error: ${err?.message}`, { status: 500 });
+                }
+            }
+
+            // -------------------------------------------------------------
+            // AniList GraphQL Anime Title & Airing Resolver
+            // -------------------------------------------------------------
+            if (normPath === "/anime/resolve" || normPath === "/anime/resolve/") {
+                const titleParam = params.get("title") || params.get("q") || params.get("slug") || "";
+                const cleanTitle = titleParam.replace(/\(\d{4}\)|-\d{4,9}$/g, "").replace(/[-_]/g, " ").trim();
+                if (!cleanTitle) {
+                    return jsonResponse({ ok: false, message: "Missing title parameter" });
+                }
+
+                const query = `
+                query ($search: String) {
+                  Media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
+                    id
+                    idMal
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    synonyms
+                    status
+                    episodes
+                    nextAiringEpisode {
+                      airingAt
+                      timeUntilAiring
+                      episode
+                    }
+                    coverImage {
+                      large
+                      medium
+                    }
+                  }
+                }`;
+
+                try {
+                    const aniRes = await fetch("https://graphql.anilist.co", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        },
+                        body: JSON.stringify({ query, variables: { search: cleanTitle } })
+                    });
+                    if (!aniRes.ok) {
+                        return jsonResponse({ ok: false, status: aniRes.status });
+                    }
+                    const json: any = await aniRes.json();
+                    const media = json.data?.Media;
+                    if (!media) {
+                        return jsonResponse({ ok: false, message: "No anime match found" });
+                    }
+
+                    return jsonResponse({
+                        ok: true,
+                        anilistId: media.id,
+                        malId: media.idMal,
+                        romaji: media.title?.romaji || null,
+                        english: media.title?.english || null,
+                        native: media.title?.native || null,
+                        synonyms: media.synonyms || [],
+                        status: media.status,
+                        episodes: media.episodes,
+                        nextAiringEpisode: media.nextAiringEpisode ? {
+                            episode: media.nextAiringEpisode.episode,
+                            airingAt: media.nextAiringEpisode.airingAt,
+                            timeUntilAiring: media.nextAiringEpisode.timeUntilAiring
+                        } : null,
+                        coverImage: media.coverImage?.large || media.coverImage?.medium
+                    });
+                } catch (e: any) {
+                    return jsonResponse({ ok: false, error: e?.message });
+                }
+            }
+
+            // -------------------------------------------------------------
+            // TVMaze Live Broadcast Schedule ("Airing Today")
+            // -------------------------------------------------------------
+            if (normPath === "/schedule/today" || normPath === "/schedule/today/") {
+                try {
+                    const tvmRes = await fetch("https://api.tvmaze.com/schedule?country=US");
+                    if (tvmRes.ok) {
+                        const list: any[] = await tvmRes.json();
+                        const items = (Array.isArray(list) ? list : []).slice(0, 30).map(entry => {
+                            const show = entry.show || {};
+                            const img = show.image || entry.image || {};
+                            return {
+                                id: entry.id || show.id,
+                                title: show.name || "Untitled Show",
+                                episodeTitle: entry.name || `Episode ${entry.number || 1}`,
+                                season: entry.season || 1,
+                                episode: entry.number || 1,
+                                airtime: entry.airtime || "",
+                                network: show.network?.name || show.webChannel?.name || "Live TV",
+                                poster: img.medium || img.original || null,
+                                rating: show.rating?.average || null,
+                                overview: (entry.summary || show.summary || "").replace(/<[^>]+>/g, "").trim(),
+                                isLiveToday: true
+                            };
+                        });
+                        return jsonResponse({ ok: true, source: "TVMaze Live", items });
+                    }
+                } catch (e: any) {
+                    return jsonResponse({ ok: false, error: e?.message, items: [] });
+                }
             }
 
             if (normPath === "/stream/resolve" || normPath === "/stream-mirrors") {

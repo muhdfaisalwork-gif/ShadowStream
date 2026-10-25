@@ -9,6 +9,7 @@ import { availablePlayers } from '../utils/externalPlayer';
 import { getApiBase } from '../utils/api';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount, recordBlocked } from '../utils/adShield';
 import { AudioPreferencesAPI } from '../utils/storage';
+import { convertSrtGzToVtt } from '../utils/subtitleFetcher';
 
 // Common ISO 639-1 language code to readable name mapping
 const LANGUAGE_NAMES = {
@@ -464,12 +465,29 @@ export default function ShadowStreamPlayer({
     // initialization" — which white-screened the entire player route. Hooks
     // that appear earlier in the body must not depend on state declared later.
     const [selectedSubtitle, setSelectedSubtitle] = useState('off');
+    const [activeTrackBlobUrls, setActiveTrackBlobUrls] = useState({});
 
     // Apply the chosen subtitle to the real media element.
     //
     // The menu sets `selectedSubtitle`, but without this the <video> keeps
     // showing whatever the browser picked by default — which is why the
     // Subtitles control looked like it did nothing.
+    // Convert GZ/SRT remote subtitles into local WebVTT Blob URLs on selection
+    useEffect(() => {
+        if (selectedSubtitle === 'off' || !isDirect) return;
+        const targetSub = normalizedSubtitles.find(s => s.language === selectedSubtitle || s.label === selectedSubtitle);
+        if (!targetSub || !targetSub.url) return;
+        if (activeTrackBlobUrls[targetSub.language]) return;
+
+        if (targetSub.url.includes('.gz') || targetSub.url.includes('opensubtitles.org')) {
+            convertSrtGzToVtt(targetSub.url).then(blobUrl => {
+                if (blobUrl && blobUrl !== targetSub.url) {
+                    setActiveTrackBlobUrls(prev => ({ ...prev, [targetSub.language]: blobUrl }));
+                }
+            });
+        }
+    }, [selectedSubtitle, normalizedSubtitles, isDirect, activeTrackBlobUrls]);
+
     useEffect(() => {
         if (!isDirect) return;
         const video = videoRef.current;
@@ -481,7 +499,7 @@ export default function ShadowStreamPlayer({
             const match = wanted !== 'off' && (t.language === wanted || t.label === wanted);
             t.mode = match ? 'showing' : 'disabled';
         }
-    }, [selectedSubtitle, isDirect, streamUrl, subtitles.length]);
+    }, [selectedSubtitle, isDirect, streamUrl, subtitles.length, activeTrackBlobUrls]);
 
     const normalizedSubtitles = useMemo(() => {
         if (!Array.isArray(subtitles)) return [];
@@ -1546,7 +1564,7 @@ export default function ShadowStreamPlayer({
                                     <track
                                         key={s.id || s.language}
                                         kind="subtitles"
-                                        src={s.url}
+                                        src={activeTrackBlobUrls[s.language] || s.url}
                                         srcLang={s.language}
                                         label={s.label || s.language}
                                         default={selectedSubtitle === s.language}

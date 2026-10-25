@@ -10,6 +10,7 @@ import Poster from '../components/Poster';
 import MediaCard from '../components/MediaCard';
 import { getApiBase } from '../utils/api';
 import { WatchlistAPI, HistoryAPI } from '../utils/storage';
+import { resolveAnimeInfo, formatTimeUntilAiring } from '../utils/animeResolver';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { useResponsive } from '../theme/scaling';
 
@@ -82,6 +83,7 @@ export default function TitleDetailScreen({ route, navigation }) {
     const titleKey = slugFromUrl || initialItem?.slug || initialItem?.id;
     const [item, setItem] = useState(initialItem || null);
     const [seasons, setSeasons] = useState([]);
+    const [animeInfo, setAnimeInfo] = useState(null);
     const [loadingSeasons, setLoadingSeasons] = useState(false);
     const [activeSeasonNum, setActiveSeasonNum] = useState(1);
     const [cast, setCast] = useState([]);
@@ -656,6 +658,20 @@ export default function TitleDetailScreen({ route, navigation }) {
                             {item.originalTitle && item.originalTitle !== item.title && (
                                 <Text style={styles.origTitle}>{item.originalTitle}</Text>
                             )}
+                            {animeInfo?.romaji && animeInfo.romaji !== item.title && animeInfo.romaji !== item.originalTitle ? (
+                                <Text style={styles.origTitle}>Romaji: {animeInfo.romaji}</Text>
+                            ) : null}
+                            {animeInfo?.native && animeInfo.native !== item.originalTitle ? (
+                                <Text style={styles.origTitle}>Japanese: {animeInfo.native}</Text>
+                            ) : null}
+                            {animeInfo?.nextAiringEpisode ? (
+                                <View style={styles.airingCountdownPill}>
+                                    <Text style={styles.airingCountdownDot}>●</Text>
+                                    <Text style={styles.airingCountdownText}>
+                                        Next Episode {animeInfo.nextAiringEpisode.episode} in {formatTimeUntilAiring(animeInfo.nextAiringEpisode.timeUntilAiring)}
+                                    </Text>
+                                </View>
+                            ) : null}
 
                             <View style={styles.metaChipsRow}>
                                 {item.year && <Text style={styles.metaChip}>{item.year}</Text>}
@@ -1429,6 +1445,28 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '900',
         letterSpacing: -0.5
+    },
+    airingCountdownPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(34, 211, 238, 0.15)',
+        borderWidth: 1,
+        borderColor: '#22D3EE',
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginTop: 6,
+        alignSelf: 'flex-start',
+    },
+    airingCountdownDot: {
+        color: '#22D3EE',
+        fontSize: 10,
+        marginRight: 6,
+    },
+    airingCountdownText: {
+        color: '#22D3EE',
+        fontSize: 12,
+        fontWeight: '700',
     },
     origTitle: {
         color: COLORS.textMuted,

@@ -88,12 +88,17 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
                     style={StyleSheet.absoluteFill}
                 />
 
-                {/* Top left type badge */}
-                {typeInfo && (
+                {/* Top left type badge or Live Today indicator */}
+                {item.isLiveToday ? (
+                    <View style={styles.liveTodayBadge}>
+                        <Text style={styles.liveTodayDot}>●</Text>
+                        <Text style={styles.liveTodayText}>AIRING TODAY</Text>
+                    </View>
+                ) : typeInfo ? (
                     <View style={[styles.typeBadge, { backgroundColor: typeInfo.bg }]}>
                         <Text style={styles.typeBadgeText}>{typeInfo.label}</Text>
                     </View>
-                )}
+                ) : null}
 
                 {/* Release Status Badge - Top right (offset below rating badge when both present) */}
                 {releaseStatus && (
@@ -143,6 +148,11 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
                 <Text style={styles.cardTitle} numberOfLines={1}>
                     {item.title || 'Untitled'}
                 </Text>
+                {item.isLiveToday && item.episodeTitle ? (
+                    <Text style={styles.liveEpisodeSub} numberOfLines={1}>
+                        {item.network ? `${item.network} • ` : ''}S{item.season}E{item.episode}
+                    </Text>
+                ) : null}
                 <View style={styles.cardMetaRow}>
                     <Text style={styles.cardYear}>{item.year || ''}</Text>
                     {item.runtime ? (
@@ -171,6 +181,35 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surfaceAlt,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.06)'
+    },
+    liveTodayBadge: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#DC2626',
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 4,
+        zIndex: 2,
+    },
+    liveTodayDot: {
+        color: '#FFFFFF',
+        fontSize: 8,
+        marginRight: 4,
+    },
+    liveTodayText: {
+        color: '#FFFFFF',
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    liveEpisodeSub: {
+        color: '#22D3EE',
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 2,
     },
     typeBadge: {
         position: 'absolute',
