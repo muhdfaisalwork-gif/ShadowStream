@@ -59,10 +59,135 @@ const COUNTRY_MAP = {
     GH: { name: 'Ghana', flag: '🇬🇭' }
 };
 
+export const COUNTRY_SLUG_MAP = {
+    'united states': 'US',
+    'united-states': 'US',
+    'united_states': 'US',
+    'usa': 'US',
+    'u.s.': 'US',
+    'us': 'US',
+    'united kingdom': 'GB',
+    'united-kingdom': 'GB',
+    'united_kingdom': 'GB',
+    'uk': 'GB',
+    'u.k.': 'GB',
+    'great britain': 'GB',
+    'great-britain': 'GB',
+    'gb': 'GB',
+    'south korea': 'KR',
+    'south-korea': 'KR',
+    'south_korea': 'KR',
+    'korea': 'KR',
+    'kr': 'KR',
+    'japan': 'JP',
+    'jp': 'JP',
+    'china': 'CN',
+    'cn': 'CN',
+    'india': 'IN',
+    'in': 'IN',
+    'pakistan': 'PK',
+    'pk': 'PK',
+    'bangladesh': 'BD',
+    'bd': 'BD',
+    'indonesia': 'ID',
+    'id': 'ID',
+    'thailand': 'TH',
+    'th': 'TH',
+    'malaysia': 'MY',
+    'my': 'MY',
+    'philippines': 'PH',
+    'ph': 'PH',
+    'turkey': 'TR',
+    'tr': 'TR',
+    'nigeria': 'NG',
+    'ng': 'NG',
+    'egypt': 'EG',
+    'eg': 'EG',
+    'morocco': 'MA',
+    'ma': 'MA',
+    'saudi arabia': 'SA',
+    'saudi-arabia': 'SA',
+    'saudi_arabia': 'SA',
+    'sa': 'SA',
+    'lebanon': 'LB',
+    'lb': 'LB',
+    'iraq': 'IQ',
+    'iq': 'IQ',
+    'syria': 'SY',
+    'sy': 'SY',
+    'ivory coast': 'CI',
+    'ivory-coast': 'CI',
+    "cote d'ivoire": 'CI',
+    'ci': 'CI',
+    'kenya': 'KE',
+    'ke': 'KE',
+    'south africa': 'ZA',
+    'south-africa': 'ZA',
+    'south_africa': 'ZA',
+    'za': 'ZA',
+    'france': 'FR',
+    'fr': 'FR',
+    'germany': 'DE',
+    'de': 'DE',
+    'italy': 'IT',
+    'it': 'IT',
+    'spain': 'ES',
+    'es': 'ES',
+    'mexico': 'MX',
+    'mx': 'MX',
+    'russia': 'RU',
+    'ru': 'RU',
+    'canada': 'CA',
+    'ca': 'CA',
+    'australia': 'AU',
+    'au': 'AU',
+    'brazil': 'BR',
+    'br': 'BR',
+    'united arab emirates': 'AE',
+    'united-arab-emirates': 'AE',
+    'uae': 'AE',
+    'ae': 'AE',
+    'sweden': 'SE',
+    'se': 'SE',
+    'norway': 'NO',
+    'no': 'NO',
+    'denmark': 'DK',
+    'dk': 'DK',
+    'netherlands': 'NL',
+    'nl': 'NL',
+    'poland': 'PL',
+    'pl': 'PL',
+    'colombia': 'CO',
+    'co': 'CO',
+    'argentina': 'AR',
+    'ar': 'AR',
+    'iran': 'IR',
+    'ir': 'IR',
+    'taiwan': 'TW',
+    'tw': 'TW',
+    'hong kong': 'HK',
+    'hong-kong': 'HK',
+    'hk': 'HK',
+    'ghana': 'GH',
+    'gh': 'GH'
+};
+
+export function normalizeCountryCode(input) {
+    if (!input || typeof input !== 'string') return 'US';
+    const clean = input.trim().toLowerCase().replace(/[_-]/g, ' ');
+    if (COUNTRY_SLUG_MAP[clean]) return COUNTRY_SLUG_MAP[clean];
+    const rawClean = input.trim().toLowerCase();
+    if (COUNTRY_SLUG_MAP[rawClean]) return COUNTRY_SLUG_MAP[rawClean];
+    const upper = input.trim().toUpperCase();
+    if (COUNTRY_MAP[upper]) return upper;
+    if (upper.length === 2) return upper;
+    return 'US';
+}
+
 export default function CountryDetailScreen({ route, navigation }) {
     const rawCountry = route?.params?.country;
     const rawSlug = route?.params?.slug || route?.params?.code || (typeof rawCountry === 'string' ? rawCountry : rawCountry?.code);
-    const countryCode = String(rawSlug || 'PK').toUpperCase();
+    const countryCode = normalizeCountryCode(rawSlug);
 
     const [countryInfo, setCountryInfo] = useState(() => {
         if (rawCountry && typeof rawCountry === 'object' && rawCountry.name) {
@@ -209,7 +334,7 @@ export default function CountryDetailScreen({ route, navigation }) {
                         {titles.map((t, idx) => (
                             <View
                                 key={`${t.id || idx}-${idx}`}
-                                style={{ width: `calc(${100 / numCols}% - ${(12 * (numCols - 1)) / numCols}px)`, marginBottom: 16 }}
+                                style={{ width: `${100 / numCols - 2}%`, marginBottom: 16 }}
                             >
                                 <MediaCard
                                     item={t}

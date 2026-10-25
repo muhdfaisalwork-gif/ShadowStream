@@ -468,6 +468,35 @@ export default function ShadowStreamPlayer({
     const [selectedSubtitle, setSelectedSubtitle] = useState('off');
     const [activeTrackBlobUrls, setActiveTrackBlobUrls] = useState({});
 
+    const normalizedSubtitles = useMemo(() => {
+        if (!Array.isArray(subtitles)) return [];
+        return subtitles.map(normalizeSubtitle).filter(Boolean);
+    }, [subtitles]);
+
+    // Expose the Subtitle menu on both direct (with tracks) and embed (with provider CC guidance)
+    const canSelectSubtitles = (normalizedSubtitles.length > 0) || !isDirect;
+
+    // Dub (audio language) picker — combines detected title dubs with common options
+    const normalizedDubs = useMemo(() => {
+        if (!Array.isArray(dubs)) return [];
+        return dubs.map(normalizeDub).filter(Boolean);
+    }, [dubs]);
+
+    const availableDubs = useMemo(() => {
+        const seen = new Set();
+        const list = [];
+        for (const d of normalizedDubs) {
+            if (!seen.has(d.code)) {
+                seen.add(d.code);
+                list.push(d);
+            }
+        }
+        return list;
+    }, [normalizedDubs]);
+
+
+
+
     // Apply the chosen subtitle to the real media element.
     //
     // The menu sets `selectedSubtitle`, but without this the <video> keeps
@@ -502,31 +531,6 @@ export default function ShadowStreamPlayer({
         }
     }, [selectedSubtitle, isDirect, streamUrl, subtitles.length, activeTrackBlobUrls]);
 
-    const normalizedSubtitles = useMemo(() => {
-        if (!Array.isArray(subtitles)) return [];
-        return subtitles.map(normalizeSubtitle).filter(Boolean);
-    }, [subtitles]);
-
-    // Expose the Subtitle menu on both direct (with tracks) and embed (with provider CC guidance)
-    const canSelectSubtitles = (normalizedSubtitles.length > 0) || !isDirect;
-
-    // Dub (audio language) picker — combines detected title dubs with common options
-    const normalizedDubs = useMemo(() => {
-        if (!Array.isArray(dubs)) return [];
-        return dubs.map(normalizeDub).filter(Boolean);
-    }, [dubs]);
-
-    const availableDubs = useMemo(() => {
-        const seen = new Set();
-        const list = [];
-        for (const d of normalizedDubs) {
-            if (!seen.has(d.code)) {
-                seen.add(d.code);
-                list.push(d);
-            }
-        }
-        return list;
-    }, [normalizedDubs]);
 
     // Dead code removed deliberately.
     //

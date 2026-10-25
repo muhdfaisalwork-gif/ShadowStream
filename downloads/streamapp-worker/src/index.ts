@@ -570,7 +570,8 @@ async function applyFacetIntersections(
     if (!skip.country) {
         const c = params.get("country");
         if (c) {
-            const obj = await env.CATALOG.get(R2_PREFIX + `titles-by-country/${c.toUpperCase()}.json`);
+            const code = normalizeCountryCode(c);
+            const obj = await env.CATALOG.get(R2_PREFIX + `titles-by-country/${code}.json`);
             if (obj) {
                 const d = (await obj.json()) as { items?: any[] };
                 const ids = new Set((d.items || []).map((x: any) => x.id));
@@ -608,6 +609,129 @@ async function applyFacetIntersections(
         }
     }
     return out;
+}
+
+
+const COUNTRY_SLUG_MAP: Record<string, string> = {
+    'united states': 'US',
+    'united-states': 'US',
+    'united_states': 'US',
+    'usa': 'US',
+    'u.s.': 'US',
+    'us': 'US',
+    'united kingdom': 'GB',
+    'united-kingdom': 'GB',
+    'united_kingdom': 'GB',
+    'uk': 'GB',
+    'u.k.': 'GB',
+    'great britain': 'GB',
+    'great-britain': 'GB',
+    'gb': 'GB',
+    'south korea': 'KR',
+    'south-korea': 'KR',
+    'south_korea': 'KR',
+    'korea': 'KR',
+    'kr': 'KR',
+    'japan': 'JP',
+    'jp': 'JP',
+    'china': 'CN',
+    'cn': 'CN',
+    'india': 'IN',
+    'in': 'IN',
+    'pakistan': 'PK',
+    'pk': 'PK',
+    'bangladesh': 'BD',
+    'bd': 'BD',
+    'indonesia': 'ID',
+    'id': 'ID',
+    'thailand': 'TH',
+    'th': 'TH',
+    'malaysia': 'MY',
+    'my': 'MY',
+    'philippines': 'PH',
+    'ph': 'PH',
+    'turkey': 'TR',
+    'tr': 'TR',
+    'nigeria': 'NG',
+    'ng': 'NG',
+    'egypt': 'EG',
+    'eg': 'EG',
+    'morocco': 'MA',
+    'ma': 'MA',
+    'saudi arabia': 'SA',
+    'saudi-arabia': 'SA',
+    'saudi_arabia': 'SA',
+    'sa': 'SA',
+    'lebanon': 'LB',
+    'lb': 'LB',
+    'iraq': 'IQ',
+    'iq': 'IQ',
+    'syria': 'SY',
+    'sy': 'SY',
+    'ivory coast': 'CI',
+    'ivory-coast': 'CI',
+    'ci': 'CI',
+    'kenya': 'KE',
+    'ke': 'KE',
+    'south africa': 'ZA',
+    'south-africa': 'ZA',
+    'za': 'ZA',
+    'france': 'FR',
+    'fr': 'FR',
+    'germany': 'DE',
+    'de': 'DE',
+    'italy': 'IT',
+    'it': 'IT',
+    'spain': 'ES',
+    'es': 'ES',
+    'mexico': 'MX',
+    'mx': 'MX',
+    'russia': 'RU',
+    'ru': 'RU',
+    'canada': 'CA',
+    'ca': 'CA',
+    'australia': 'AU',
+    'au': 'AU',
+    'brazil': 'BR',
+    'br': 'BR',
+    'united arab emirates': 'AE',
+    'united-arab-emirates': 'AE',
+    'uae': 'AE',
+    'ae': 'AE',
+    'sweden': 'SE',
+    'se': 'SE',
+    'norway': 'NO',
+    'no': 'NO',
+    'denmark': 'DK',
+    'dk': 'DK',
+    'netherlands': 'NL',
+    'nl': 'NL',
+    'poland': 'PL',
+    'pl': 'PL',
+    'colombia': 'CO',
+    'co': 'CO',
+    'argentina': 'AR',
+    'ar': 'AR',
+    'iran': 'IR',
+    'ir': 'IR',
+    'taiwan': 'TW',
+    'tw': 'TW',
+    'hong kong': 'HK',
+    'hong-kong': 'HK',
+    'hk': 'HK',
+    'ghana': 'GH',
+    'gh': 'GH'
+};
+
+function normalizeCountryCode(input: string | null | undefined): string {
+    if (!input) return 'US';
+    const clean = input.toLowerCase().trim().replace(/[_-]/g, ' ');
+    if (COUNTRY_SLUG_MAP[clean]) return COUNTRY_SLUG_MAP[clean];
+    const rawClean = input.toLowerCase().trim();
+    if (COUNTRY_SLUG_MAP[rawClean]) return COUNTRY_SLUG_MAP[rawClean];
+    const upper = input.toUpperCase().trim();
+    if (upper.length === 2) return upper;
+    return 'US';
 }
 
 const REGION_MAP: Record<string, string[]> = {
@@ -755,7 +879,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
     const country = params.get("country");
     if (country) {
-        const countryCode = country.toUpperCase();
+        const countryCode = normalizeCountryCode(country);
         const obj = await env.CATALOG.get(R2_PREFIX + `titles-by-country/${countryCode}.json`);
         if (obj) {
             const data = await obj.json() as { items: any[]; total: number; country: string; name: string };

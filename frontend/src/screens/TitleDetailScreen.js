@@ -13,6 +13,7 @@ import { WatchlistAPI, HistoryAPI } from '../utils/storage';
 import { resolveAnimeInfo, formatTimeUntilAiring } from '../utils/animeResolver';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { useResponsive } from '../theme/scaling';
+import { normalizeCountryCode, COUNTRY_MAP } from './CountryDetailScreen';
 
 const LANGUAGE_NAMES = {
     en: 'English',
@@ -927,25 +928,28 @@ export default function TitleDetailScreen({ route, navigation }) {
                         <Text style={styles.sectionHeaderTitle}>🌍 ORIGIN</Text>
                         <View style={styles.langPillsRow}>
                             {item.countries.map((c, idx) => {
-                                const code = typeof c === 'string' ? c : (c.code || '');
-                                const name = typeof c === 'string' ? c : (c.name || c.code || '');
-                                const flag = typeof c === 'object' && c.flag ? c.flag : '🌐';
+                                const rawVal = typeof c === 'string' ? c : (c.code || c.name || '');
+                                const code = normalizeCountryCode(rawVal);
+                                const mapped = (typeof COUNTRY_MAP !== 'undefined' && COUNTRY_MAP[code]) || {};
+                                const name = typeof c === 'string' ? (mapped.name || c) : (c.name || mapped.name || code);
+                                const flag = typeof c === 'object' && c.flag ? c.flag : (mapped.flag || '🌐');
                                 return (
                                     <TouchableOpacity
                                         key={`country-${code || idx}`}
                                         style={[styles.langPill, styles.langPillCountry]}
                                         onPress={() => {
-                                            if (code) {
-                                                navigation.navigate('CountryDetail', { slug: code.toLowerCase(), code: code.toUpperCase(), country: { code: code.toUpperCase(), name, flag } });
-                                            }
+                                            navigation.navigate('CountryDetail', {
+                                                slug: code.toLowerCase(),
+                                                code: code.toUpperCase(),
+                                                country: { code: code.toUpperCase(), name, flag }
+                                            });
                                         }}
                                         activeOpacity={0.7}
                                     >
                                         <Text style={styles.langPillText}>{flag} {name || code}</Text>
                                     </TouchableOpacity>
                                 );
-                            })}
-                        </View>
+                            })}</View>
                     </View>
                 )}
 
