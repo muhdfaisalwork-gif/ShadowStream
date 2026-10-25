@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    SafeAreaView, ActivityIndicator, Alert, useWindowDimensions
+    SafeAreaView, ActivityIndicator, Alert, useWindowDimensions, Image
 } from 'react-native';
 import { COLORS } from '../theme/colors';
 import AppHeader from '../components/AppHeader';
@@ -15,6 +15,44 @@ import { getApiBase } from '../utils/api';
 import { Storage, HistoryAPI, WatchlistAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { useResponsive } from '../theme/scaling';
+
+function HomeSportsChannelCard({ channel, cardWidth, onPress }) {
+    const [imgErr, setImgErr] = useState(!channel.logo);
+    return (
+        <TouchableOpacity
+            style={[styles.homeSportsCard, { width: cardWidth }]}
+            onPress={() => onPress(channel)}
+            activeOpacity={0.8}
+        >
+            <View style={styles.homeSportsLogoBox}>
+                {!imgErr && channel.logo ? (
+                    <Image
+                        source={{ uri: channel.logo }}
+                        style={styles.homeSportsLogo}
+                        resizeMode="contain"
+                        onError={() => setImgErr(true)}
+                    />
+                ) : (
+                    <Text style={{ fontSize: 26 }}>🏆</Text>
+                )}
+            </View>
+            <View style={styles.homeSportsCardInfo}>
+                <View style={styles.homeSportsBadgeRow}>
+                    <View style={styles.homeSportsLiveBadge}>
+                        <Text style={styles.homeSportsLiveText}>LIVE</Text>
+                    </View>
+                    {channel.quality ? (
+                        <Text style={styles.homeSportsQualityText}>{channel.quality}</Text>
+                    ) : null}
+                </View>
+                <Text style={styles.homeSportsTitle} numberOfLines={1}>{channel.name}</Text>
+                <Text style={styles.homeSportsCategory} numberOfLines={1}>
+                    {channel.country || 'GLOBAL'} • {channel.category ? channel.category.toUpperCase() : 'SPORTS'}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
+}
 
 export default function HomeScreen({ navigation }) {
     const { width } = useWindowDimensions();
@@ -432,45 +470,23 @@ export default function HomeScreen({ navigation }) {
                         >
                             {liveSports.map((channel, idx) => (
                                 <View key={`home-sport-${channel.id || idx}`} style={styles.continueCardSlot}>
-                                    <TouchableOpacity
-                                        style={[styles.homeSportsCard, { width: responsive.cardWidth }]}
-                                        onPress={() => navigation.navigate('Player', {
+                                    <HomeSportsChannelCard
+                                        channel={channel}
+                                        cardWidth={responsive.cardWidth}
+                                        onPress={(ch) => navigation.navigate('Player', {
                                             item: {
-                                                id: channel.id,
-                                                title: channel.name,
+                                                id: ch.id,
+                                                title: ch.name,
                                                 type: 'live_tv',
-                                                streamUrl: channel.url,
-                                                poster: channel.logo,
-                                                category: channel.category,
-                                                quality: channel.quality,
+                                                streamUrl: ch.url,
+                                                poster: ch.logo,
+                                                category: ch.category,
+                                                quality: ch.quality,
                                                 isLive: true,
-                                                sourceName: `${channel.name} (Live HLS)`
+                                                sourceName: `${ch.name} (Live HLS)`
                                             }
                                         })}
-                                        activeOpacity={0.8}
-                                    >
-                                        <View style={styles.homeSportsLogoBox}>
-                                            {channel.logo ? (
-                                                <Image source={{ uri: channel.logo }} style={styles.homeSportsLogo} resizeMode="contain" />
-                                            ) : (
-                                                <Text style={{ fontSize: 26 }}>🏆</Text>
-                                            )}
-                                        </View>
-                                        <View style={styles.homeSportsCardInfo}>
-                                            <View style={styles.homeSportsBadgeRow}>
-                                                <View style={styles.homeSportsLiveBadge}>
-                                                    <Text style={styles.homeSportsLiveText}>LIVE</Text>
-                                                </View>
-                                                {channel.quality ? (
-                                                    <Text style={styles.homeSportsQualityText}>{channel.quality}</Text>
-                                                ) : null}
-                                            </View>
-                                            <Text style={styles.homeSportsTitle} numberOfLines={1}>{channel.name}</Text>
-                                            <Text style={styles.homeSportsCategory} numberOfLines={1}>
-                                                {channel.country || 'GLOBAL'} • {channel.category ? channel.category.toUpperCase() : 'SPORTS'}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
+                                    />
                                 </View>
                             ))}
                         </ScrollView>

@@ -1,10 +1,10 @@
 {
-  "version": "2.4.23",
-  "versionCode": 263,
+  "version": "2.4.24",
+  "versionCode": 264,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-25",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Critical hotfix: Resolved Player initialization (TDZ) order on playback, enabled full multi-language anime dubs (Hindi, Tamil, Telugu, English, Japanese), and normalized global country & regional catalog routing."
+  "releaseNotes": "Critical hotfix: Resolved React Native Image import constructor crash on Home live sports shelf, ensuring uninterrupted homepage and playback rendering."
 }
