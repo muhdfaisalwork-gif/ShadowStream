@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.22",
-    versionCode: 262,
+    version: "2.4.23",
+    versionCode: 263,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-25",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "Live Sports Streaming Hub with 400+ legal free-to-air sports channels, ESPN live match scoreboards & schedule fixtures, home rail, and seamless HLS live playback.",
+    releaseNotes: "Critical hotfix: Resolved Player initialization (TDZ) order on playback, enabled full multi-language anime dubs (Hindi, Tamil, Telugu, English, Japanese), and normalized global country & regional catalog routing.",
 };
 
 
