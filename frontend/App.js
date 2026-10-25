@@ -25,6 +25,7 @@ const linking = {
             TV: 'tv',
             Anime: 'anime',
             ShortDramas: 'short-dramas',
+            Sports: 'sports',
             Genres: 'genres',
             Countries: 'countries',
             CountryDetail: {
@@ -87,6 +88,7 @@ import MoviesScreen from './src/screens/MoviesScreen';
 import TVScreen from './src/screens/TVScreen';
 import AnimeScreen from './src/screens/AnimeScreen';
 import ShortDramasScreen from './src/screens/ShortDramasScreen';
+import SportsScreen from './src/screens/SportsScreen';
 import GenreScreen from './src/screens/GenreScreen';
 import CountriesScreen from './src/screens/CountriesScreen';
 import CountryDetailScreen from './src/screens/CountryDetailScreen';
@@ -161,6 +163,7 @@ export default function App() {
                     <Drawer.Screen name="TV" component={TVScreen} />
                     <Drawer.Screen name="Anime" component={AnimeScreen} />
                     <Drawer.Screen name="ShortDramas" component={ShortDramasScreen} />
+                    <Drawer.Screen name="Sports" component={SportsScreen} />
                     <Drawer.Screen name="Genres" component={GenreScreen} />
                     <Drawer.Screen name="Countries" component={CountriesScreen} />
                     <Drawer.Screen name="CountryDetail" component={CountryDetailScreen} />

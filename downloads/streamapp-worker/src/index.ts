@@ -37,14 +37,14 @@ export interface Env {
 const R2_PREFIX = "";
 
 const CURRENT_APP_RELEASE = {
-    version: "2.4.21",
-    versionCode: 261,
+    version: "2.4.22",
+    versionCode: 262,
     minVersion: "1.0.0",
     name: "ShadowStream",
     releaseDate: "2026-10-25",
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-    releaseNotes: "AniList GraphQL triple-title anime resolver & airing countdowns, TVMaze live broadcast schedule, and OpenSubtitles multi-lingual subtitle engine.",
+    releaseNotes: "Live Sports Streaming Hub with 400+ legal free-to-air sports channels, ESPN live match scoreboards & schedule fixtures, home rail, and seamless HLS live playback.",
 };
 
 
@@ -2242,6 +2242,40 @@ export default {
                     }
                 } catch (e: any) {
                     return jsonResponse({ ok: false, error: e?.message, items: [] });
+                }
+            }
+
+            // -------------------------------------------------------------
+            // Live Sports Hub & TV Channels ("/sports/hub")
+            // -------------------------------------------------------------
+            if (normPath === "/sports/hub" || normPath === "/sports/hub/" ||
+                normPath === "/sports" || normPath === "/sports/") {
+                try {
+                    const hubRes = await fetch("https://ssmoviestvs.site/sports_hub.json");
+                    if (hubRes.ok) {
+                        const data = await hubRes.json();
+                        return jsonResponse(data);
+                    }
+                } catch (_) {}
+
+                try {
+                    const espnRes = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard", {
+                        headers: { "User-Agent": "Mozilla/5.0" }
+                    });
+                    const espnData = espnRes.ok ? await espnRes.json() : null;
+                    return jsonResponse({
+                        ok: true,
+                        totalChannels: 0,
+                        matches: (espnData?.events || []).map((ev: any) => ({
+                            id: ev.id,
+                            name: ev.name,
+                            league: "Premier League",
+                            isLive: ev.status?.type?.state === "in"
+                        })),
+                        channels: []
+                    });
+                } catch (e: any) {
+                    return jsonResponse({ ok: false, error: e?.message, channels: [] });
                 }
             }
 

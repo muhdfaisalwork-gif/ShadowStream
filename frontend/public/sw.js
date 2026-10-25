@@ -22,7 +22,7 @@
  * than a visible network error the player can retry.
  */
 
-const VERSION = 'v32';
+const VERSION = 'v33';
 const SHELL_CACHE = `shadowstream-shell-${VERSION}`;
 const STATIC_CACHE = `shadowstream-static-${VERSION}`;
 const CATALOG_CACHE = `shadowstream-catalog-${VERSION}`;
@@ -33,6 +33,8 @@ const SHELL_ASSETS = [
     '/offline.html',
     '/manifest.webmanifest',
     '/featured.json',
+    '/sports_hub.json',
+    '/airing_today.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/apple-touch-icon.png',

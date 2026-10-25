@@ -26,6 +26,7 @@ export default function HomeScreen({ navigation }) {
     const [heroIndex, setHeroIndex] = useState(0);
     const [continueWatching, setContinueWatching] = useState([]);
     const [airingToday, setAiringToday] = useState([]);
+    const [liveSports, setLiveSports] = useState([]);
     const [featured, setFeatured] = useState([]); // bundled picks used when API is unreachable
     const [loading, setLoading] = useState(true);
     const [apiStatus, setApiStatus] = useState('loading'); // 'loading' | 'ok' | 'unreachable'
@@ -102,6 +103,24 @@ export default function HomeScreen({ navigation }) {
                     const staticData = await staticRes.json();
                     if (Array.isArray(staticData.items)) {
                         setAiringToday(staticData.items);
+                    }
+                }
+            }
+        } catch (_) {}
+        // Load live sports streams for Sports Shelf
+        try {
+            const sportsRes = await fetch(`${getApiBase()}/sports/hub`).catch(() => null);
+            if (sportsRes && sportsRes.ok) {
+                const sData = await sportsRes.json();
+                if (Array.isArray(sData.channels)) {
+                    setLiveSports(sData.channels.slice(0, 25));
+                }
+            } else {
+                const staticRes = await fetch('/sports_hub.json').catch(() => null);
+                if (staticRes && staticRes.ok) {
+                    const sData = await staticRes.json();
+                    if (Array.isArray(sData.channels)) {
+                        setLiveSports(sData.channels.slice(0, 25));
                     }
                 }
             }
@@ -385,6 +404,73 @@ export default function HomeScreen({ navigation }) {
                                         width={responsive.cardWidth}
                                         onPress={handleSelectMedia}
                                     />
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                                {/* 🔴 Live Sports Channels Rail */}
+                {liveSports.length > 0 && (
+                    <View style={styles.sportsSection}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.airingTitleRow}>
+                                <View style={[styles.livePulseDot, { backgroundColor: '#EF4444' }]} />
+                                <Text style={styles.sectionTitle}>Live Sports & Channels</Text>
+                                <View style={[styles.liveTagBadge, { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#EF4444' }]}>
+                                    <Text style={[styles.liveTagBadgeText, { color: '#EF4444' }]}>400+ LIVE</Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('Sports')} activeOpacity={0.7}>
+                                <Text style={styles.sectionMeta}>View All Feeds ❯</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.continueList}
+                        >
+                            {liveSports.map((channel, idx) => (
+                                <View key={`home-sport-${channel.id || idx}`} style={styles.continueCardSlot}>
+                                    <TouchableOpacity
+                                        style={[styles.homeSportsCard, { width: responsive.cardWidth }]}
+                                        onPress={() => navigation.navigate('Player', {
+                                            item: {
+                                                id: channel.id,
+                                                title: channel.name,
+                                                type: 'live_tv',
+                                                streamUrl: channel.url,
+                                                poster: channel.logo,
+                                                category: channel.category,
+                                                quality: channel.quality,
+                                                isLive: true,
+                                                sourceName: `${channel.name} (Live HLS)`
+                                            }
+                                        })}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.homeSportsLogoBox}>
+                                            {channel.logo ? (
+                                                <Image source={{ uri: channel.logo }} style={styles.homeSportsLogo} resizeMode="contain" />
+                                            ) : (
+                                                <Text style={{ fontSize: 26 }}>🏆</Text>
+                                            )}
+                                        </View>
+                                        <View style={styles.homeSportsCardInfo}>
+                                            <View style={styles.homeSportsBadgeRow}>
+                                                <View style={styles.homeSportsLiveBadge}>
+                                                    <Text style={styles.homeSportsLiveText}>LIVE</Text>
+                                                </View>
+                                                {channel.quality ? (
+                                                    <Text style={styles.homeSportsQualityText}>{channel.quality}</Text>
+                                                ) : null}
+                                            </View>
+                                            <Text style={styles.homeSportsTitle} numberOfLines={1}>{channel.name}</Text>
+                                            <Text style={styles.homeSportsCategory} numberOfLines={1}>
+                                                {channel.country || 'GLOBAL'} • {channel.category ? channel.category.toUpperCase() : 'SPORTS'}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
                                 </View>
                             ))}
                         </ScrollView>
@@ -682,6 +768,64 @@ const styles = StyleSheet.create({
     heroDotActive: {
         width: 22,
         backgroundColor: COLORS.brand
+    },
+    sportsSection: {
+        marginBottom: 26,
+    },
+    homeSportsCard: {
+        backgroundColor: '#161B22',
+        borderRadius: 12,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    homeSportsLogoBox: {
+        height: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 4,
+    },
+    homeSportsLogo: {
+        width: '85%',
+        height: '100%',
+    },
+    homeSportsCardInfo: {
+        marginTop: 4,
+    },
+    homeSportsBadgeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    homeSportsLiveBadge: {
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+        paddingHorizontal: 5,
+        paddingVertical: 1,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(239, 68, 68, 0.6)',
+    },
+    homeSportsLiveText: {
+        color: '#EF4444',
+        fontSize: 9,
+        fontWeight: '800',
+    },
+    homeSportsQualityText: {
+        color: '#8B949E',
+        fontSize: 9,
+        fontWeight: '700',
+    },
+    homeSportsTitle: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '800',
+        marginBottom: 2,
+    },
+    homeSportsCategory: {
+        color: '#8B949E',
+        fontSize: 10,
+        fontWeight: '600',
     },
     airingSection: {
         marginBottom: 24,

@@ -1,0 +1,2251 @@
+{
+  "updatedAt": "2026-10-25T16:01:16.325538+00:00",
+  "totalChannels": 414,
+  "totalMatches": 24,
+  "categories": [
+    {
+      "id": "all",
+      "label": "All Sports",
+      "icon": "🏆"
+    },
+    {
+      "id": "football",
+      "label": "Football / Soccer",
+      "icon": "⚽"
+    },
+    {
+      "id": "racing",
+      "label": "Motorsports & Racing",
+      "icon": "🏎️"
+    },
+    {
+      "id": "combat",
+      "label": "Combat & MMA",
+      "icon": "🥊"
+    },
+    {
+      "id": "basketball",
+      "label": "Basketball",
+      "icon": "🏀"
+    },
+    {
+      "id": "tennis_golf",
+      "label": "Tennis & Golf",
+      "icon": "🎾"
+    },
+    {
+      "id": "extreme",
+      "label": "Extreme Sports",
+      "icon": "🏂"
+    },
+    {
+      "id": "general",
+      "label": "Sports Networks",
+      "icon": "📺"
+    }
+  ],
+  "matches": [
+    {
+      "id": "401879254",
+      "name": "Newcastle United at Crystal Palace",
+      "shortName": "NEW @ CRY",
+      "league": "Premier League",
+      "sport": "football",
+      "icon": "⚽",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-25T14:00Z",
+      "homeTeam": {
+        "name": "Crystal Palace",
+        "shortName": "CRY",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/384.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Newcastle United",
+        "shortName": "NEW",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/361.png",
+        "score": "2"
+      },
+      "broadcast": "USA Net, Tele",
+      "isLive": false
+    },
+    {
+      "id": "401878766",
+      "name": "Brentford at Hull City",
+      "shortName": "BRE @ HUL",
+      "league": "Premier League",
+      "sport": "football",
+      "icon": "⚽",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-25T14:00Z",
+      "homeTeam": {
+        "name": "Hull City",
+        "shortName": "HUL",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/306.png",
+        "score": "1"
+      },
+      "awayTeam": {
+        "name": "Brentford",
+        "shortName": "BRE",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/337.png",
+        "score": "1"
+      },
+      "broadcast": "Peacock",
+      "isLive": false
+    },
+    {
+      "id": "401878765",
+      "name": "Brighton & Hove Albion at Liverpool",
+      "shortName": "BHA @ LIV",
+      "league": "Premier League",
+      "sport": "football",
+      "icon": "⚽",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-25T14:00Z",
+      "homeTeam": {
+        "name": "Liverpool",
+        "shortName": "LIV",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
+        "score": "2"
+      },
+      "awayTeam": {
+        "name": "Brighton & Hove Albion",
+        "shortName": "BHA",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/331.png",
+        "score": "0"
+      },
+      "broadcast": "Peacock",
+      "isLive": false
+    },
+    {
+      "id": "401879252",
+      "name": "AFC Bournemouth at Manchester United",
+      "shortName": "BOU @ MAN",
+      "league": "Premier League",
+      "sport": "football",
+      "icon": "⚽",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-25T14:00Z",
+      "homeTeam": {
+        "name": "Manchester United",
+        "shortName": "MAN",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "AFC Bournemouth",
+        "shortName": "BOU",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/349.png",
+        "score": "3"
+      },
+      "broadcast": "Peacock",
+      "isLive": false
+    },
+    {
+      "id": "401878764",
+      "name": "Leeds United at Sunderland",
+      "shortName": "LEE @ SUN",
+      "league": "Premier League",
+      "sport": "football",
+      "icon": "⚽",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T16:30Z",
+      "homeTeam": {
+        "name": "Sunderland",
+        "shortName": "SUN",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/366.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Leeds United",
+        "shortName": "LEE",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/357.png",
+        "score": "0"
+      },
+      "broadcast": "USA Net",
+      "isLive": false
+    },
+    {
+      "id": "401909861",
+      "name": "Los Angeles Lakers at Utah Jazz",
+      "shortName": "LAL @ UTAH",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T21:00Z",
+      "homeTeam": {
+        "name": "Utah Jazz",
+        "shortName": "UTAH",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/utah.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Los Angeles Lakers",
+        "shortName": "LAL",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lal.png",
+        "score": "0"
+      },
+      "broadcast": "NBA League Pass, Spectrum Sports Net, Spectrum Sports Net +",
+      "isLive": false
+    },
+    {
+      "id": "401909862",
+      "name": "Indiana Pacers at Brooklyn Nets",
+      "shortName": "IND @ BKN",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T22:00Z",
+      "homeTeam": {
+        "name": "Brooklyn Nets",
+        "shortName": "BKN",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bkn.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Indiana Pacers",
+        "shortName": "IND",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ind.png",
+        "score": "0"
+      },
+      "broadcast": "NBA League Pass, DAZN IND",
+      "isLive": false
+    },
+    {
+      "id": "401909863",
+      "name": "Orlando Magic at New York Knicks",
+      "shortName": "ORL @ NY",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T23:00Z",
+      "homeTeam": {
+        "name": "New York Knicks",
+        "shortName": "NY",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ny.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Orlando Magic",
+        "shortName": "ORL",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/orl.png",
+        "score": "0"
+      },
+      "broadcast": "NBA League Pass",
+      "isLive": false
+    },
+    {
+      "id": "401909864",
+      "name": "Toronto Raptors at Minnesota Timberwolves",
+      "shortName": "TOR @ MIN",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T23:00Z",
+      "homeTeam": {
+        "name": "Minnesota Timberwolves",
+        "shortName": "MIN",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/min.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Toronto Raptors",
+        "shortName": "TOR",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/tor.png",
+        "score": "0"
+      },
+      "broadcast": "NBA TV",
+      "isLive": false
+    },
+    {
+      "id": "401909865",
+      "name": "LA Clippers at Oklahoma City Thunder",
+      "shortName": "LAC @ OKC",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T23:00Z",
+      "homeTeam": {
+        "name": "Oklahoma City Thunder",
+        "shortName": "OKC",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/okc.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "LA Clippers",
+        "shortName": "LAC",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lac.png",
+        "score": "0"
+      },
+      "broadcast": "NBA League Pass, ClipperVision",
+      "isLive": false
+    },
+    {
+      "id": "401909866",
+      "name": "Detroit Pistons at Philadelphia 76ers",
+      "shortName": "DET @ PHI",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T23:30Z",
+      "homeTeam": {
+        "name": "Philadelphia 76ers",
+        "shortName": "PHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/phi.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Detroit Pistons",
+        "shortName": "DET",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/det.png",
+        "score": "0"
+      },
+      "broadcast": "NBA League Pass",
+      "isLive": false
+    },
+    {
+      "id": "401873011",
+      "name": "Pittsburgh Steelers at New Orleans Saints",
+      "shortName": "PIT VS NO",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "In Progress",
+      "state": "in",
+      "date": "2026-10-25T13:30Z",
+      "homeTeam": {
+        "name": "New Orleans Saints",
+        "shortName": "NO",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/no.png",
+        "score": "10"
+      },
+      "awayTeam": {
+        "name": "Pittsburgh Steelers",
+        "shortName": "PIT",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/pit.png",
+        "score": "16"
+      },
+      "broadcast": "NFL Net",
+      "isLive": true
+    },
+    {
+      "id": "401873017",
+      "name": "San Francisco 49ers at Atlanta Falcons",
+      "shortName": "SF @ ATL",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T17:00Z",
+      "homeTeam": {
+        "name": "Atlanta Falcons",
+        "shortName": "ATL",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "San Francisco 49ers",
+        "shortName": "SF",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png",
+        "score": "0"
+      },
+      "broadcast": "Fox",
+      "isLive": false
+    },
+    {
+      "id": "401873013",
+      "name": "Cleveland Browns at Tennessee Titans",
+      "shortName": "CLE @ TEN",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T17:00Z",
+      "homeTeam": {
+        "name": "Tennessee Titans",
+        "shortName": "TEN",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ten.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Cleveland Browns",
+        "shortName": "CLE",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/cle.png",
+        "score": "0"
+      },
+      "broadcast": "CBS",
+      "isLive": false
+    },
+    {
+      "id": "401873014",
+      "name": "Indianapolis Colts at Minnesota Vikings",
+      "shortName": "IND @ MIN",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T17:00Z",
+      "homeTeam": {
+        "name": "Minnesota Vikings",
+        "shortName": "MIN",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/min.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Indianapolis Colts",
+        "shortName": "IND",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ind.png",
+        "score": "0"
+      },
+      "broadcast": "CBS",
+      "isLive": false
+    },
+    {
+      "id": "401873015",
+      "name": "Miami Dolphins at New York Jets",
+      "shortName": "MIA @ NYJ",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T17:00Z",
+      "homeTeam": {
+        "name": "New York Jets",
+        "shortName": "NYJ",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyj.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Miami Dolphins",
+        "shortName": "MIA",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/mia.png",
+        "score": "0"
+      },
+      "broadcast": "CBS",
+      "isLive": false
+    },
+    {
+      "id": "401873018",
+      "name": "Tampa Bay Buccaneers at Carolina Panthers",
+      "shortName": "TB @ CAR",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-25T17:00Z",
+      "homeTeam": {
+        "name": "Carolina Panthers",
+        "shortName": "CAR",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/car.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Tampa Bay Buccaneers",
+        "shortName": "TB",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/tb.png",
+        "score": "0"
+      },
+      "broadcast": "Fox",
+      "isLive": false
+    },
+    {
+      "id": "600057446",
+      "name": "MSC Cruises United States Grand Prix",
+      "shortName": "MSC Cruises United States GP",
+      "league": "Formula 1",
+      "sport": "racing",
+      "icon": "🏎️",
+      "status": "Final",
+      "state": "post",
+      "date": "2026-10-23T17:30Z",
+      "homeTeam": {
+        "name": "Home",
+        "shortName": "HM",
+        "logo": null,
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Away",
+        "shortName": "AW",
+        "logo": null,
+        "score": "0"
+      },
+      "broadcast": "Apple TV",
+      "isLive": false
+    },
+    {
+      "id": "401915395",
+      "name": "Manchester United at Como",
+      "shortName": "MAN @ COMO",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T16:45Z",
+      "homeTeam": {
+        "name": "Como",
+        "shortName": "COMO",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2572.png",
+        "score": "4"
+      },
+      "awayTeam": {
+        "name": "Manchester United",
+        "shortName": "MAN",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+        "score": "1"
+      },
+      "broadcast": "Paramount+",
+      "isLive": false
+    },
+    {
+      "id": "401915396",
+      "name": "Galatasaray at Lille",
+      "shortName": "GAL @ LILL",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T16:45Z",
+      "homeTeam": {
+        "name": "Lille",
+        "shortName": "LILL",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/166.png",
+        "score": "2"
+      },
+      "awayTeam": {
+        "name": "Galatasaray",
+        "shortName": "GAL",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/432.png",
+        "score": "4"
+      },
+      "broadcast": "Paramount+",
+      "isLive": false
+    },
+    {
+      "id": "401915394",
+      "name": "Viking FK at Aston Villa",
+      "shortName": "VFK @ AVL",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T19:00Z",
+      "homeTeam": {
+        "name": "Aston Villa",
+        "shortName": "AVL",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/362.png",
+        "score": "3"
+      },
+      "awayTeam": {
+        "name": "Viking FK",
+        "shortName": "VFK",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/510.png",
+        "score": "1"
+      },
+      "broadcast": "Paramount+",
+      "isLive": false
+    },
+    {
+      "id": "401915312",
+      "name": "Arsenal at Bayern Munich",
+      "shortName": "ARS @ MUN",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T19:00Z",
+      "homeTeam": {
+        "name": "Bayern Munich",
+        "shortName": "MUN",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+        "score": "2"
+      },
+      "awayTeam": {
+        "name": "Arsenal",
+        "shortName": "ARS",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+        "score": "2"
+      },
+      "broadcast": "Paramount+",
+      "isLive": false
+    },
+    {
+      "id": "401915388",
+      "name": "Lens at Club Brugge",
+      "shortName": "RCL @ BRU",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T19:00Z",
+      "homeTeam": {
+        "name": "Club Brugge",
+        "shortName": "BRU",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/570.png",
+        "score": "3"
+      },
+      "awayTeam": {
+        "name": "Lens",
+        "shortName": "RCL",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/175.png",
+        "score": "0"
+      },
+      "broadcast": "Paramount+",
+      "isLive": false
+    },
+    {
+      "id": "401915390",
+      "name": "Shakhtar Donetsk at Internazionale",
+      "shortName": "SHK @ INT",
+      "league": "Champions League",
+      "sport": "football",
+      "icon": "🏆",
+      "status": "Full Time",
+      "state": "post",
+      "date": "2026-10-21T19:00Z",
+      "homeTeam": {
+        "name": "Internazionale",
+        "shortName": "INT",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
+        "score": "1"
+      },
+      "awayTeam": {
+        "name": "Shakhtar Donetsk",
+        "shortName": "SHK",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/493.png",
+        "score": "0"
+      },
+      "broadcast": "CBSSN, Paramount+",
+      "isLive": false
+    }
+  ],
+  "channels": [
+    {
+      "id": "sport_ch_3",
+      "name": "30A Golf Kingdom",
+      "logo": "https://i.imgur.com/Lv53nh4.png",
+      "url": "https://30a-tv.com/feeds/vidaa/golf.m3u8",
+      "quality": "720p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_5",
+      "name": "ACC Digital Network",
+      "logo": "https://i.imgur.com/V6Kaqha.png",
+      "url": "https://raycom-accdn-firetv.amagi.tv/playlist.m3u8",
+      "quality": "1080p",
+      "category": "basketball",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_6",
+      "name": "ACC Network",
+      "logo": "https://i.imgur.com/TpCkbkT.png",
+      "url": "http://23.239.31.26:8989/accnetwork/index.m3u8",
+      "quality": "720p",
+      "category": "basketball",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_51",
+      "name": "Bellator MMA",
+      "logo": "https://i.imgur.com/VBKoLHk.png",
+      "url": "https://jmp2.uk/plu-5ebc8688f3697d00072f7cf8.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_73",
+      "name": "CCTV-Golf & Tennis",
+      "logo": "https://i.imgur.com/iqJJTmH.png",
+      "url": "http://38.75.136.137:98/gslb/dsdqpub/gefwq.m3u8?auth=testpub",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_74",
+      "name": "CCTV-Storm Football",
+      "logo": "https://i.imgur.com/Fy6HkX0.png",
+      "url": "http://38.75.136.137:98/gslb/dsdqpub/fyzq.m3u8?auth=testpub",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_78",
+      "name": "Combate",
+      "logo": "https://i.imgur.com/ZPYK5jr.png",
+      "url": "http://143.14.134.107/167/index.m3u8",
+      "quality": "720p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_82",
+      "name": "DAZN Combat",
+      "logo": "https://i.postimg.cc/VsW3Jsrz/logo-DAZN-Combat.png",
+      "url": "https://jmp2.uk/plu-64d626ac9b414d000820e2fc.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_134",
+      "name": "Extreme Sports Channel",
+      "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f0/Extreme_Sports_Channel.svg/960px-Extreme_Sports_Channel.svg.png",
+      "url": "http://46.32.176.50/extremesport/index.m3u8",
+      "quality": "HD",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_135",
+      "name": "F1 Channel [Geo-blocked]",
+      "logo": "https://i.imgur.com/cjXzWsI.png",
+      "url": "https://amg12058-c15studio-amg12058c1-lg-us-5787.playouts.now.amagi.tv/playlist.m3u8",
+      "quality": "1080p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_139",
+      "name": "FIFA+",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://jmp2.uk/plu-660c29b5aec9680008f5b4a4.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_140",
+      "name": "FIFA+ French",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://37b4c228.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWZyX0ZJRkFQbHVzRnJlbmNoX0hMUw/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_141",
+      "name": "FIFA+ German",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://4397879b.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWRlX0ZJRkFQbHVzR2VybWFuX0hMUw/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_142",
+      "name": "FIFA+ Hispanic America",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://6c849fb3.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctbXhfRklGQVBsdXNTcGFuaXNoLTFfSExT/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_143",
+      "name": "FIFA+ Italy",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://5d95f7d7.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X0ZJRkFQbHVzSXRhbGlhbl9ITFM/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_144",
+      "name": "FIFA+ Portuguese",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://e3be9ac5.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctYnJfRklGQVBsdXNQb3J0dWd1ZXNlX0hMUw/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_145",
+      "name": "FIFA+ Spain",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://d63fabad.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWVzX0ZJRkFQbHVzU3BhbmlzaF9ITFM/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_146",
+      "name": "FIFA+ United States",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+      "url": "https://d2w9q46ikgrcwx.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-of5cbk3sav3w5/v1/sysdata_s_p_a_fifa_7/samsungheadend_us/latest/main/hls/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_147",
+      "name": "FIFA+ Women",
+      "logo": "https://i.imgur.com/xy9ZxVO.png",
+      "url": "https://cffda8ff.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/U2Ftc3VuZy1nYl9GSUZBUGx1c3dvbWVuX0hMUw/playlist.m3u8",
+      "quality": "720p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_148",
+      "name": "Fight Network",
+      "logo": "https://i.imgur.com/vlKPZHR.png",
+      "url": "https://d12a2vxqkkh1bo.cloudfront.net/hls/main.m3u8",
+      "quality": "1080p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_149",
+      "name": "FightBox HD",
+      "logo": "https://i.imgur.com/mRsnztA.png",
+      "url": "https://nosignal1.antenaplay.ro/hls/fightbox-hd/index.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_150",
+      "name": "FightBox Poland (576i)",
+      "logo": "https://i.imgur.com/mRsnztA.png",
+      "url": "http://92.114.85.87:8003/play/a00b/index.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_153",
+      "name": "FloRacing",
+      "logo": "https://images.fubo.tv/channel-config-ui/station-logos/on-dark/floracing-white.png",
+      "url": "https://amg02278-amg02278c1-flosports-worldwide-7592.playouts.now.amagi.tv/playlist.m3u8",
+      "quality": "1080p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_166",
+      "name": "Futbol",
+      "logo": "https://i.imgur.com/RngmCDn.png",
+      "url": "https://live.teleradiocom.tj/8/3m.m3u8",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_167",
+      "name": "Futbol TV",
+      "logo": "https://i.ibb.co/h1gQSkbB/Futbol-TV.png",
+      "url": "http://stream3.cinerama.uz/1010/tracks-v1a1/mono.m3u8",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_172",
+      "name": "Glory Kickboxing Poland",
+      "logo": "https://i.imgur.com/tS7Ub7i.png",
+      "url": "https://6f972d29.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0dsb3J5S2lja2JveGluZ19ITFM/playlist.m3u8",
+      "quality": "720p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_174",
+      "name": "Golf + [Geo-blocked]",
+      "logo": "https://i.imgur.com/WHnddkg.png",
+      "url": "http://tv.streambox.fr/live/testlivestream/testlivestream/49.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_175",
+      "name": "Golf Channel",
+      "logo": "https://www.sms.cz/kategorie/televize/bmp/loga/velka/golfchannel.png",
+      "url": "https://dash4.antik.sk/live/test_golf_channel/playlist.m3u8",
+      "quality": "HD",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_176",
+      "name": "Golf Channel Latin America",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Golf_Channel_Logo_2018.png/960px-Golf_Channel_Logo_2018.png",
+      "url": "http://15.204.246.24:8080/GolfChannelHD/index.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_218",
+      "name": "MMA TV",
+      "logo": "https://i.imgur.com/Qxco1eW.png",
+      "url": "http://31.148.48.15/M1_Global/index.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_219",
+      "name": "MMA-TV.com",
+      "logo": "https://i.imgur.com/QhdxNsB.png",
+      "url": "https://streams2.sofast.tv/vglive-sk-462904/playlist.m3u8",
+      "quality": "1080p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_231",
+      "name": "NBA TV",
+      "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png",
+      "url": "http://23.237.104.106:8080/USA_NBA/index.m3u8",
+      "quality": "720p",
+      "category": "basketball",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_238",
+      "name": "Okko Futbol",
+      "logo": "https://xml-epgservice.cdnvideo.ru/EPGService/hs/xmldata/852f4b92-cae5-463e-aad6-cd8844c5a49/logo/8986.png",
+      "url": "http://178.124.179.122:8080/Setanta1/index.m3u8",
+      "quality": "HD",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_242",
+      "name": "One Golf",
+      "logo": "https://i.imgur.com/7JhaEW5.png",
+      "url": "http://162.250.201.58:6211/pk/ONEGOLF/index.m3u8",
+      "quality": "720p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_248",
+      "name": "PFL MMA",
+      "logo": "https://provider-static.plex.tv/epg/cms/production/96dd0531-b500-4bd4-93ca-763cbf46defe/1500x1000_PFL_SHIELD_DARK_BG_-_Allie_Dinsmore.png",
+      "url": "https://jmp2.uk/plu-64f6180130ab3300083d896b.m3u8",
+      "quality": "720p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_249",
+      "name": "PGA Tour",
+      "logo": "https://i.imgur.com/J0TY9dG.png",
+      "url": "https://d11k1mnrgfposz.cloudfront.net/playlist.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_255",
+      "name": "Pluto TV Fishing",
+      "logo": "https://images.pluto.tv/channels/619e1874e0d3a7000729a036/colorLogoPNG.png",
+      "url": "https://jmp2.uk/plu-619e1874e0d3a7000729a036.m3u8",
+      "quality": "HD",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_269",
+      "name": "Polsat Sport Fight",
+      "logo": "https://i.imgur.com/8x1FV3o.png",
+      "url": "http://57.128.210.196:8080/194/index.m3u8",
+      "quality": "1080p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_270",
+      "name": "Premier Sports 2",
+      "logo": "https://i.imgur.com/UQeXWd2.png",
+      "url": "https://amg19223-amg19223c4-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c4-amgplt0351/playlist.m3u8",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_271",
+      "name": "Premier Sports",
+      "logo": "https://i.imgur.com/BURPHzI.png",
+      "url": "https://amg19223-amg19223c3-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c3-amgplt0351/playlist.m3u8",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_280",
+      "name": "Racing.com",
+      "logo": "https://i.imgur.com/Q55HX1O.png",
+      "url": "https://racingvic-i.akamaized.net/hls/live/598695/racingvic/index1500.m3u8",
+      "quality": "720p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_281",
+      "name": "Rally TV",
+      "logo": "https://i.postimg.cc/WtLq2C7c/logo-Rally-Tv1.png",
+      "url": "https://rally-tv-live.akamaized.net/hls/live/2117704/RallyTV-Pri/master.m3u8",
+      "quality": "1080p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_285",
+      "name": "Red Bull TV",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://3ea22335.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWdiX1JlZEJ1bGxUVl9ITFM/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_286",
+      "name": "Red Bull TV AU",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://db34cc6127ac459db55cab5f97cd66b9.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-680-WORBAUENFAST-WHALETVPLUS/680/whaletvplus/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_287",
+      "name": "Red Bull TV BR",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://d03ae6b5c6724c24867e97a3dc04934a.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-1026-WORBBRPTFAST-WHALETVPLUS/1026/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_288",
+      "name": "Red Bull TV DE",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://46cfeb23c7f74853bba7a256655a3119.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-582-WORBDACHDEFAST-WHALETVPLUS/582/whaletvplus/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_289",
+      "name": "Red Bull TV ES",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://886bd3fbc782459f8de7555d32d7e9ce.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-957-WORBLATAMESFAST-WHALETVPLUS/957/whaletvplus/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_290",
+      "name": "Red Bull TV SD",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_291",
+      "name": "Red Bull TV UK",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://1a3566cb46914c5499fbc86fbc4ac87e.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-932-WORBUKENFAST-WHALETVPLUS/932/whaletvplus/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_292",
+      "name": "Red Bull TV US",
+      "logo": "https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png",
+      "url": "https://0b73ace69ebb45eaa249bb87837cb958.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-644-WORBUSENFAST-LG_US/644/lgtv/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_296",
+      "name": "Russian Extreme",
+      "logo": "https://i.imgur.com/hJK7mOW.png",
+      "url": "http://31.148.48.15/Russkiy_Ekstrim/index.m3u8",
+      "quality": "HD",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_297",
+      "name": "Russian Extreme Ultra",
+      "logo": "https://i.imgur.com/Dk8VbAc.png",
+      "url": "http://46.53.200.153:7777/play/test_krask1/index.m3u8",
+      "quality": "HD",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_303",
+      "name": "SKI TV [Not 24/7]",
+      "logo": "https://i.imgur.com/S6qgwLG.png",
+      "url": "https://d2xeo83q8fcni6.cloudfront.net/v1/master/9d062541f2ff39b5c0f48b743c6411d25f62fc25/SkiTV-SportsTribal/193.m3u8",
+      "quality": "1080p",
+      "category": "extreme",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_304",
+      "name": "Sky Racing 1",
+      "logo": "https://i.imgur.com/Hf0EiaW.png",
+      "url": "https://636ffd31f0e12.streamlock.net/RacingStream1/RacingStream1/playlist.m3u8",
+      "quality": "720p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_305",
+      "name": "Sky Racing 2 [Geo-blocked]",
+      "logo": "https://i.imgur.com/TxQvFnQ.png",
+      "url": "https://skylivetab-new.akamaized.net/hls/live/2038781/sky2/index.m3u8",
+      "quality": "720p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_322",
+      "name": "Sportitalia Motori [Geo-blocked]",
+      "logo": "https://i.imgur.com/hu56Ya5.png",
+      "url": "https://di-yx2saj20.vo.lswcdn.net/sportitalia/smil:simotori.smil/playlist.m3u8",
+      "quality": "720p",
+      "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_344",
+      "name": "SuperTennis",
+      "logo": "https://upload.wikimedia.org/wikipedia/it/thumb/6/6a/SuperTennis_-_Logo_2016.svg/960px-SuperTennis_-_Logo_2016.svg.png",
+      "url": "https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_345",
+      "name": "Swerve Combat",
+      "logo": "https://i.imgur.com/eFZh7aG.png",
+      "url": "https://linear-253.frequency.stream/mt/roku/253/hls/master/playlist.m3u8",
+      "quality": "1080p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_356",
+      "name": "Tennis Channel 2",
+      "logo": "https://image-resizer-cloud-cdn.api.cms.amdvids.com/image/7382296F-97F6-4450-B77B-8FE331FC04F6/3-1x1.png",
+      "url": "https://mumbai-edge.smartplaytv.in/Tennis2/index.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_357",
+      "name": "Tennis Channel",
+      "logo": "https://i.imgur.com/tsljAnY.png",
+      "url": "https://cdn-ue1-prod.tsv2.amagi.tv/linear/amg01444-tennischannelth-tennischannelnl-samsungnl/playlist.m3u8",
+      "quality": "1080p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_358",
+      "name": "Tennis Channel +2",
+      "logo": "https://i.imgur.com/tsljAnY.png",
+      "url": "https://jmp2.uk/plu-681109b688b9d85d0938c6ba.m3u8",
+      "quality": "720p",
+      "category": "tennis_golf",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_380",
+      "name": "TVMatic Fight",
+      "logo": "https://i.imgur.com/l5PBcKN.png",
+      "url": "http://cdn.tvmatic.net/fight.m3u8",
+      "quality": "720p",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_385",
+      "name": "TVS Boxing",
+      "logo": "https://i.imgur.com/30ZoF75.png",
+      "url": "https://rpn.bozztv.com/gusa/gusa-tvsboxing/index.m3u8",
+      "quality": "HD",
+      "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_406",
+      "name": "Win+ Futbol",
+      "logo": "https://i.imgur.com/0UN87vB.png",
+      "url": "http://181.78.12.119:16123/play/ch19/index.m3u8",
+      "quality": "1080p",
+      "category": "football",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_1",
+      "name": "5Plus",
+      "logo": "https://i.imgur.com/L3RA9Lv.png",
+      "url": "http://89.33.29.115:8080/sportplus/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_2",
+      "name": "5Stars",
+      "logo": "https://i.imgur.com/IQtAKIa.png",
+      "url": "http://89.33.29.115:8080/IL_5Stars/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_4",
+      "name": "A Spor SD",
+      "logo": "https://i.imgur.com/ZhkZzLf.png",
+      "url": "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_7",
+      "name": "ACI Sport TV SD",
+      "logo": "https://i.imgur.com/U8cHMOt.png",
+      "url": "https://webstream.multistream.it/memfs/e2cb3629-c1a2-495b-b43a-9eb386f04ed8.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_8",
+      "name": "Adjarasport 1",
+      "logo": "https://i.imgur.com/SVV5xHC.png",
+      "url": "https://live20.bozztv.com/dvrfl05/gin-adjara/index.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_9",
+      "name": "ADO TV",
+      "logo": "https://i.imgur.com/pxFamLr.png",
+      "url": "https://strhls.streamakaci.tv/ortb/ortb2-multi/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_10",
+      "name": "Africa 24 Sport",
+      "logo": "https://i0.wp.com/africa24tv.com/wp-content/uploads/2023/12/LOGO-AFRICASPORT-4-HD-sans-fond.png?fit=512%2C107&ssl=1",
+      "url": "https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_11",
+      "name": "Al Iraqia Sport",
+      "logo": "https://i.imgur.com/DrrlxTO.png",
+      "url": "https://imn-live.esite-lab.com/hls/iraqia-sports-1.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_12",
+      "name": "Alfa Sport [Not 24/7]",
+      "logo": "https://i.imgur.com/vhMPYIW.png",
+      "url": "https://dev.aftermind.xyz/edge-hls/unitrust/alfasports/index.m3u8?token=8TXWzhY3h6jrzqEqx",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_13",
+      "name": "American Ninja Warrior",
+      "logo": "https://raw.githubusercontent.com/RoqueDJ/iptv-svg/main/1792421696158.png",
+      "url": "https://d4whmvwm0rdvi.cloudfront.net/10007/99951318/hls/master.m3u8?ads.xumo_channelId=99951318&ads.asnw=169843&ads.afid=405342864&ads.sfid=19647852&ads.csid=xumo_web_NBCUAmericanNinjaWarrior_ssai_cro&ads._fw_is_lat=0&ads._fw_us_privacy=&ads._fw_coppa=0&ads._fw_did=a5090924-15b1-4b7f-b6cd-2f06e2ba51e1&ads._fw_vcid2=512116:a5090924-15b1-4b7f-b6cd-2f06e2ba51e1&ads._fw_app_bundle=web.xumo.com&ads._fw_app_store_url=&ads._fw_content_category=&ads._fw_content_genre=&ads._fw_content_language=en&ads._fw_content_rating=&ads._fw_deviceMake=GitHubAction&ads._fw_device_model=PythonScript&ads._fw_deviceType=3-Connected_TV&ads.appVersion=1.0.0&ads.appName=XumoPlay&ads.xumo_contentId=4063&ads.xumo_contentName=NBCUAmericanNinjaWarrior&ads.xumo_providerId=4063&ads.xumo_providerName=NBCUAmericanNinjaWarrior&ads.channelId=99951318",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_14",
+      "name": "Arena4",
+      "logo": "https://i.imgur.com/uAaQDr6.png",
+      "url": "http://88.212.15.17/live/arena4/index.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_15",
+      "name": "Arena Sport 1 Premium (Serbia)",
+      "logo": "https://i.imgur.com/csv6YsL.png",
+      "url": "http://telekomsrbije.com:2095/play/lhpjmkfVyhON1JAiZCx7vmRdlEHaaMaQAQw3LRAakpnghBMtR57sXXgLEXZF8gVD",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_16",
+      "name": "Arena Sport 1 Premium (Slovenia)",
+      "logo": "https://i.imgur.com/csv6YsL.png",
+      "url": "http://telekomsrbije.com:2095/play/lhpjmkfVyhON1JAiZCx7vhWLdkJ_3C0RZgs4W19uhl8S3kU0l__4SxERjFMDgcT6",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_17",
+      "name": "Arena Sport Premium M1",
+      "logo": "https://tvarenasport.mk/wp-content/themes/tvarenasport-mk/assets/channels/arena-m1.png",
+      "url": "http://telekomsrbije.com:2095/play/lhpjmkfVyhON1JAiZCx7vgvje3t-Jiqa5d94ZBmKAqQgIFxl-Ch6B37eGpkVDb28",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_18",
+      "name": "Arena Sport Premium M2",
+      "logo": "https://tvarenasport.mk/wp-content/themes/tvarenasport-mk/assets/channels/arena-m2.png",
+      "url": "http://telekomsrbije.com:2095/play/lhpjmkfVyhON1JAiZCx7vgvje3t-Jiqa5d94ZBmKAqR25sVNOuyj97sUY8aJBFf4",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_19",
+      "name": "Arena Sport Premium M3",
+      "logo": "https://tvarenasport.mk/wp-content/themes/tvarenasport-mk/assets/channels/arena-m3.png",
+      "url": "http://telekomsrbije.com:2095/play/lhpjmkfVyhON1JAiZCx7vgvje3t-Jiqa5d94ZBmKAqSVr5S9_a_TNo_sg7gE1yvH",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_20",
+      "name": "Arryadia",
+      "logo": "https://i.imgur.com/XjzK3gZ.png",
+      "url": "http://149.100.11.252:8000/play/a065/index.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_21",
+      "name": "AS3 Sport TV",
+      "logo": "https://i.ibb.co/bRmGbsyV/A3-SPORTTV.jpg",
+      "url": "https://streamtv.as3sport.online:3394/hybrid/play.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_22",
+      "name": "Astrahan.Ru Sport",
+      "logo": "https://i.imgur.com/BKaEtqL.png",
+      "url": "https://streaming.astrakhan.ru/astrakhanrusporthd/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_23",
+      "name": "ATG Live",
+      "logo": "https://i.imgur.com/bPWFXkL.png",
+      "url": "https://kanal75xto-llhls.akamaized.net/live/Data/atg-kanal-15-02a-rr/HLS-Legacy-HL/atg-kanal-15-02a-rr.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_24",
+      "name": "Awapa Sports TV [Not 24/7]",
+      "logo": "https://i.imgur.com/MNw5cJH.jpg",
+      "url": "https://mgv-awapa.akamaized.net/hls/live/2104282/MGV_CHANNEL15/master.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_25",
+      "name": "AyM Sports",
+      "logo": "https://i.imgur.com/yu3Bpbd.png",
+      "url": "http://168.196.127.137:6001/play/a06v/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_26",
+      "name": "Azteca Deportes Network",
+      "logo": "https://match-images.icdb.tv/5913207f2494844101287828e87625eb.jpg",
+      "url": "http://209.14.115.253:8081/azteca-deportes/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_27",
+      "name": "Bahrain Sports 1 [Not 24/7]",
+      "logo": "https://i.imgur.com/fBpLsbC.png",
+      "url": "https://5c7b683162943.streamlock.net/live/ngrp:sportsone_all/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_28",
+      "name": "Bahrain Sports 2 [Not 24/7]",
+      "logo": "https://i.imgur.com/ZkuZmIo.png",
+      "url": "https://5c7b683162943.streamlock.net/live/ngrp:bahrainsportstwo_all/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_29",
+      "name": "Band Sports",
+      "logo": "https://i.imgur.com/EuPvzJe.png",
+      "url": "https://cdn-5.nxplay.com.br/BAND_SPORTS/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_30",
+      "name": "Barca TV",
+      "logo": "https://i.imgur.com/d8x7c8i.png",
+      "url": "https://live20.bozztv.com/dvrfl06/astv/astv-barca/index.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_31",
+      "name": "beIN Sports 1",
+      "logo": "https://i.imgur.com/Vtk2cGI.png",
+      "url": "http://primetv.cc.cd/beinfhd11/tracks-v1a1/mono.tbin.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_32",
+      "name": "beIN Sports 1 Turk",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/2/27/BeinSports1.svg/revision/latest?cb=20230910184457",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebs1.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_33",
+      "name": "beIN Sports 2",
+      "logo": "https://i.imgur.com/vUJZSvs.png",
+      "url": "http://primetv.cc.cd/beinfhd22/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_34",
+      "name": "beIN Sports 2 Turk",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/4/40/BeinSports2.svg/revision/latest?cb=20230910185720",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebs2.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_35",
+      "name": "beIN Sports 3",
+      "logo": "https://i.imgur.com/UYSMao3.png",
+      "url": "http://primetv.cc.cd/beinfhd33/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_36",
+      "name": "beIN Sports 3 Turk",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/5/53/BeIN_Sports_3_2017_Rectangle.png/revision/latest/scale-to-width-down/1000?cb=20251213114000",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebs3.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_37",
+      "name": "beIN Sports 4",
+      "logo": "https://i.imgur.com/vwAgJNi.png",
+      "url": "http://primetv.cc.cd/beinfhd44/tracks-v1a1/mono.tbin.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_38",
+      "name": "beIN Sports 4 Turk",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/9/96/Logo_bein_sports_4.png/revision/latest/scale-to-width-down/1000?cb=20251213115820",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebs4.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_39",
+      "name": "beIN Sports 5",
+      "logo": "https://i.imgur.com/2Rha5aY.png",
+      "url": "http://primetv.cc.cd/beinfhd55/tracks-v1a1/mono.tbin.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_40",
+      "name": "beIN Sports 5 Turk",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/1/14/BeIN%2Bsports%2B5.png/revision/latest/scale-to-width-down/1000?cb=20251214104942",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebs5.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_41",
+      "name": "beIN Sports 6",
+      "logo": "https://i.imgur.com/0wBdLYb.png",
+      "url": "http://primetv.cc.cd/beinfhd66/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_42",
+      "name": "beIN Sports 7",
+      "logo": "https://i.imgur.com/iODFwZi.png",
+      "url": "http://primetv.cc.cd/beinfhd77/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_43",
+      "name": "beIN Sports 8",
+      "logo": "https://i.imgur.com/CaFEyVn.png",
+      "url": "http://primetv.cc.cd/beinfhd88/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_44",
+      "name": "beIN Sports Haber",
+      "logo": "https://i.imgur.com/QWo0x7S.jpg",
+      "url": "https://andro.mangeinde4.lat/checklist/androstreamlivebsh.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_45",
+      "name": "beIN SPORTS XTRA",
+      "logo": "https://i.ibb.co/HT49GPmB/XTRA-2.png",
+      "url": "https://bein-xtra-bein.amagi.tv/playlist.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_46",
+      "name": "beIN SPORTS XTRA en Espanol",
+      "logo": "https://i.imgur.com/V562tpO.png",
+      "url": "http://201.190.41.246:9060/play/a03y/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_47",
+      "name": "BEK Sports West",
+      "logo": "https://i.imgur.com/1l3t5jd.png",
+      "url": "https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_48",
+      "name": "Belarus-5 [Not 24/7]",
+      "logo": "https://i.imgur.com/NJsRFud.png",
+      "url": "https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus5.smil/playlist.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_49",
+      "name": "Belarus-5 HD",
+      "logo": "https://i.imgur.com/NJsRFud.png",
+      "url": "http://178.124.179.122:8080/BT5/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_50",
+      "name": "Belarus-5 Internet [Not 24/7]",
+      "logo": "https://i.imgur.com/NJsRFud.png",
+      "url": "https://edge59.dc.beltelecom.by/ngtrk/smil:belarus5int.smil/playlist.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_52",
+      "name": "Billiard TV [Geo-blocked]",
+      "logo": "https://i.imgur.com/BZijfKh.png",
+      "url": "https://pb-wm04vonaerv0k.akamaized.net/billi.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_53",
+      "name": "Boks TV",
+      "logo": "https://i.imgur.com/R1UjyfX.png",
+      "url": "http://31.148.48.15/Boks_TV/index.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_54",
+      "name": "Brondby TV",
+      "logo": "https://images.pluto.tv/channels/685029cda1e091e16ff57fc8/colorLogoPNG_1750246109707.png",
+      "url": "https://jmp2.uk/plu-685029cda1e091e16ff57fc8.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_55",
+      "name": "Canal do Inter [Not 24/7]",
+      "logo": "https://i.imgur.com/TQFWEIS.png",
+      "url": "https://video01.soultv.com.br/internacional/internacional/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_56",
+      "name": "Canal Showsport",
+      "logo": "https://i.imgur.com/0L9tW3Z.png",
+      "url": "https://livestream.lumpentv.com.ar/hls/lumpen.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_57",
+      "name": "Canal+ Sport 2 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/a/ab/CANAL%2B_SPORT_2.svg/revision/latest?cb=20241028202739",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport2/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_58",
+      "name": "Canal+ Sport 3 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/4/4c/CANAL%2B_SPORT_3.svg/revision/latest?cb=20241028202810",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport3/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_59",
+      "name": "Canal+ Sport 4 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/8/82/CANAL%2B_SPORT_4.svg/revision/latest?cb=20241028202820",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport4/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_60",
+      "name": "Canal+ Sport 5 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/3/39/CANAL%2B_SPORT_5.svg/revision/latest?cb=20241028202829",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport5/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_61",
+      "name": "Canal+ Sport 6 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/3/3b/Canal%2B_Sport_6.svg/revision/latest?cb=20251106141229",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport6/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_62",
+      "name": "Canal+ Sport 7 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/0/03/Canal%2B_Sport_7.svg/revision/latest?cb=20251106141245",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport7/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_63",
+      "name": "Canal+ Sport 8 SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/6/64/Canal%2B_Sport_8.svg/revision/latest?cb=20251106141257",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport8/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_64",
+      "name": "Canal+ Sport [Geo-blocked]",
+      "logo": "https://i.imgur.com/EOXnU15.png",
+      "url": "http://tv.streambox.fr/live/testlivestream/testlivestream/31.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_65",
+      "name": "Canal+ Sport SK",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/2/25/Canal%2B_Sport_2023.svg/revision/latest?cb=20230901182304",
+      "url": "http://rpprod.hbbtv.cdn.cra.cz:8080/hbbTV/cme-sk-canal-plus-sport/live_fullhd?offsetSeconds=0",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_66",
+      "name": "CazeTV",
+      "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/6/64/Caz%C3%A9TV_logo.svg/1280px-Caz%C3%A9TV_logo.svg.png",
+      "url": "http://138.204.86.4:8080/CAZE_TV/playlist.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_67",
+      "name": "CBC Sport [Geo-blocked]",
+      "logo": "https://i.imgur.com/3mEdjuq.png",
+      "url": "https://mn-nl.mncdn.com/cbcsports_live/cbcsports/playlist.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_68",
+      "name": "CBS Sports Golazo Network",
+      "logo": "https://i.imgur.com/eMjutHS.png",
+      "url": "https://dai.google.com/linear/hls/event/7f3Wv6f7QEKfQna22jHqLQ/master.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_69",
+      "name": "CBS Sports HQ",
+      "logo": "https://i.imgur.com/q8BENJg.png",
+      "url": "https://jmp2.uk/plu-5e9f2c05172a0f0007db4786.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_70",
+      "name": "CCTV-5+",
+      "logo": "https://i.imgur.com/OK8mdJV.png",
+      "url": "https://myip.pdtvhd.com/Sports/streams/CCTV5pul.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_71",
+      "name": "CCTV-16 HD",
+      "logo": "https://i.imgur.com/ZzV6JQp.png",
+      "url": "http://74.91.26.218:82/live/cctv16hd.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_72",
+      "name": "CCTV-Billiards",
+      "logo": "https://i.imgur.com/WK3keM9.png",
+      "url": "http://38.75.136.137:98/gslb/dsdqpub/ystq.m3u8?auth=testpub",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_75",
+      "name": "CDN Deportes [Not 24/7]",
+      "logo": "https://i.imgur.com/yU5LqTL.png",
+      "url": "https://hls.tvabierta.net/hls/036.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_76",
+      "name": "Claro Sports",
+      "logo": "https://i.imgur.com/n0kd17r.png",
+      "url": "http://168.196.127.137:6001/play/a08r/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_77",
+      "name": "Colimdo TV",
+      "logo": "https://i.imgur.com/ZeUgLCa.png",
+      "url": "https://cnn.livestreaminggroup.info:3132/live/colimdotvlive.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_79",
+      "name": "Cricket Gold",
+      "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
+      "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_80",
+      "name": "CRTV (Chile)",
+      "logo": "https://i2.paste.pics/bf68b159547597c39574aec9dd7c626a.png",
+      "url": "https://stmv2.voxtvhd.com.br/crtvchile/crtvchile/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_81",
+      "name": "CT Sport",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/%C4%8CT_sport_logo.png/960px-%C4%8CT_sport_logo.png",
+      "url": "http://88.212.15.17/live/test_ctsport_25p/playlist.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_83",
+      "name": "DAZN Darts x Pluto TV",
+      "logo": "https://images.pluto.tv/channels/64b67f0424ade50008a3be17/colorLogoPNG.png",
+      "url": "https://jmp2.uk/plu-64b67f0424ade50008a3be17.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_84",
+      "name": "DAZN Heldinnen x Pluto TV",
+      "logo": "https://images.pluto.tv/channels/64afe50c5dc16600087f3227/colorLogoPNG.png",
+      "url": "https://jmp2.uk/plu-64afe50c5dc16600087f3227.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_85",
+      "name": "DD Sports",
+      "logo": "https://dtil.tmsimg.com/assets/s158255_ld_h15_aa.png?lock=720x540",
+      "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_86",
+      "name": "DD Sports HD",
+      "logo": "https://dtil.tmsimg.com/assets/s158255_ld_h15_aa.png?lock=720x540",
+      "url": "https://cdn.pishow.tv/ott/live/1161/master.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_87",
+      "name": "Deportes TVC",
+      "logo": "https://i.imgur.com/Y1t8xkL.png",
+      "url": "http://162.19.255.233:8080/play/UNbAl57p9hXZClOu56FCTYXmD-MOS3u5IUkeXPpBt80/m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_88",
+      "name": "DeporTV",
+      "logo": "https://i.imgur.com/THk9ARS.png",
+      "url": "http://158.172.155.130:8000/play/a09y/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_89",
+      "name": "Digi Sport 2 HD (1080i)",
+      "logo": "https://i.imgur.com/KWDUi3v.png",
+      "url": "https://lbgo.bozztv.com/ssh101/ssh101/digisport222/playlist.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_90",
+      "name": "DiviSport",
+      "logo": "https://i.logos-download.com/114030/29915-s5120-904df224e4c030fefcc45adda448b6e8.png/DiviSport_Logo_2023-s5120.png",
+      "url": "http://stream.mcquack.net/457/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_91",
+      "name": "Dong Nai TV 2",
+      "logo": "https://i.imgur.com/tNKPSkO.png",
+      "url": "https://freem3u.xyz/api/live/play.m3u8?vid=255",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_92",
+      "name": "DraftKings Network",
+      "logo": "https://i.imgur.com/SFYhgrt.png",
+      "url": "https://na.linear.zype.com/e0bd0e23-a958-4e43-8164-4f2fef8876a8/fd3614bd-90bf-4530-a277-65ae3a1720c8-zype/live.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_93",
+      "name": "DSports 2",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/DIRECTV_Sports_2_Latin_America_%282018%29.svg/960px-DIRECTV_Sports_2_Latin_America_%282018%29.svg.png",
+      "url": "http://187.102.208.209:8000/play/a0bq/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_94",
+      "name": "DSports",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/DirecTV_Sports_Latin_America_%282018%29.png/960px-DirecTV_Sports_Latin_America_%282018%29.png",
+      "url": "http://38.187.7.252:8000/play/a03d/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_95",
+      "name": "El-Heddaf TV",
+      "logo": "https://i.imgur.com/cDkIDIA.png",
+      "url": "https://live.elheddaftv.com:8081/elheddaftv/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_96",
+      "name": "Eleven Sports 1",
+      "logo": "https://i.imgur.com/AOu4FXH.png",
+      "url": "http://92.114.85.87:8002/play/a00e/index.m3u8",
+      "quality": "HD",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_97",
+      "name": "Eleven Sports 2",
+      "logo": "https://i.imgur.com/bTIRgqG.png",
+      "url": "http://92.114.85.87:8002/play/a00f/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_98",
+      "name": "Eleven Sports 3",
+      "logo": "https://i.imgur.com/bWjGol4.png",
+      "url": "http://92.114.85.87:8002/play/a00g/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_99",
+      "name": "Eleven Sports 4",
+      "logo": "https://i.imgur.com/SEKXaAW.png",
+      "url": "http://92.114.85.87:8002/play/a00h/index.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_100",
+      "name": "Equidia",
+      "logo": "https://i.imgur.com/QPpbRcZ.png",
+      "url": "https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_101",
+      "name": "ERT Sports 1",
+      "logo": "https://i.imgur.com/EsczO2H.png",
+      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertsports_mpeg.2ts",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_102",
+      "name": "ERT Sports 2",
+      "logo": "https://i.imgur.com/b2SNQPi.png",
+      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertplay2_mpeg.2ts",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_103",
+      "name": "ESPN 2 (United States) HD",
+      "logo": "https://i.imgur.com/00tsvjE.png",
+      "url": "http://85.237.89.160:9590/usa-s/ESPN-2-HD/index.m3u8",
+      "quality": "720p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_104",
+      "name": "ESPN 2 Latin America",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/ESPN2_logo.svg/960px-ESPN2_logo.svg.png",
+      "url": "https://barinaslive1.boldmss.com/ESPN_2/ESPN_2.isml/ESPN_2.m3u8",
+      "quality": "1080p",
+      "category": "general",
+      "country": "US",
+      "isLive": true
+    }
+  ]
+}

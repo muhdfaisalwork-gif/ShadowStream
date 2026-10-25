@@ -126,6 +126,13 @@ export default function DrawerContent({ navigation }) {
                         <Text style={styles.rowBadgeText}>HOT</Text>
                     </View>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.navRow} onPress={() => onNav('Sports')}>
+                    <Text style={styles.navIcon}>🏆</Text>
+                    <Text style={styles.navLabel}>Live Sports & Channels</Text>
+                    <View style={[styles.rowBadge, { backgroundColor: '#EF4444' }]}>
+                        <Text style={styles.rowBadgeText}>LIVE</Text>
+                    </View>
+                </TouchableOpacity>
 
                 {/* EXPLORE TAXONOMY */}
                 <Text style={styles.sectionHeader}>EXPLORE</Text>

@@ -93,7 +93,7 @@ function normalizeDub(d) {
 
 // Helper to format seconds into HH:MM:SS or MM:SS
 function formatTime(seconds) {
-    if (!seconds || isNaN(seconds) || seconds < 0) return '00:00';
+    if (!seconds || isNaN(seconds) || seconds < 0 || !isFinite(seconds)) return '00:00';
     const s = Math.floor(seconds);
     const hrs = Math.floor(s / 3600);
     const mins = Math.floor((s % 3600) / 60);
@@ -126,6 +126,7 @@ export default function ShadowStreamPlayer({
     renditions = [],
     onSelectRendition,
     targetLanguage = null,
+    isLive = false,
 }) {
     const { width, height } = useWindowDimensions();
     const isMobile = width < 768;
@@ -2645,7 +2646,7 @@ export default function ShadowStreamPlayer({
                                     left: 0,
                                     top: 0,
                                     bottom: 0,
-                                    width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                                    width: `${isLive || !isFinite(duration) || duration <= 0 ? 100 : (duration > 0 ? (currentTime / duration) * 100 : 0)}%`,
                                     backgroundColor: COLORS.brand,
                                     borderRadius: 2,
                                 }}>
@@ -2709,7 +2710,7 @@ export default function ShadowStreamPlayer({
                                 </div>
 
                                 <Text style={styles.timeDisplay}>
-                                    {formatTime(currentTime)} / {formatTime(duration)}
+                                    {isLive || !isFinite(duration) || duration <= 0 ? '🔴 LIVE' : `${formatTime(currentTime)} / ${formatTime(duration)}`}
                                 </Text>
                             </View>
 

@@ -305,6 +305,54 @@ export default {
         }
       }
 
+      // -------------------------------------------------------------
+      // 4. Live Sports Hub & TV Channels ("/api/v1/sports/hub")
+      // -------------------------------------------------------------
+      if (url.pathname === '/api/v1/sports/hub' || url.pathname === '/api/v1/sports/hub/' ||
+          url.pathname === '/api/v1/sports' || url.pathname === '/api/v1/sports/') {
+        const corsHeaders = {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Cache-Control': 'public, max-age=300'
+        };
+        if (request.method === 'OPTIONS') {
+          return new Response(null, { status: 204, headers: corsHeaders });
+        }
+
+        if (env.ASSETS) {
+          try {
+            const assetRes = await env.ASSETS.fetch(new Request(new URL('/sports_hub.json', request.url), request));
+            if (assetRes && assetRes.ok) {
+              const body = await assetRes.json();
+              return new Response(JSON.stringify(body), { headers: corsHeaders });
+            }
+          } catch (_) {}
+        }
+
+        // Live fallback to ESPN scores directly if assets unavailable
+        try {
+          const espnRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard', {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          const espnData = espnRes.ok ? await espnRes.json() : null;
+          return new Response(JSON.stringify({
+            ok: true,
+            totalChannels: 0,
+            matches: (espnData?.events || []).map(ev => ({
+              id: ev.id,
+              name: ev.name,
+              league: 'Premier League',
+              isLive: ev.status?.type?.state === 'in'
+            })),
+            channels: []
+          }), { headers: corsHeaders });
+        } catch (e) {
+          return new Response(JSON.stringify({ ok: false, error: e.message, channels: [] }), { headers: corsHeaders });
+        }
+      }
+
       if (
         url.pathname === '/downloads' ||
         url.pathname.startsWith('/downloads/') ||

@@ -763,6 +763,8 @@ export default function PlayerScreen({ route, navigation }) {
                     mediaId={item?.id || item?.slug}
                     renditions={renditions}
                     notice={resolveNote}
+                    isLive={Boolean(item?.isLive || item?.type === 'live_tv')}
+                    posterUrl={item?.poster}
                     targetLanguage={effectiveTargetLang || (AudioPreferencesAPI.getPreferred() !== 'auto' ? AudioPreferencesAPI.getPreferred() : null)}
                 />
             </SafeAreaView>
