@@ -521,7 +521,7 @@ export default function PlayerScreen({ route, navigation }) {
             }
 
             if (sourcesToUse.length > 0) {
-                const PROVIDER_RANK = ['vidlink_sub', 'vidlink_dub', 'vidlink', 'multiembed', 'smashystream', 'vidsrc', 'vidsrc_imdb', '2embed', 'vid_src'];
+                const PROVIDER_RANK = ['archive_org', 'direct', 'vidlink_sub', 'vidlink_dub', 'vidlink', 'multiembed', 'smashystream', 'autoembed', 'embedsu', 'vidsrc', 'vidsrc_imdb', 'multiembed_imdb', 'autoembed_imdb', '2embed', 'vid_src'];
                 const MAX_MIRRORS = 10;
 
                 const byProvider = new Map();

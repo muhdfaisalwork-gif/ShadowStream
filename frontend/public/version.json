@@ -1,10 +1,10 @@
 {
-  "version": "2.4.24",
-  "versionCode": 264,
+  "version": "2.4.25",
+  "versionCode": 265,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-25",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Critical hotfix: Resolved React Native Image import constructor crash on Home live sports shelf, ensuring uninterrupted homepage and playback rendering."
+  "releaseNotes": "Global & Regional Streaming Fix: Fixed catalog exact slug resolution, added dynamic TVMaze IMDb fallback resolution for international series, prioritized direct playback streams, and linked multi-server providers across all countries."
 }
