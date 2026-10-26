@@ -3,30 +3,6 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <!-- Early AdShield Bootstrapper: Neutralizes popups and popunders before any third-party script loads -->
-    <script>
-      (function() {
-        try {
-          var dummyWin = { closed: true, close: function(){}, focus: function(){}, blur: function(){}, postMessage: function(){} };
-          var isBlockedPattern = function(u) {
-            if (!u || typeof u !== 'string') return true;
-            var l = u.toLowerCase();
-            var bad = ['adsterra', 'popads', 'popcash', 'monetag', 'propeller', 'onclick', 'exoclick', 'bet365', '1xbet', 'deloton', 'galaksion', 'richpush', 'evadav', 'rollerads', 'tsyndicate', 'zoneid=', 'bannerid=', 'popunder'];
-            for (var i = 0; i < bad.length; i++) {
-              if (l.indexOf(bad[i]) !== -1) return true;
-            }
-            return false;
-          };
-          var origOpen = window.open;
-          window.open = function(url, target, features) {
-            if (url && !isBlockedPattern(url) && (url.indexOf('ssmoviestvs.site') !== -1 || url.indexOf('themoviedb.org') !== -1 || url.indexOf('imdb.com') !== -1 || url.indexOf('github.com') !== -1)) {
-              return origOpen ? origOpen.call(window, url, target, features) : dummyWin;
-            }
-            return dummyWin;
-          };
-        } catch (e) {}
-      })();
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover" />
     <title>ShadowStream - Free Movies & TV Shows</title>
     <meta name="description" content="ShadowStream - Stream thousands of movies and TV shows ad-free across all your devices." />

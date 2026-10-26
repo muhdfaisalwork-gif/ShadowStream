@@ -85,7 +85,6 @@ let blockedCount = 0;
 let installed = false;
 let originalOpen = null;
 let originalAnchorClick = null;
-let originalDispatchEvent = null;
 let clickInterceptorAttached = false;
 let beforeUnloadAttached = false;
 let blurTrapAttached = false;
@@ -300,24 +299,6 @@ export function installAdShield() {
         };
     }
 
-    // 2b. Intercept EventTarget.prototype.dispatchEvent (blocks synthetic click events from clickjacker scripts)
-    if (typeof window !== 'undefined' && window.EventTarget && window.EventTarget.prototype) {
-        originalDispatchEvent = window.EventTarget.prototype.dispatchEvent;
-        window.EventTarget.prototype.dispatchEvent = function guardedDispatch(event) {
-            if (noAdsActive && event && (event.type === 'click' || event.type === 'auxclick')) {
-                try {
-                    const anchor = this && typeof this.closest === 'function'
-                        ? this.closest('a')
-                        : (this && this.tagName === 'A' ? this : null);
-                    if (anchor && anchor.href && !isAllowed(anchor.href)) {
-                        recordBlocked(anchor.href, 'synthetic click event');
-                        return false;
-                    }
-                } catch (_) {}
-            }
-            return originalDispatchEvent.apply(this, arguments);
-        };
-    }
 
     // 2c. Intercept programmatic HTMLFormElement.submit (used by ad networks to bypass window.open)
     const FormCls = (typeof window !== 'undefined' && window.HTMLFormElement) ? window.HTMLFormElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLFormElement) ? globalThis.HTMLFormElement : null);
@@ -426,10 +407,6 @@ export function uninstallAdShield() {
     if (AnchorCls && AnchorCls.prototype && originalAnchorClick) {
         AnchorCls.prototype.click = originalAnchorClick;
         originalAnchorClick = null;
-    }
-    if (typeof window !== 'undefined' && window.EventTarget && window.EventTarget.prototype && originalDispatchEvent) {
-        window.EventTarget.prototype.dispatchEvent = originalDispatchEvent;
-        originalDispatchEvent = null;
     }
 
     if (typeof document !== 'undefined' && document.removeEventListener && clickInterceptorAttached) {
