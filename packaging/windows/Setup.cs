@@ -28,7 +28,7 @@ namespace StreamAppInstaller
 
         public InstallerForm()
         {
-            this.Text = "StreamApp Setup";
+            this.Text = "ShadowStream Setup";
             this.Size = new Size(480, 200);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -39,7 +39,7 @@ namespace StreamAppInstaller
 
             Label titleLabel = new Label()
             {
-                Text = "Installing StreamApp — Cinematic Discovery",
+                Text = "Installing ShadowStream — Cinematic Discovery",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 Location = new Point(24, 20),
                 AutoSize = true,
@@ -79,7 +79,7 @@ namespace StreamAppInstaller
             try
             {
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string installDir = Path.Combine(localAppData, @"Programs\StreamApp");
+                string installDir = Path.Combine(localAppData, @"Programs\ShadowStream");
 
                 if (!Directory.Exists(installDir))
                 {
@@ -112,20 +112,24 @@ namespace StreamAppInstaller
                     }
                 }
 
-                string exePath = Path.Combine(installDir, "StreamApp.exe");
+                string exePath = Path.Combine(installDir, "ShadowStream.exe");
+                if (!File.Exists(exePath))
+                {
+                    exePath = Path.Combine(installDir, "StreamApp.exe");
+                }
 
                 // Create Desktop Shortcut
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                CreateShortcut(Path.Combine(desktop, "StreamApp.lnk"), exePath, "StreamApp — Cinematic Discovery");
+                CreateShortcut(Path.Combine(desktop, "ShadowStream.lnk"), exePath, "ShadowStream — Cinematic Discovery");
 
                 // Create Start Menu Shortcut
                 string startMenu = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs");
-                CreateShortcut(Path.Combine(startMenu, "StreamApp.lnk"), exePath, "StreamApp — Cinematic Discovery");
+                CreateShortcut(Path.Combine(startMenu, "ShadowStream.lnk"), exePath, "ShadowStream — Cinematic Discovery");
 
                 // Register in Windows Add/Remove Programs
                 RegisterUninstall(installDir, exePath);
 
-                // Launch StreamApp in its standalone window
+                // Launch ShadowStream in its standalone window
                 if (File.Exists(exePath))
                 {
                     Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
@@ -135,7 +139,7 @@ namespace StreamAppInstaller
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Installation encountered an issue: " + ex.Message, "StreamApp Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Installation encountered an issue: " + ex.Message, "ShadowStream Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.Close();
             }
         }
@@ -162,16 +166,16 @@ namespace StreamAppInstaller
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\StreamApp"))
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\ShadowStream"))
                 {
                     if (key != null)
                     {
-                        key.SetValue("DisplayName", "StreamApp — Cinematic Discovery");
+                        key.SetValue("DisplayName", "ShadowStream — Cinematic Discovery");
                         key.SetValue("DisplayIcon", exePath + ",0");
-                        key.SetValue("DisplayVersion", "2.2.18");
-                        key.SetValue("Publisher", "StreamApp Foundation");
+                        key.SetValue("DisplayVersion", "2.4.26");
+                        key.SetValue("Publisher", "ShadowStream");
                         key.SetValue("InstallLocation", installDir);
-                        key.SetValue("UninstallString", "cmd.exe /c rd /s /q \"" + installDir + "\" & del \"%USERPROFILE%\\Desktop\\StreamApp.lnk\" & del \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\StreamApp.lnk\"");
+                        key.SetValue("UninstallString", "cmd.exe /c rd /s /q \"" + installDir + "\" & del \"%USERPROFILE%\\Desktop\\ShadowStream.lnk\" & del \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\ShadowStream.lnk\"");
                         key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                         key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
                     }

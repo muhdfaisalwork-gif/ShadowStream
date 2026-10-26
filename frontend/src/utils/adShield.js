@@ -5,10 +5,11 @@
  *   1. User-controlled "No Ads" mode (ON by default).
  *   2. Overriding `window.open` to block and close unauthorized popup/popunder windows.
  *   3. Guarding `HTMLAnchorElement.prototype.click` to block hidden programmatic ad clicks.
- *   4. Global capture-phase click interception to prevent invisible transparent overlay clickjacking.
- *   5. Guarding top-level window navigation against hostile ad redirects.
- *   6. Disarming background iframe blur/focus stealing popunders.
- *   7. Real-time event broadcasting to update player HUD badges and blocked counters.
+ *   4. Guarding `EventTarget.prototype.dispatchEvent` to prevent synthetic ad click triggering.
+ *   5. Global capture-phase click and auxclick interception to prevent invisible transparent overlay clickjacking.
+ *   6. Guarding top-level window navigation against hostile ad redirects.
+ *   7. Disarming background iframe blur/focus stealing popunders.
+ *   8. Real-time event broadcasting to update player HUD badges and blocked counters.
  */
 
 const STORAGE_KEY = 'no_ads_mode';
@@ -63,7 +64,20 @@ const AD_KEYWORDS = [
     'highperformancegate', 'effectivegate', 'profitablegatetocontent', 'al5sm', 'whomeverwhistle',
     'deloton', 'galaksion', 'rollerads', 'richpush', 'evadav', 'juicyads', 'vdo.ai',
     'doubleclick', 'googleadservices', 'googlesyndication', 'adnxs', 'criteo', 'taboola',
-    'outbrain', 'melbet', 'mostbet', 'parimatch', 'dafabet', 'stake.com'
+    'outbrain', 'melbet', 'mostbet', 'parimatch', 'dafabet', 'stake.com', 'betwinner',
+    'megapari', 'linebet', 'pin-up.bet', 'sodlessteargas', 'yllix', 'adcash', 'pubfuture',
+    'richaudience', 'infolinks', 'poppush', 'ad-maven', 'clicksor', 'zergnet', 'mgid',
+    'revcontent', 'scorecardresearch', 'quantserve', 'adservice.google', 'adcolony',
+    'onclickperformance', 'glispa', 'adkeep', 'creativecdn', 'cpmstar', 'adtrue',
+    'inpagepush', 'pushame', 'propellerclick', 'propu.sh', 'onclickalgo', 'onclkds',
+    'ad-delivery', 'trafficstars', 'bidgear', 'adsco.re', 'adexc', 'adkernel',
+    'adxadserv', 'clickaine', 'coinhive', 'cryptoloot', 'jscache', 'adpushup',
+    'ezoic', 'a-ads', 'realsrv', 'tsyndicate', 'serving-sys', 'rubiconproject',
+    'openx', 'pubmatic', 'casalemedia', 'smartadserver', 'spotxchange', 'spotx.tv',
+    'tremorhub', 'sovrn', 'lijit', 'yieldmo', 'sharethrough', 'teads.tv', 'unruly',
+    'triplelift', 'gumgum', 'undertone', 'kargo', 'inmobi', 'ironsrc', 'applovin',
+    'vungle', 'chartboost', 'fyber', 'mintegral', 'tapjoy', 'flurry', 'adjust.com',
+    'appsflyer', 'branch.io', 'singular.net', 'kochava'
 ];
 
 let noAdsActive = readStoredPreference();
@@ -71,6 +85,7 @@ let blockedCount = 0;
 let installed = false;
 let originalOpen = null;
 let originalAnchorClick = null;
+let originalDispatchEvent = null;
 let clickInterceptorAttached = false;
 let beforeUnloadAttached = false;
 let blurTrapAttached = false;
@@ -92,7 +107,8 @@ export function isAllowed(url) {
     }
 
     // Reject known ad query patterns
-    if (lowerUrl.includes('zoneid=') || lowerUrl.includes('bannerid=') || lowerUrl.includes('popunder') || lowerUrl.includes('campaignid=')) {
+    if (lowerUrl.includes('zoneid=') || lowerUrl.includes('bannerid=') || lowerUrl.includes('popunder') ||
+        lowerUrl.includes('campaignid=') || lowerUrl.includes('aff_id=') || lowerUrl.includes('/pop/')) {
         return false;
     }
 
@@ -207,7 +223,7 @@ export function onNoAdsChange(callback) {
     return () => {};
 }
 
-/** Global capture-phase click handler */
+/** Global capture-phase click and auxclick handler (stops ads before reaching document listeners) */
 function globalCaptureClickHandler(e) {
     if (!noAdsActive) return;
 
@@ -218,7 +234,7 @@ function globalCaptureClickHandler(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                recordBlocked(anchor.href, 'link click');
+                recordBlocked(anchor.href, `${e.type || 'link'} click`);
             }
         }
     } catch (_) {}
@@ -247,7 +263,7 @@ export function installAdShield() {
 
     installed = true;
 
-    // 1. Intercept window.open and lock it so hostile ad scripts cannot delete or override it
+    // 1. Intercept window.open and lock it so hostile ad scripts cannot overwrite it
     if (typeof window.open === 'function') {
         originalOpen = window.open;
         const guardedOpen = function shadowStreamWindowOpen(url, target, features) {
@@ -264,7 +280,7 @@ export function installAdShield() {
             Object.defineProperty(window, 'open', {
                 value: guardedOpen,
                 configurable: false,
-                writable: true,
+                writable: false,
             });
         } catch (_) {
             window.open = guardedOpen;
@@ -284,7 +300,26 @@ export function installAdShield() {
         };
     }
 
-    // 2b. Intercept programmatic HTMLFormElement.submit (used by ad networks to bypass window.open)
+    // 2b. Intercept EventTarget.prototype.dispatchEvent (blocks synthetic click events from clickjacker scripts)
+    if (typeof window !== 'undefined' && window.EventTarget && window.EventTarget.prototype) {
+        originalDispatchEvent = window.EventTarget.prototype.dispatchEvent;
+        window.EventTarget.prototype.dispatchEvent = function guardedDispatch(event) {
+            if (noAdsActive && event && (event.type === 'click' || event.type === 'auxclick')) {
+                try {
+                    const anchor = this && typeof this.closest === 'function'
+                        ? this.closest('a')
+                        : (this && this.tagName === 'A' ? this : null);
+                    if (anchor && anchor.href && !isAllowed(anchor.href)) {
+                        recordBlocked(anchor.href, 'synthetic click event');
+                        return false;
+                    }
+                } catch (_) {}
+            }
+            return originalDispatchEvent.apply(this, arguments);
+        };
+    }
+
+    // 2c. Intercept programmatic HTMLFormElement.submit (used by ad networks to bypass window.open)
     const FormCls = (typeof window !== 'undefined' && window.HTMLFormElement) ? window.HTMLFormElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLFormElement) ? globalThis.HTMLFormElement : null);
     if (FormCls && FormCls.prototype) {
         const originalFormSubmit = FormCls.prototype.submit;
@@ -305,9 +340,10 @@ export function installAdShield() {
         };
     }
 
-    // 3. Global capture-phase click handler (blocks clicks before they reach ad listeners)
+    // 3. Global capture-phase click and auxclick handlers (blocks clicks before they reach ad listeners)
     if (typeof document !== 'undefined' && document.addEventListener && !clickInterceptorAttached) {
         document.addEventListener('click', globalCaptureClickHandler, true);
+        document.addEventListener('auxclick', globalCaptureClickHandler, true);
         clickInterceptorAttached = true;
     }
 
@@ -375,7 +411,15 @@ export function installAdShield() {
 export function uninstallAdShield() {
     if (!installed) return;
     if (typeof window !== 'undefined' && originalOpen) {
-        window.open = originalOpen;
+        try {
+            Object.defineProperty(window, 'open', {
+                value: originalOpen,
+                configurable: true,
+                writable: true,
+            });
+        } catch (_) {
+            window.open = originalOpen;
+        }
         originalOpen = null;
     }
     const AnchorCls = (typeof window !== 'undefined' && window.HTMLAnchorElement) ? window.HTMLAnchorElement : ((typeof globalThis !== 'undefined' && globalThis.HTMLAnchorElement) ? globalThis.HTMLAnchorElement : null);
@@ -383,9 +427,14 @@ export function uninstallAdShield() {
         AnchorCls.prototype.click = originalAnchorClick;
         originalAnchorClick = null;
     }
+    if (typeof window !== 'undefined' && window.EventTarget && window.EventTarget.prototype && originalDispatchEvent) {
+        window.EventTarget.prototype.dispatchEvent = originalDispatchEvent;
+        originalDispatchEvent = null;
+    }
 
     if (typeof document !== 'undefined' && document.removeEventListener && clickInterceptorAttached) {
         document.removeEventListener('click', globalCaptureClickHandler, true);
+        document.removeEventListener('auxclick', globalCaptureClickHandler, true);
         clickInterceptorAttached = false;
     }
     installed = false;

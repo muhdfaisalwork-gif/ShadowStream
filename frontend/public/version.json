@@ -1,10 +1,10 @@
 {
-  "version": "2.4.25",
-  "versionCode": 265,
+  "version": "2.4.26",
+  "versionCode": 266,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-25",
+  "releaseDate": "2026-10-26",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Global & Regional Streaming Fix: Fixed catalog exact slug resolution, added dynamic TVMaze IMDb fallback resolution for international series, prioritized direct playback streams, and linked multi-server providers across all countries."
+  "releaseNotes": "AdShield Hardening: Full desktop and mobile popup lockdown, network-level ad request interceptor, auxiliary click hijacking mitigation, and secured embed player containment."
 }

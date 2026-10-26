@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 265
-VERSION_NAME = "2.4.25"
+VERSION_CODE = 266
+VERSION_NAME = "2.4.26"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -190,7 +190,8 @@ public class MainActivity extends Activity {{
         "fyber.com", "mintegral.com", "tapjoy.com", "flurry.com",
         "adjust.com", "appsflyer.com", "branch.io", "singular.net",
         "kochava.com", "melbet.com", "mostbet.com", "parimatch.com",
-        "dafabet.com", "stake.com"
+        "dafabet.com", "stake.com",
+        "betwinner.com", "megapari.com", "linebet.com", "mostbet-pk.com", "pin-up.bet"
     }};
 
     private static final String[] AD_PATTERNS = new String[] {{
