@@ -1,10 +1,10 @@
 {
-  "version": "2.4.28",
-  "versionCode": 268,
+  "version": "2.4.29",
+  "versionCode": 269,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-27",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Updater Hardening: Resolved infinite update banner loop, introduced desktop bridge for native downloads, recompiled v2.4.28 Windows distribution binaries, and ensured zero-regression cross-platform synchronization."
+  "releaseNotes": "Live Cricket Hub integration with verified Star Sports 1, Hindi, Select 1/2, Sony Sports Ten 1/2, PTV Sports, Willow, and DD Sports channels; dedicated cricket navigation category and HLS playback reliability."
 }

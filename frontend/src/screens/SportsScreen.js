@@ -12,6 +12,7 @@ import { useResponsive } from '../theme/scaling';
 
 const DEFAULT_CATEGORIES = [
     { id: 'all', label: 'All Sports', icon: '🏆' },
+    { id: 'cricket', label: 'Cricket', icon: '🏏' },
     { id: 'football', label: 'Football / Soccer', icon: '⚽' },
     { id: 'racing', label: 'Motorsports & Racing', icon: '🏎️' },
     { id: 'combat', label: 'Combat & MMA', icon: '🥊' },
@@ -26,6 +27,7 @@ function SportsChannelCard({ channel, onPress, cardWidth }) {
 
     const categoryIcon = useMemo(() => {
         switch (channel.category) {
+            case 'cricket': return '🏏';
             case 'football': return '⚽';
             case 'racing': return '🏎️';
             case 'combat': return '🥊';
@@ -293,7 +295,7 @@ export default function SportsScreen({ navigation }) {
                     </View>
                     <Text style={styles.heroTitle}>Free Live Sports & Matches</Text>
                     <Text style={styles.heroSubtitle}>
-                        Direct HLS television feeds for Premier League, NBA, Motorsports, Combat, Tennis & Golf with live ESPN scoreboards.
+                        Direct HLS television feeds for Cricket, Premier League, NBA, Motorsports, Combat, Tennis & Golf with live ESPN scoreboards.
                     </Text>
                 </View>
 

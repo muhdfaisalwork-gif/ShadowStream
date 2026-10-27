@@ -1,12 +1,17 @@
 {
-  "updatedAt": "2026-10-25T16:01:16.325538+00:00",
-  "totalChannels": 414,
-  "totalMatches": 24,
+  "updatedAt": "2026-10-27T18:17:09.075030+00:00",
+  "totalChannels": 418,
+  "totalMatches": 22,
   "categories": [
     {
       "id": "all",
       "label": "All Sports",
       "icon": "🏆"
+    },
+    {
+      "id": "cricket",
+      "label": "Cricket",
+      "icon": "🏏"
     },
     {
       "id": "football",
@@ -152,8 +157,8 @@
       "league": "Premier League",
       "sport": "football",
       "icon": "⚽",
-      "status": "Scheduled",
-      "state": "pre",
+      "status": "Full Time",
+      "state": "post",
       "date": "2026-10-25T16:30Z",
       "homeTeam": {
         "name": "Sunderland",
@@ -171,144 +176,44 @@
       "isLive": false
     },
     {
-      "id": "401909861",
-      "name": "Los Angeles Lakers at Utah Jazz",
-      "shortName": "LAL @ UTAH",
+      "id": "401909877",
+      "name": "Brooklyn Nets at Boston Celtics",
+      "shortName": "BKN @ BOS",
       "league": "NBA",
       "sport": "basketball",
       "icon": "🏀",
       "status": "Scheduled",
       "state": "pre",
-      "date": "2026-10-25T21:00Z",
+      "date": "2026-10-27T23:30Z",
       "homeTeam": {
-        "name": "Utah Jazz",
-        "shortName": "UTAH",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/utah.png",
+        "name": "Boston Celtics",
+        "shortName": "BOS",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bos.png",
         "score": "0"
       },
       "awayTeam": {
-        "name": "Los Angeles Lakers",
-        "shortName": "LAL",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lal.png",
-        "score": "0"
-      },
-      "broadcast": "NBA League Pass, Spectrum Sports Net, Spectrum Sports Net +",
-      "isLive": false
-    },
-    {
-      "id": "401909862",
-      "name": "Indiana Pacers at Brooklyn Nets",
-      "shortName": "IND @ BKN",
-      "league": "NBA",
-      "sport": "basketball",
-      "icon": "🏀",
-      "status": "Scheduled",
-      "state": "pre",
-      "date": "2026-10-25T22:00Z",
-      "homeTeam": {
         "name": "Brooklyn Nets",
         "shortName": "BKN",
         "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bkn.png",
         "score": "0"
       },
-      "awayTeam": {
-        "name": "Indiana Pacers",
-        "shortName": "IND",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ind.png",
-        "score": "0"
-      },
-      "broadcast": "NBA League Pass, DAZN IND",
+      "broadcast": "NBA League Pass, DAZN (YES)",
       "isLive": false
     },
     {
-      "id": "401909863",
-      "name": "Orlando Magic at New York Knicks",
-      "shortName": "ORL @ NY",
+      "id": "401909878",
+      "name": "Detroit Pistons at New York Knicks",
+      "shortName": "DET @ NY",
       "league": "NBA",
       "sport": "basketball",
       "icon": "🏀",
       "status": "Scheduled",
       "state": "pre",
-      "date": "2026-10-25T23:00Z",
+      "date": "2026-10-28T00:00Z",
       "homeTeam": {
         "name": "New York Knicks",
         "shortName": "NY",
         "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ny.png",
-        "score": "0"
-      },
-      "awayTeam": {
-        "name": "Orlando Magic",
-        "shortName": "ORL",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/orl.png",
-        "score": "0"
-      },
-      "broadcast": "NBA League Pass",
-      "isLive": false
-    },
-    {
-      "id": "401909864",
-      "name": "Toronto Raptors at Minnesota Timberwolves",
-      "shortName": "TOR @ MIN",
-      "league": "NBA",
-      "sport": "basketball",
-      "icon": "🏀",
-      "status": "Scheduled",
-      "state": "pre",
-      "date": "2026-10-25T23:00Z",
-      "homeTeam": {
-        "name": "Minnesota Timberwolves",
-        "shortName": "MIN",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/min.png",
-        "score": "0"
-      },
-      "awayTeam": {
-        "name": "Toronto Raptors",
-        "shortName": "TOR",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/tor.png",
-        "score": "0"
-      },
-      "broadcast": "NBA TV",
-      "isLive": false
-    },
-    {
-      "id": "401909865",
-      "name": "LA Clippers at Oklahoma City Thunder",
-      "shortName": "LAC @ OKC",
-      "league": "NBA",
-      "sport": "basketball",
-      "icon": "🏀",
-      "status": "Scheduled",
-      "state": "pre",
-      "date": "2026-10-25T23:00Z",
-      "homeTeam": {
-        "name": "Oklahoma City Thunder",
-        "shortName": "OKC",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/okc.png",
-        "score": "0"
-      },
-      "awayTeam": {
-        "name": "LA Clippers",
-        "shortName": "LAC",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lac.png",
-        "score": "0"
-      },
-      "broadcast": "NBA League Pass, ClipperVision",
-      "isLive": false
-    },
-    {
-      "id": "401909866",
-      "name": "Detroit Pistons at Philadelphia 76ers",
-      "shortName": "DET @ PHI",
-      "league": "NBA",
-      "sport": "basketball",
-      "icon": "🏀",
-      "status": "Scheduled",
-      "state": "pre",
-      "date": "2026-10-25T23:30Z",
-      "homeTeam": {
-        "name": "Philadelphia 76ers",
-        "shortName": "PHI",
-        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/phi.png",
         "score": "0"
       },
       "awayTeam": {
@@ -317,7 +222,82 @@
         "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/det.png",
         "score": "0"
       },
+      "broadcast": "NBC",
+      "isLive": false
+    },
+    {
+      "id": "401909879",
+      "name": "Sacramento Kings at San Antonio Spurs",
+      "shortName": "SAC @ SA",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-28T00:00Z",
+      "homeTeam": {
+        "name": "San Antonio Spurs",
+        "shortName": "SA",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/sa.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Sacramento Kings",
+        "shortName": "SAC",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/sac.png",
+        "score": "0"
+      },
       "broadcast": "NBA League Pass",
+      "isLive": false
+    },
+    {
+      "id": "401909880",
+      "name": "Portland Trail Blazers at Los Angeles Lakers",
+      "shortName": "POR @ LAL",
+      "league": "NBA",
+      "sport": "basketball",
+      "icon": "🏀",
+      "status": "Scheduled",
+      "state": "pre",
+      "date": "2026-10-28T03:00Z",
+      "homeTeam": {
+        "name": "Los Angeles Lakers",
+        "shortName": "LAL",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lal.png",
+        "score": "0"
+      },
+      "awayTeam": {
+        "name": "Portland Trail Blazers",
+        "shortName": "POR",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/por.png",
+        "score": "0"
+      },
+      "broadcast": "Peacock, NBC",
+      "isLive": false
+    },
+    {
+      "id": "401873010",
+      "name": "New England Patriots at Chicago Bears",
+      "shortName": "NE @ CHI",
+      "league": "NFL",
+      "sport": "football_us",
+      "icon": "🏈",
+      "status": "Final",
+      "state": "post",
+      "date": "2026-10-23T00:15Z",
+      "homeTeam": {
+        "name": "Chicago Bears",
+        "shortName": "CHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/chi.png",
+        "score": "30"
+      },
+      "awayTeam": {
+        "name": "New England Patriots",
+        "shortName": "NE",
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ne.png",
+        "score": "24"
+      },
+      "broadcast": "Prime Video",
       "isLive": false
     },
     {
@@ -327,8 +307,8 @@
       "league": "NFL",
       "sport": "football_us",
       "icon": "🏈",
-      "status": "In Progress",
-      "state": "in",
+      "status": "Final",
+      "state": "post",
       "date": "2026-10-25T13:30Z",
       "homeTeam": {
         "name": "New Orleans Saints",
@@ -343,7 +323,7 @@
         "score": "16"
       },
       "broadcast": "NFL Net",
-      "isLive": true
+      "isLive": false
     },
     {
       "id": "401873017",
@@ -352,20 +332,20 @@
       "league": "NFL",
       "sport": "football_us",
       "icon": "🏈",
-      "status": "Scheduled",
-      "state": "pre",
+      "status": "Final",
+      "state": "post",
       "date": "2026-10-25T17:00Z",
       "homeTeam": {
         "name": "Atlanta Falcons",
         "shortName": "ATL",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png",
-        "score": "0"
+        "score": "29"
       },
       "awayTeam": {
         "name": "San Francisco 49ers",
         "shortName": "SF",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png",
-        "score": "0"
+        "score": "20"
       },
       "broadcast": "Fox",
       "isLive": false
@@ -377,20 +357,20 @@
       "league": "NFL",
       "sport": "football_us",
       "icon": "🏈",
-      "status": "Scheduled",
-      "state": "pre",
+      "status": "Final",
+      "state": "post",
       "date": "2026-10-25T17:00Z",
       "homeTeam": {
         "name": "Tennessee Titans",
         "shortName": "TEN",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ten.png",
-        "score": "0"
+        "score": "24"
       },
       "awayTeam": {
         "name": "Cleveland Browns",
         "shortName": "CLE",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/cle.png",
-        "score": "0"
+        "score": "27"
       },
       "broadcast": "CBS",
       "isLive": false
@@ -402,20 +382,20 @@
       "league": "NFL",
       "sport": "football_us",
       "icon": "🏈",
-      "status": "Scheduled",
-      "state": "pre",
+      "status": "Final",
+      "state": "post",
       "date": "2026-10-25T17:00Z",
       "homeTeam": {
         "name": "Minnesota Vikings",
         "shortName": "MIN",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/min.png",
-        "score": "0"
+        "score": "16"
       },
       "awayTeam": {
         "name": "Indianapolis Colts",
         "shortName": "IND",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ind.png",
-        "score": "0"
+        "score": "10"
       },
       "broadcast": "CBS",
       "isLive": false
@@ -427,47 +407,22 @@
       "league": "NFL",
       "sport": "football_us",
       "icon": "🏈",
-      "status": "Scheduled",
-      "state": "pre",
+      "status": "Final",
+      "state": "post",
       "date": "2026-10-25T17:00Z",
       "homeTeam": {
         "name": "New York Jets",
         "shortName": "NYJ",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyj.png",
-        "score": "0"
+        "score": "25"
       },
       "awayTeam": {
         "name": "Miami Dolphins",
         "shortName": "MIA",
         "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/mia.png",
-        "score": "0"
+        "score": "28"
       },
       "broadcast": "CBS",
-      "isLive": false
-    },
-    {
-      "id": "401873018",
-      "name": "Tampa Bay Buccaneers at Carolina Panthers",
-      "shortName": "TB @ CAR",
-      "league": "NFL",
-      "sport": "football_us",
-      "icon": "🏈",
-      "status": "Scheduled",
-      "state": "pre",
-      "date": "2026-10-25T17:00Z",
-      "homeTeam": {
-        "name": "Carolina Panthers",
-        "shortName": "CAR",
-        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/car.png",
-        "score": "0"
-      },
-      "awayTeam": {
-        "name": "Tampa Bay Buccaneers",
-        "shortName": "TB",
-        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/tb.png",
-        "score": "0"
-      },
-      "broadcast": "Fox",
       "isLive": false
     },
     {
@@ -648,6 +603,126 @@
   ],
   "channels": [
     {
+      "id": "sport_cricket_1",
+      "name": "Star Sports 1",
+      "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
+      "url": "http://103.151.60.162:2122/play/a024/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_2",
+      "name": "Star Sports 1 Hindi",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a025/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_3",
+      "name": "Star Sports Select 1 HD",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a026/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_4",
+      "name": "Star Sports Select 2 HD",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a027/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_5",
+      "name": "Star Sports 2",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a00v/index.m3u8?hls",
+      "quality": "720p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_6",
+      "name": "Sony Sports Ten 1",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a01c/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_7",
+      "name": "Sony Sports Ten 2",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a01b/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_8",
+      "name": "Ten Cricket",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a0fj/index.m3u8?hls",
+      "quality": "720p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_9",
+      "name": "PTV Sports Live",
+      "logo": null,
+      "url": "http://103.151.60.162:2122/play/a018/index.m3u8?hls",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "PK",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_10",
+      "name": "Willow Sports HD",
+      "logo": null,
+      "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_11",
+      "name": "DD Sports HD",
+      "logo": null,
+      "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "IN",
+      "isLive": true
+    },
+    {
+      "id": "sport_cricket_12",
+      "name": "Cricket Gold HD",
+      "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
+      "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "AU",
+      "isLive": true
+    },
+    {
       "id": "sport_ch_3",
       "name": "30A Golf Kingdom",
       "logo": "https://i.imgur.com/Lv53nh4.png",
@@ -674,6 +749,16 @@
       "url": "http://23.239.31.26:8989/accnetwork/index.m3u8",
       "quality": "720p",
       "category": "basketball",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_24",
+      "name": "Awapa Sports TV [Not 24/7]",
+      "logo": "https://i.imgur.com/MNw5cJH.jpg",
+      "url": "https://mgv-awapa.akamaized.net/hls/live/2104282/MGV_CHANNEL15/master.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
       "country": "US",
       "isLive": true
     },
@@ -724,6 +809,26 @@
       "url": "https://jmp2.uk/plu-64d626ac9b414d000820e2fc.m3u8",
       "quality": "HD",
       "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_101",
+      "name": "ERT Sports 1",
+      "logo": "https://i.imgur.com/EsczO2H.png",
+      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertsports_mpeg.2ts",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_102",
+      "name": "ERT Sports 2",
+      "logo": "https://i.imgur.com/b2SNQPi.png",
+      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertplay2_mpeg.2ts",
+      "quality": "1080p",
+      "category": "cricket",
       "country": "US",
       "isLive": true
     },
@@ -1048,6 +1153,16 @@
       "isLive": true
     },
     {
+      "id": "sport_ch_274",
+      "name": "PTV Sports",
+      "logo": "https://i.imgur.com/CPm6GHA.png",
+      "url": "http://103.250.28.74:8000/play/a019/index.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
       "id": "sport_ch_280",
       "name": "Racing.com",
       "logo": "https://i.imgur.com/Q55HX1O.png",
@@ -1198,12 +1313,92 @@
       "isLive": true
     },
     {
+      "id": "sport_ch_308",
+      "name": "Sony Sports Ten 1 HD",
+      "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_SONY_SPORTS_TEN_1/images/LOGO_HD/image.png",
+      "url": "http://103.185.24.134:3001/SonyTenSports1/index.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_310",
+      "name": "Sony Sports Ten 3 Hindi",
+      "logo": "https://dtil.tmsimg.com/assets/GNLZZGG0025TCMR.png?lock=720x540",
+      "url": "http://103.151.60.162:2122/play/a01t/index.m3u8?hls",
+      "quality": "HD",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_311",
+      "name": "Sony Sports Ten 4 Kannada",
+      "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/SonyTen4Kan.png",
+      "url": "http://103.151.60.162:2122/play/a021/index.m3u8?hls",
+      "quality": "HD",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_312",
+      "name": "Sony Sports Ten 5",
+      "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_SONY_SPORTS_TEN_5/images/LOGO_HD/image.png",
+      "url": "http://103.151.60.162:2122/play/a028/index.m3u8?hls",
+      "quality": "HD",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
       "id": "sport_ch_322",
       "name": "Sportitalia Motori [Geo-blocked]",
       "logo": "https://i.imgur.com/hu56Ya5.png",
       "url": "https://di-yx2saj20.vo.lswcdn.net/sportitalia/smil:simotori.smil/playlist.m3u8",
       "quality": "720p",
       "category": "racing",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_333",
+      "name": "Star Sports 2 HD",
+      "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_STAR_SPORTS_2/images/LOGO_HD/image.png",
+      "url": "http://tvsen5.aynascope.net/cXPB2LKkErN9/index.m3u8",
+      "quality": "720p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_334",
+      "name": "Star Sports 2 Hindi",
+      "logo": "https://i.imgur.com/kHerF19.png",
+      "url": "https://tvsen5.aynaott.com/cXPB2LKkErN9/index.m3u8",
+      "quality": "720p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_335",
+      "name": "Star Sports 2 Telugu HD",
+      "logo": "https://i.imgur.com/m7DvvqF.png",
+      "url": "https://real-vk.proxy.nellaiiptv.com/SDMEDIA/index.m3u8",
+      "quality": "HD",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_336",
+      "name": "Star Sports 3",
+      "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_STAR_SPORTS_3/images/LOGO_HD/image.png",
+      "url": "http://103.151.60.162:2122/play/a029/index.m3u8?hls",
+      "quality": "HD",
+      "category": "cricket",
       "country": "US",
       "isLive": true
     },
@@ -1224,6 +1419,26 @@
       "url": "https://linear-253.frequency.stream/mt/roku/253/hls/master/playlist.m3u8",
       "quality": "1080p",
       "category": "combat",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_347",
+      "name": "T Sports 7",
+      "logo": "https://i.imgur.com/KyI0s5n.png",
+      "url": "https://live-us1.thaimomo.com/live-as/chtsport-1/playlist.m3u8",
+      "quality": "HD",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_348",
+      "name": "T Sports",
+      "logo": "https://i.imgur.com/2JzlorD.png",
+      "url": "https://tvsen5.aynaott.com/TnMn5kZz8aLm/index.m3u8",
+      "quality": "1080p",
+      "category": "cricket",
       "country": "US",
       "isLive": true
     },
@@ -1278,7 +1493,17 @@
       "isLive": true
     },
     {
-      "id": "sport_ch_406",
+      "id": "sport_ch_404",
+      "name": "Willow",
+      "logo": "https://cricket.willow.tv/_nuxt/img/willow_blue_logo.362ed8e.png",
+      "url": "http://tvsen5.aynascope.net/willowhd/index.m3u8",
+      "quality": "720p",
+      "category": "cricket",
+      "country": "US",
+      "isLive": true
+    },
+    {
+      "id": "sport_ch_407",
       "name": "Win+ Futbol",
       "logo": "https://i.imgur.com/0UN87vB.png",
       "url": "http://181.78.12.119:16123/play/ch19/index.m3u8",
@@ -1391,7 +1616,7 @@
       "id": "sport_ch_14",
       "name": "Arena4",
       "logo": "https://i.imgur.com/uAaQDr6.png",
-      "url": "http://88.212.15.17/live/arena4/index.m3u8",
+      "url": "http://88.212.7.14/live/arena4/index.m3u8",
       "quality": "HD",
       "category": "general",
       "country": "US",
@@ -1483,16 +1708,6 @@
       "logo": "https://i.imgur.com/bPWFXkL.png",
       "url": "https://kanal75xto-llhls.akamaized.net/live/Data/atg-kanal-15-02a-rr/HLS-Legacy-HL/atg-kanal-15-02a-rr.m3u8",
       "quality": "720p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_24",
-      "name": "Awapa Sports TV [Not 24/7]",
-      "logo": "https://i.imgur.com/MNw5cJH.jpg",
-      "url": "https://mgv-awapa.akamaized.net/hls/live/2104282/MGV_CHANNEL15/master.m3u8",
-      "quality": "1080p",
       "category": "general",
       "country": "US",
       "isLive": true
@@ -1941,8 +2156,8 @@
       "id": "sport_ch_70",
       "name": "CCTV-5+",
       "logo": "https://i.imgur.com/OK8mdJV.png",
-      "url": "https://myip.pdtvhd.com/Sports/streams/CCTV5pul.m3u8",
-      "quality": "HD",
+      "url": "https://php.jdshipin.com/TVOD/iptv.php?id=cctv5p",
+      "quality": "1080p",
       "category": "general",
       "country": "US",
       "isLive": true
@@ -1998,16 +2213,6 @@
       "isLive": true
     },
     {
-      "id": "sport_ch_79",
-      "name": "Cricket Gold",
-      "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
-      "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
       "id": "sport_ch_80",
       "name": "CRTV (Chile)",
       "logo": "https://i2.paste.pics/bf68b159547597c39574aec9dd7c626a.png",
@@ -2021,7 +2226,7 @@
       "id": "sport_ch_81",
       "name": "CT Sport",
       "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/%C4%8CT_sport_logo.png/960px-%C4%8CT_sport_logo.png",
-      "url": "http://88.212.15.17/live/test_ctsport_25p/playlist.m3u8",
+      "url": "http://88.212.15.50/live/test_ctsport_25p/playlist.m3u8",
       "quality": "720p",
       "category": "general",
       "country": "US",
@@ -2043,16 +2248,6 @@
       "logo": "https://images.pluto.tv/channels/64afe50c5dc16600087f3227/colorLogoPNG.png",
       "url": "https://jmp2.uk/plu-64afe50c5dc16600087f3227.m3u8",
       "quality": "HD",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_85",
-      "name": "DD Sports",
-      "logo": "https://dtil.tmsimg.com/assets/s158255_ld_h15_aa.png?lock=720x540",
-      "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8",
-      "quality": "1080p",
       "category": "general",
       "country": "US",
       "isLive": true
@@ -2152,96 +2347,6 @@
       "name": "El-Heddaf TV",
       "logo": "https://i.imgur.com/cDkIDIA.png",
       "url": "https://live.elheddaftv.com:8081/elheddaftv/index.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_96",
-      "name": "Eleven Sports 1",
-      "logo": "https://i.imgur.com/AOu4FXH.png",
-      "url": "http://92.114.85.87:8002/play/a00e/index.m3u8",
-      "quality": "HD",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_97",
-      "name": "Eleven Sports 2",
-      "logo": "https://i.imgur.com/bTIRgqG.png",
-      "url": "http://92.114.85.87:8002/play/a00f/index.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_98",
-      "name": "Eleven Sports 3",
-      "logo": "https://i.imgur.com/bWjGol4.png",
-      "url": "http://92.114.85.87:8002/play/a00g/index.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_99",
-      "name": "Eleven Sports 4",
-      "logo": "https://i.imgur.com/SEKXaAW.png",
-      "url": "http://92.114.85.87:8002/play/a00h/index.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_100",
-      "name": "Equidia",
-      "logo": "https://i.imgur.com/QPpbRcZ.png",
-      "url": "https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_101",
-      "name": "ERT Sports 1",
-      "logo": "https://i.imgur.com/EsczO2H.png",
-      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertsports_mpeg.2ts",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_102",
-      "name": "ERT Sports 2",
-      "logo": "https://i.imgur.com/b2SNQPi.png",
-      "url": "http://hbbtvapp.ert.gr/stream.php/v/vid_ertplay2_mpeg.2ts",
-      "quality": "1080p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_103",
-      "name": "ESPN 2 (United States) HD",
-      "logo": "https://i.imgur.com/00tsvjE.png",
-      "url": "http://85.237.89.160:9590/usa-s/ESPN-2-HD/index.m3u8",
-      "quality": "720p",
-      "category": "general",
-      "country": "US",
-      "isLive": true
-    },
-    {
-      "id": "sport_ch_104",
-      "name": "ESPN 2 Latin America",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/ESPN2_logo.svg/960px-ESPN2_logo.svg.png",
-      "url": "https://barinaslive1.boldmss.com/ESPN_2/ESPN_2.isml/ESPN_2.m3u8",
       "quality": "1080p",
       "category": "general",
       "country": "US",

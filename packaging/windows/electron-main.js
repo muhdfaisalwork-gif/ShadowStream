@@ -218,8 +218,8 @@ function createWindow() {
             try {
                 window.ShadowStreamDesktop = {
                     platform: 'windows',
-                    version: '2.4.28',
-                    versionCode: 268
+                    version: '2.4.29',
+                    versionCode: 269
                 };
                 var mockWin = { closed: true, close: function(){}, focus: function(){}, blur: function(){}, postMessage: function(){} };
                 Object.defineProperty(window, 'open', {

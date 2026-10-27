@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.28",
+    version: "2.4.29",
 
-    versionCode: 268,
+    versionCode: 269,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "AdShield Hardening: Full desktop and mobile popup lockdown, network-level ad request interceptor, auxiliary click hijacking mitigation, and secured embed player containment.",
+    releaseNotes: "Live Cricket Hub integration with verified Star Sports 1, Hindi, Select 1/2, Sony Sports Ten 1/2, PTV Sports, Willow, and DD Sports channels; dedicated cricket navigation category and HLS playback reliability.",
 
 };
 
@@ -3891,6 +3891,18 @@ export default {
                     return errorResponse("Releases storage not bound", 500);
                 }
 
+                if (normPath === "/admin/upload/put" && (req.method === "PUT" || req.method === "POST")) {
+                    const url = new URL(req.url);
+                    const key = url.searchParams.get("key");
+                    if (!key) return errorResponse("Missing key", 400);
+                    const contentType = req.headers.get("content-type") || "application/octet-stream";
+                    const bodyBytes = await req.arrayBuffer();
+                    await env.RELEASES.put(key, bodyBytes, {
+                        httpMetadata: { contentType }
+                    });
+                    return jsonResponse({ ok: true, key, size: bodyBytes.byteLength });
+                }
+
                 if (normPath === "/admin/upload/init" && req.method === "POST") {
                     const body = await req.json() as { key: string; contentType?: string };
                     if (!body.key) return errorResponse("Missing key", 400);
@@ -4252,6 +4264,33 @@ export default {
             }
 
 
+
+            if (normPath === "/latest.yml" || normPath === "/latest-win.yml") {
+                if (env.RELEASES) {
+                    try {
+                        const r2Obj = await env.RELEASES.get("latest.yml");
+                        if (r2Obj) {
+                            return new Response(r2Obj.body, {
+                                headers: {
+                                    "Content-Type": "text/yaml; charset=utf-8",
+                                    "Cache-Control": "no-cache, must-revalidate",
+                                    "X-Content-Type-Options": "nosniff",
+                                    ...CORS,
+                                },
+                            });
+                        }
+                    } catch (_) {}
+                }
+                const latestYml = `version: ${CURRENT_APP_RELEASE.version}\nfiles:\n  - url: ShadowStream-Setup-x64.exe\n    sha512: N6RimMa1Na9wLYIIHPmIQsb+p3vRUV9+URlUlFYf1SaOfZ6D7bf9CU2EtrytwnY6UscaCtTOl/egnCTBPZBVAA==\n    size: 115094528\npath: ShadowStream-Setup-x64.exe\nsha512: N6RimMa1Na9wLYIIHPmIQsb+p3vRUV9+URlUlFYf1SaOfZ6D7bf9CU2EtrytwnY6UscaCtTOl/egnCTBPZBVAA==\nreleaseDate: '2026-10-27T00:00:00.000Z'\n`;
+                return new Response(latestYml, {
+                    headers: {
+                        "Content-Type": "text/yaml; charset=utf-8",
+                        "Cache-Control": "no-cache, must-revalidate",
+                        "X-Content-Type-Options": "nosniff",
+                        ...CORS,
+                    },
+                });
+            }
 
             if (normPath === "/downloads" || normPath === "/downloads/list") {
 

@@ -37,8 +37,134 @@ def fetch_url(url: str, timeout: int = 10) -> str:
         return ""
 
 
+VERIFIED_CRICKET_CHANNELS = [
+    {
+        "id": "sport_cricket_1",
+        "name": "Star Sports 1",
+        "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
+        "url": "http://103.151.60.162:2122/play/a024/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_2",
+        "name": "Star Sports 1 Hindi",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a025/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_3",
+        "name": "Star Sports Select 1 HD",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a026/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_4",
+        "name": "Star Sports Select 2 HD",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a027/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_5",
+        "name": "Star Sports 2",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a00v/index.m3u8?hls",
+        "quality": "720p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_6",
+        "name": "Sony Sports Ten 1",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a01c/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_7",
+        "name": "Sony Sports Ten 2",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a01b/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_8",
+        "name": "Ten Cricket",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a0fj/index.m3u8?hls",
+        "quality": "720p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_9",
+        "name": "PTV Sports Live",
+        "logo": None,
+        "url": "http://103.151.60.162:2122/play/a018/index.m3u8?hls",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "PK",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_10",
+        "name": "Willow Sports HD",
+        "logo": None,
+        "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "US",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_11",
+        "name": "DD Sports HD",
+        "logo": None,
+        "url": "https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "IN",
+        "isLive": True
+    },
+    {
+        "id": "sport_cricket_12",
+        "name": "Cricket Gold HD",
+        "logo": "https://resources.cricket-australia.pulselive.com/cricket-australia/photo/2025/07/25/836eddae-4329-4542-ad17-dcd37e9d951a/Cricket-Gold-1920x1080_noBG.png",
+        "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
+        "quality": "1080p",
+        "category": "cricket",
+        "country": "AU",
+        "isLive": True
+    }
+]
+
+
 def categorize_channel(name: str) -> str:
     n = name.lower()
+    if any(k in n for k in ["cricket", "willow", "star sports", "ptv sports", "ten cricket", "sony ten", "sony sports ten", "a sports", "t sports", "geo super", "super sport cricket", "astro cricket"]):
+        return "cricket"
     if any(k in n for k in ["football", "soccer", "futbol", "fifa", "premier", "serie a", "bundesliga", "liga"]):
         return "football"
     if any(k in n for k in ["racing", "motorsport", "auto", "f1", "motor", "nascar", "speedway", "rally", "kart", "moto"]):
@@ -169,15 +295,24 @@ def ingest_espn_scores():
 
 
 def build_sports_hub():
-    channels = ingest_iptv_sports()
+    iptv_channels = ingest_iptv_sports()
     matches = ingest_espn_scores()
+
+    # Prepend verified cricket channels and deduplicate URLs
+    seen_urls = set(c["url"] for c in VERIFIED_CRICKET_CHANNELS)
+    merged_channels = list(VERIFIED_CRICKET_CHANNELS)
+    for ch in iptv_channels:
+        if ch["url"] not in seen_urls:
+            seen_urls.add(ch["url"])
+            merged_channels.append(ch)
 
     result = {
         "updatedAt": datetime.now(timezone.utc).isoformat(),
-        "totalChannels": len(channels),
+        "totalChannels": len(merged_channels),
         "totalMatches": len(matches),
         "categories": [
             {"id": "all", "label": "All Sports", "icon": "🏆"},
+            {"id": "cricket", "label": "Cricket", "icon": "🏏"},
             {"id": "football", "label": "Football / Soccer", "icon": "⚽"},
             {"id": "racing", "label": "Motorsports & Racing", "icon": "🏎️"},
             {"id": "combat", "label": "Combat & MMA", "icon": "🥊"},
@@ -187,15 +322,26 @@ def build_sports_hub():
             {"id": "general", "label": "Sports Networks", "icon": "📺"}
         ],
         "matches": matches,
-        "channels": channels[:160]  # Top 160 curated high-quality channels
+        "channels": merged_channels[:175]  # Curated high-quality channels including live cricket
     }
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
 
-    print(f"[Sports Ingest] Successfully exported sports hub to {OUTPUT_FILE}")
-    return len(channels)
+    # Sync to frontend dist and apkbuild if directories exist
+    dist_file = REPO_ROOT / "frontend" / "dist" / "sports_hub.json"
+    if dist_file.parent.exists():
+        with open(dist_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+
+    apk_file = REPO_ROOT / ".apkbuild" / "assets" / "www" / "sports_hub.json"
+    if apk_file.parent.exists():
+        with open(apk_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+
+    print(f"[Sports Ingest] Successfully exported sports hub to {OUTPUT_FILE} (Channels: {len(result['channels'])})")
+    return len(result["channels"])
 
 
 if __name__ == "__main__":

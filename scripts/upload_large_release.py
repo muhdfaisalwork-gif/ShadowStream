@@ -16,8 +16,8 @@ from pathlib import Path
 
 ENDPOINT = "https://streamapp-catalog.muhd-faisal-work.workers.dev"
 ADMIN_KEY = "shadowstream-upload-key-2026"
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ShadowStream/2.4.27"
-CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ShadowStream/2.4.29"
+CHUNK_SIZE = 5 * 1024 * 1024  # 5 MB (R2 minimum part size, high network stability)
 
 FILES_TO_UPLOAD = [
     (
