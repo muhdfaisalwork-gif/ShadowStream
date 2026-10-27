@@ -3882,6 +3882,60 @@ export default {
 
             }
 
+            if (normPath.startsWith("/admin/upload/")) {
+                const adminKey = req.headers.get("x-admin-key");
+                if (adminKey !== "shadowstream-upload-key-2026") {
+                    return errorResponse("Unauthorized", 401);
+                }
+                if (!env.RELEASES) {
+                    return errorResponse("Releases storage not bound", 500);
+                }
+
+                if (normPath === "/admin/upload/init" && req.method === "POST") {
+                    const body = await req.json() as { key: string; contentType?: string };
+                    if (!body.key) return errorResponse("Missing key", 400);
+                    const multipart = await env.RELEASES.createMultipartUpload(body.key, {
+                        httpMetadata: {
+                            contentType: body.contentType || "application/octet-stream",
+                        },
+                    });
+                    return jsonResponse({ uploadId: multipart.uploadId, key: multipart.key });
+                }
+
+                if (normPath === "/admin/upload/part" && req.method === "PUT") {
+                    const url = new URL(req.url);
+                    const key = url.searchParams.get("key");
+                    const uploadId = url.searchParams.get("uploadId");
+                    const partNumberStr = url.searchParams.get("partNumber");
+                    if (!key || !uploadId || !partNumberStr) return errorResponse("Missing parameters", 400);
+                    const partNumber = parseInt(partNumberStr, 10);
+                    if (isNaN(partNumber) || partNumber < 1) return errorResponse("Invalid partNumber", 400);
+
+                    const multipart = env.RELEASES.resumeMultipartUpload(key, uploadId);
+                    const bodyBytes = await req.arrayBuffer();
+                    const part = await multipart.uploadPart(partNumber, bodyBytes);
+                    return jsonResponse({ partNumber: part.partNumber, etag: part.etag });
+                }
+
+                if (normPath === "/admin/upload/complete" && req.method === "POST") {
+                    const body = await req.json() as { key: string; uploadId: string; parts: Array<{ partNumber: number; etag: string }> };
+                    if (!body.key || !body.uploadId || !Array.isArray(body.parts)) return errorResponse("Missing parameters", 400);
+
+                    const multipart = env.RELEASES.resumeMultipartUpload(body.key, body.uploadId);
+                    const completed = await multipart.complete(body.parts);
+                    return jsonResponse({ ok: true, key: completed.key, size: completed.size, etag: completed.etag });
+                }
+
+                if (normPath === "/admin/upload/abort" && req.method === "POST") {
+                    const body = await req.json() as { key: string; uploadId: string };
+                    if (!body.key || !body.uploadId) return errorResponse("Missing parameters", 400);
+
+                    const multipart = env.RELEASES.resumeMultipartUpload(body.key, body.uploadId);
+                    await multipart.abort();
+                    return jsonResponse({ ok: true });
+                }
+            }
+
 
 
             if (normPath === "/health" || path === "/health" || path === "/api/v1/health") {

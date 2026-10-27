@@ -11,7 +11,7 @@ import { HistoryAPI, Storage, AudioPreferencesAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount } from '../utils/adShield';
 
-const CURRENT_VERSION = '2.4.8';
+import { CURRENT_VERSION, CURRENT_CODE, isNewerVersion } from '../config/version';
 
 export default function SettingsScreen({ navigation }) {
     useRouteMeta('Settings');
@@ -47,10 +47,11 @@ export default function SettingsScreen({ navigation }) {
         setCheckingUpdate(true);
         setUpdateMessage(null);
         try {
-            const res = await fetch('/api/v1/app-version', { cache: 'no-store' });
+            const res = await fetch('/api/v1/app-version?_t=' + Date.now(), { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
-                if (data.version && data.version !== CURRENT_VERSION) {
+                const hasNewer = isNewerVersion(data.version, CURRENT_VERSION) || (data.versionCode && data.versionCode > CURRENT_CODE);
+                if (hasNewer) {
                     setUpdateMessage(`🚀 Update v${data.version} available! (${data.releaseNotes || 'New improvements'})`);
                 } else {
                     setUpdateMessage(`✅ You're up to date! Version ${CURRENT_VERSION} is the latest release.`);

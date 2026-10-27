@@ -8,6 +8,7 @@ import MobileTabBar from '../components/MobileTabBar';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { getApiBase } from '../utils/api';
 import { applyAppUpdate } from '../utils/pwa';
+import { CURRENT_VERSION, CURRENT_CODE, CURRENT_RELEASE_DATE } from '../config/version';
 
 export function getReleaseBase() {
     const api = getApiBase();
@@ -135,9 +136,9 @@ export default function AppsScreen({ navigation }) {
     const { width } = useWindowDimensions();
 
     const [liveRelease, setLiveRelease] = useState({
-        version: '2.4.17',
-        versionCode: 257,
-        releaseDate: '2026-10-24',
+        version: CURRENT_VERSION,
+        versionCode: CURRENT_CODE,
+        releaseDate: CURRENT_RELEASE_DATE,
         releaseNotes: 'Direct APK in-app installer prompt, background download receiver, zero-cache version sync, and responsive global scaling.',
     });
     const [refreshing, setRefreshing] = useState(false);

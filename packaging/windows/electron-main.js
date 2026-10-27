@@ -61,12 +61,10 @@ const EMBED_HOST_HINTS = [
     'vidsrc',
     '2embed',
     'vidlink',
-    'multiembed',
     'superembed',
     'moviebox',
     'archive.org',
     'smashystream',
-    'embed.su',
     'moviesapi.club',
     'autoembed.co',
     'animesalt'
@@ -132,6 +130,12 @@ function createWindow() {
             return { action: 'deny' };
         }
 
+        // Downloadable releases (.exe, .zip, .apk, .dmg, or /downloads/) -> open in external browser
+        if (url.endsWith('.exe') || url.endsWith('.zip') || url.endsWith('.apk') || url.endsWith('.dmg') || url.includes('/downloads/')) {
+            shell.openExternal(url);
+            return { action: 'deny' };
+        }
+
         // EMBED PLAYERS NEVER NEED NEW WINDOWS.
         // Third-party embed players call window.open solely for popunders/affiliate redirects.
         // Denying it leaves the player iframe running cleanly inside the main window!
@@ -167,6 +171,14 @@ function createWindow() {
             event.preventDefault();
             return;
         }
+
+        // Downloadable releases (.exe, .zip, .apk, .dmg, or /downloads/) -> trigger external browser download
+        if (url.endsWith('.exe') || url.endsWith('.zip') || url.endsWith('.apk') || url.endsWith('.dmg') || url.includes('/downloads/')) {
+            event.preventDefault();
+            shell.openExternal(url);
+            return;
+        }
+
         let parsed;
         try {
             parsed = new URL(url);
@@ -200,19 +212,29 @@ function createWindow() {
         } catch (_) {}
     });
 
-    // 5. In-Page AdShield: neutralize window.open in all frames on DOM ready
+    // 5. In-Page Desktop Bridge & AdShield: neutralize window.open in all frames on DOM ready
     mainWindow.webContents.on('dom-ready', () => {
-        const clientAdShield = `
+        const clientBridge = `
             try {
+                window.ShadowStreamDesktop = {
+                    platform: 'windows',
+                    version: '2.4.27',
+                    versionCode: 267
+                };
                 var mockWin = { closed: true, close: function(){}, focus: function(){}, blur: function(){}, postMessage: function(){} };
                 Object.defineProperty(window, 'open', {
-                    value: function() { return mockWin; },
+                    value: function(url) {
+                        if (url && (url.includes('.exe') || url.includes('.apk') || url.includes('.zip') || url.includes('/downloads/'))) {
+                            window.location.href = url;
+                        }
+                        return mockWin;
+                    },
                     writable: false,
                     configurable: false
                 });
             } catch(e) {}
         `;
-        mainWindow.webContents.executeJavaScript(clientAdShield).catch(() => {});
+        mainWindow.webContents.executeJavaScript(clientBridge).catch(() => {});
     });
 
     mainWindow.on('closed', () => {

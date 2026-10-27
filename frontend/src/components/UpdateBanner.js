@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
 import { COLORS } from '../theme/colors';
 import { applyAppUpdate } from '../utils/pwa';
-
-const CURRENT_VERSION = '2.4.18';
-const CURRENT_CODE = 258;
+import { CURRENT_VERSION, CURRENT_CODE, isNewerVersion } from '../config/version';
 
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState(null);
@@ -36,7 +34,7 @@ export default function UpdateBanner() {
                 if (!res.ok) return;
                 const remote = await res.json();
 
-                // If running inside Android APK wrapper
+                // Environment A: Android APK wrapper
                 if (window.ShadowStreamNative) {
                     const currentCode = typeof window.ShadowStreamNative.getAppVersionCode === 'function'
                         ? window.ShadowStreamNative.getAppVersionCode()
@@ -45,8 +43,8 @@ export default function UpdateBanner() {
                     if (remote.versionCode && currentCode < remote.versionCode) {
                         setUpdateInfo({
                             type: 'apk',
-                            version: remote.version || '2.4.17',
-                            title: `Update Available (v${remote.version || '2.4.17'})`,
+                            version: remote.version || CURRENT_VERSION,
+                            title: `Update Available (v${remote.version || CURRENT_VERSION})`,
                             subtitle: remote.releaseNotes || 'Install the newest version for player fixes & performance improvements.',
                             action: () => {
                                 const dlUrl = remote.apkUrl || 'https://ssmoviestvs.site/downloads/ShadowStream.apk';
@@ -63,12 +61,42 @@ export default function UpdateBanner() {
                                 }
                             },
                         });
-                        return;
                     }
+                    return; // Android wrapper handled, do not fall through to desktop/web check
                 }
 
-                // Web / PWA / Browser check
-                if (remote.version && remote.version !== CURRENT_VERSION) {
+                // Environment B: Windows Desktop App (Electron)
+                const isElectronDesktop = !!(
+                    window.ShadowStreamDesktop ||
+                    (typeof navigator !== 'undefined' && /electron/i.test(navigator.userAgent || ''))
+                );
+                if (isElectronDesktop) {
+                    const desktopCode = window.ShadowStreamDesktop?.versionCode || CURRENT_CODE;
+                    const desktopVersion = window.ShadowStreamDesktop?.version || CURRENT_VERSION;
+                    const hasNewerDesktop = (remote.versionCode && desktopCode < remote.versionCode) ||
+                                            isNewerVersion(remote.version, desktopVersion);
+
+                    if (hasNewerDesktop) {
+                        setUpdateInfo({
+                            type: 'desktop',
+                            version: remote.version || CURRENT_VERSION,
+                            title: `ShadowStream Desktop v${remote.version} Available`,
+                            subtitle: remote.releaseNotes || 'Download the newest installer for desktop performance improvements.',
+                            action: () => {
+                                const dlUrl = remote.desktopUrl || 'https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe';
+                                setDownloading(true);
+                                window.location.href = dlUrl;
+                            },
+                        });
+                    }
+                    return; // Desktop app handled, do not fall through to web check
+                }
+
+                // Environment C: Standard Web / PWA / Browser
+                const hasNewerWeb = (remote.versionCode && CURRENT_CODE < remote.versionCode) ||
+                                    isNewerVersion(remote.version, CURRENT_VERSION);
+
+                if (hasNewerWeb) {
                     setUpdateInfo({
                         type: 'web',
                         version: remote.version,
