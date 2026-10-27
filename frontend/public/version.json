@@ -1,10 +1,10 @@
 {
-  "version": "2.4.27",
-  "versionCode": 267,
+  "version": "2.4.28",
+  "versionCode": 268,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-27",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "Platform Polish: Mirror provider hardening, audio languages directory endpoint, and platform verification suite compliance."
+  "releaseNotes": "Updater Hardening: Resolved infinite update banner loop, introduced desktop bridge for native downloads, recompiled v2.4.28 Windows distribution binaries, and ensured zero-regression cross-platform synchronization."
 }

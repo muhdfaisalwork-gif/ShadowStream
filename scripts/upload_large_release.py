@@ -135,9 +135,7 @@ def main():
             print(f"Error: {path} not found")
             return 1
         expected_size = path.stat().st_size
-        if pub.get(key) == expected_size:
-            print(f"\n{key} already matches expected size ({expected_size} bytes). Skipping.")
-            continue
+        print(f"\nProcessing {key} (target: {expected_size:,} bytes)...")
 
         success = upload_file(key, path, ctype)
         if not success:

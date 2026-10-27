@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.27",
+    version: "2.4.28",
 
-    versionCode: 267,
+    versionCode: 268,
 
     minVersion: "1.0.0",
 

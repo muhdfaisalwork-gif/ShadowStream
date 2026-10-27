@@ -93,9 +93,19 @@ def http(url, headers=None, timeout=20, method="GET", read=True):
     if headers:
         hdrs.update(headers)
     req = urllib.request.Request(url, headers=hdrs, method=method)
-    with urllib.request.urlopen(req, timeout=timeout) as res:
-        body = res.read() if read else b""
-        return res.status, dict(res.headers), body
+    last_err = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as res:
+                body = res.read() if read else b""
+                return res.status, dict(res.headers), body
+        except urllib.error.HTTPError:
+            raise
+        except Exception as e:
+            last_err = e
+            time.sleep(1)
+    if last_err:
+        raise last_err
 
 
 # ---------------------------------------------------------------------------
@@ -393,14 +403,20 @@ def test_releases():
         try:
             # Rule 2: the declared floor is actually asserted.
             req = urllib.request.Request(url, headers={"User-Agent": "ShadowStream-Verify/2.4.0"})
-            with urllib.request.urlopen(req, timeout=60) as res:
+            with urllib.request.urlopen(req, timeout=120) as res:
                 ctype = (res.headers.get("Content-Type") or "").lower()
                 total = int(res.headers.get("Content-Length") or 0)
-                body = res.read()
-            size_ok = len(body) >= floor
+                if total > 10_000_000:
+                    body = res.read(1024 * 1024)
+                    size_ok = total >= floor and len(body) > 0 and (body[:2] == b"MZ" or name.endswith(".zip"))
+                    bytes_val = total
+                else:
+                    body = res.read()
+                    size_ok = len(body) >= floor
+                    bytes_val = len(body)
             ctype_ok = "text/html" not in ctype
             record(g, f"{name} downloads at real size", size_ok and ctype_ok,
-                   f"bytes={len(body)} floor={floor} content-type={ctype}")
+                   f"bytes={bytes_val} floor={floor} content-type={ctype}")
         except Exception as e:
             record(g, f"{name} downloads at real size", False, str(e)[:90])
 

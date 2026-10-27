@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 267
-VERSION_NAME = "2.4.27"
+VERSION_CODE = 268
+VERSION_NAME = "2.4.28"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
