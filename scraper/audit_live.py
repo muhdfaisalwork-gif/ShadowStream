@@ -67,7 +67,7 @@ print("=== RELEASES BUCKET ===")
 for k in ['latest.yml', 'ShadowStream-Setup-x64.exe', 'ShadowStream-win-x64.zip',
           'StreamApp-Browser-Shortcut.exe', 'ShadowStream-Setup-x64.exe.blockmap',
           'StreamApp-Setup-x64.exe']:
-    url = f'https://streamapp-releases.muhd-faisal-work.workers.dev/downloads/{k}'
+    url = f'https://streamapp-catalog.muhd-faisal-work.workers.dev/downloads/{k}'
     try:
         req = urllib.request.Request(url, headers={'User-Agent': UA}, method='HEAD')
         r = urllib.request.urlopen(req, timeout=15)

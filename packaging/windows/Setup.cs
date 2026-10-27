@@ -172,7 +172,7 @@ namespace StreamAppInstaller
                     {
                         key.SetValue("DisplayName", "ShadowStream — Cinematic Discovery");
                         key.SetValue("DisplayIcon", exePath + ",0");
-                        key.SetValue("DisplayVersion", "2.4.26");
+                        key.SetValue("DisplayVersion", "2.4.27");
                         key.SetValue("Publisher", "ShadowStream");
                         key.SetValue("InstallLocation", installDir);
                         key.SetValue("UninstallString", "cmd.exe /c rd /s /q \"" + installDir + "\" & del \"%USERPROFILE%\\Desktop\\ShadowStream.lnk\" & del \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\ShadowStream.lnk\"");

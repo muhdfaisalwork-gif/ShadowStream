@@ -15,7 +15,7 @@ keys = ['latest.yml', 'ShadowStream-Setup-x64.exe', 'ShadowStream-win-x64.zip',
         'StreamApp-Browser-Shortcut.exe', 'ShadowStream-Setup-x64.exe.blockmap']
 bases = [
     'https://ssmoviestvs.site/downloads',
-    'https://streamapp-releases.muhd-faisal-work.workers.dev/downloads',
+    'https://streamapp-catalog.muhd-faisal-work.workers.dev/downloads',
     'https://streamapp-releases.r2.dev/downloads',
 ]
 for b in bases:

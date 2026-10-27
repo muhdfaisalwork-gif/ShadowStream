@@ -1,10 +1,10 @@
 {
-  "version": "2.4.26",
-  "versionCode": 266,
+  "version": "2.4.27",
+  "versionCode": 267,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-26",
+  "releaseDate": "2026-10-27",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "AdShield Hardening: Full desktop and mobile popup lockdown, network-level ad request interceptor, auxiliary click hijacking mitigation, and secured embed player containment."
+  "releaseNotes": "Platform Polish: Mirror provider hardening, audio languages directory endpoint, and platform verification suite compliance."
 }

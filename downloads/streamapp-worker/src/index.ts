@@ -122,15 +122,15 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.26",
+    version: "2.4.27",
 
-    versionCode: 266,
+    versionCode: 267,
 
     minVersion: "1.0.0",
 
     name: "ShadowStream",
 
-    releaseDate: "2026-10-26",
+    releaseDate: "2026-10-27",
 
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
 
@@ -2628,25 +2628,7 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
 
 
 
-        // 2. Multiembed Regional (Multi-Server & Dubs)
 
-        list.push({
-
-            source: "multiembed",
-
-            sourceName: "Multiembed (Multi-Server & Dubs)",
-
-            sourceIsLegal: false,
-
-            kind: "embed",
-
-            status: "available",
-
-            url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
-
-            playbackUrl: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
-
-        });
 
 
 
@@ -2740,23 +2722,6 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
 
         });
 
-        list.push({
-
-            source: "embedsu",
-
-            sourceName: "EmbedSu Multi-Lang",
-
-            sourceIsLegal: false,
-
-            kind: "embed",
-
-            status: "available",
-
-            url: isTv ? `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` : `https://embed.su/embed/movie/${tmdbId}`,
-
-            playbackUrl: isTv ? `https://embed.su/embed/tv/${tmdbId}/${s}/${e}` : `https://embed.su/embed/movie/${tmdbId}`,
-
-        });
 
     }
 
@@ -2786,23 +2751,6 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
 
         });
 
-        list.push({
-
-            source: "multiembed_imdb",
-
-            sourceName: "MultiEmbed (IMDb Server)",
-
-            sourceIsLegal: false,
-
-            kind: "embed",
-
-            status: "available",
-
-            url: isTv ? `https://multiembed.mov/?video_id=${imdbId}&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${imdbId}`,
-
-            playbackUrl: isTv ? `https://multiembed.mov/?video_id=${imdbId}&s=${s}&e=${e}` : `https://multiembed.mov/?video_id=${imdbId}`,
-
-        });
 
         list.push({
 
@@ -4134,6 +4082,57 @@ export default {
 
 
 
+                        if (normPath === "/audio-languages") {
+                const limit = parseInt(params.get("limit") || "20", 10) || 20;
+                const lang = params.get("lang") || params.get("language") || params.get("audio_language");
+                const supportedLangs = [
+                    "en", "hi", "ur", "es", "fr", "de", "ja", "ko", "zh", "ar",
+                    "it", "pt", "ru", "tr", "ta", "te", "bn", "id", "tl", "th",
+                    "vi", "fa", "pa"
+                ];
+
+                let items: any[] = [];
+                if (lang) {
+                    const lc = lang.toLowerCase();
+                    const obj = await env.CATALOG.get(R2_PREFIX + `titles-by-language/${lc}.json`);
+                    if (obj) {
+                        try {
+                            const d = (await obj.json()) as { items?: any[] };
+                            items = d.items || [];
+                        } catch (_) {}
+                    }
+                }
+
+                if (items.length === 0) {
+                    const obj = await env.CATALOG.get(R2_PREFIX + `titles-by-type/movie/page-0.json`);
+                    if (obj) {
+                        try {
+                            const pop = (await obj.json()) as any[];
+                            items = pop.filter(x => Array.isArray(x.audioLanguages) && x.audioLanguages.length > 0);
+                            if (items.length === 0) items = pop;
+                        } catch (_) {}
+                    }
+                }
+
+                const mapped = items.slice(0, limit).map((it: any) => ({
+                    id: it.id,
+                    title: it.title,
+                    slug: it.slug,
+                    type: it.type || "movie",
+                    poster: it.poster,
+                    year: it.year,
+                    audioLanguages: Array.isArray(it.audioLanguages) && it.audioLanguages.length > 0 ? it.audioLanguages : ["en"],
+                    dubs: Array.isArray(it.audioLanguages) && it.audioLanguages.length > 0 ? it.audioLanguages : ["en"]
+                }));
+
+                return jsonResponse({
+                    items: mapped,
+                    total: items.length,
+                    page: 1,
+                    languages: supportedLangs
+                });
+            }
+
             if (normPath === "/languages" || normPath === "/languages-catalog") {
 
                 return streamWrappedR2("languages.json", env);
@@ -5264,25 +5263,7 @@ export default {
 
 
 
-                    const isHindiReq = langParam === 'hi';
 
-                    streams.push({
-
-                        label: isHindiReq ? "⚡ Multiembed (Hindi Dub & Multi-Server)" : "⚡ Multiembed (Multi-Server & Regional Dubs)",
-
-                        provider: "multiembed",
-
-                        url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
-
-                        format: "embed",
-
-                        quality: "HD",
-
-                        language: isHindiReq ? "hi" : "multi",
-
-                        languageName: isHindiReq ? "Hindi / Multi" : "Multi-Language"
-
-                    });
 
 
 
@@ -5326,23 +5307,6 @@ export default {
 
 
 
-                    streams.push({
-
-                        label: "⚡ EmbedSu Regional (HD)",
-
-                        provider: "embedsu",
-
-                        url: isTv ? `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}` : `https://embed.su/embed/movie/${tmdbId}`,
-
-                        format: "embed",
-
-                        quality: "1080p",
-
-                        language: "multi",
-
-                        languageName: "Multi-Language"
-
-                    });
 
 
 
@@ -5410,23 +5374,6 @@ export default {
 
                     });
 
-                    streams.push({
-
-                        label: "⚡ MultiEmbed (IMDb Server)",
-
-                        provider: "multiembed_imdb",
-
-                        url: isTv ? `https://multiembed.mov/?video_id=${imdbId}&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${imdbId}`,
-
-                        format: "embed",
-
-                        quality: "HD",
-
-                        language: "multi",
-
-                        languageName: "Multi-Language"
-
-                    });
 
                     streams.push({
 
