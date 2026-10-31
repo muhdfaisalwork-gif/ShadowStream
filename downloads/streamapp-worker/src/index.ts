@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.35",
+    version: "2.4.36",
 
-    versionCode: 275,
+    versionCode: 276,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.35: Fixed autoembed.me ERR_BLOCKED_BY_RESPONSE (X-Frame-Options: SAMEORIGIN) by replacing autoembed with VidSrc Buzz HD and NontonGo HD (frame-ancestors * / no XFO restrictions), keeping the Zero-Server Frictionless UX and 1-tap Audio Dub selector.",
+    releaseNotes: "v2.4.36: Hardened AdShield popup & 3rd-party link interception with enforced iframe sandbox, promoted clean Vidy (Donkey.to) multi-audio engine to #1 primary stream, enabled 1-tap Hindi & multi-lingual Dubbed switching, and eliminated background audio leak when returning home.",
 
 };
 
@@ -2600,15 +2600,15 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
-        // 1. VidSrc Buzz HD (Primary Zero-XFO HTML5 1080p Engine)
+        // 1. Vidy (Multi-Audio HD) - Donkey.to Clean Primary Engine
         list.push({
-            source: "vidsrc_buzz",
-            sourceName: "VidSrc Buzz HD",
+            source: "vidy",
+            sourceName: "Vidy (Multi-Audio HD)",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
-            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+            url: isTv ? `https://vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
+            playbackUrl: isTv ? `https://vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
         });
 
         // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
@@ -2655,15 +2655,15 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
         });
 
-        // 5. Vidy - Multi-Audio Dubbing Engine & Subtitles (Universal DNS)
+        // 6. VidSrc Buzz HD (Demoted fallback)
         list.push({
-            source: "vidy",
-            sourceName: "Vidy (Multi-Audio HD)",
+            source: "vidsrc_buzz",
+            sourceName: "VidSrc Buzz HD",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: `https://vidy.st/${tvVideasy}`,
-            playbackUrl: `https://vidy.st/${tvVideasy}`,
+            url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
         });
 
         // 5. VidSrc RIP Fast
@@ -5290,15 +5290,15 @@ export default {
 
                 // 2. TMDB-based providers (Verified 100% working high-uptime streams)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. VidSrc Buzz HD (Primary Zero-XFO HTML5 1080p Engine)
+                    // 1. Vidy (Multi-Audio Dubs HD) - Donkey.to Clean Primary Engine
                     streams.push({
-                        label: "⚡ VidSrc Buzz HD",
-                        provider: "vidsrc_buzz",
-                        url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+                        label: "⚡ Vidy (Multi-Audio Dubs HD)",
+                        provider: "vidy",
+                        url: isTv ? `https://vidy.st/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
                         format: "embed",
                         quality: "1080p",
-                        language: "en",
-                        languageName: "English"
+                        language: "multi",
+                        languageName: "Multi-Audio (In-Player Switcher)"
                     });
 
                     // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
@@ -5345,15 +5345,15 @@ export default {
                         languageName: "English"
                     });
 
-                    // 5. Vidy - Multi-Audio Dubbing & Subtitles
+                    // 6. VidSrc Buzz HD (Demoted fallback)
                     streams.push({
-                        label: "⚡ Vidy (Multi-Audio Dubs HD)",
-                        provider: "vidy",
-                        url: isTv ? `https://vidy.st/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
+                        label: "⚡ VidSrc Buzz HD",
+                        provider: "vidsrc_buzz",
+                        url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
                         format: "embed",
                         quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Audio (In-Player Switcher)"
+                        language: "en",
+                        languageName: "English"
                     });
 
                     // 5. VidSrc RIP Fast

@@ -142,6 +142,22 @@ export default function PlayerScreen({ route, navigation }) {
     const [renditions, setRenditions] = useState([]);
     const [animeInfo, setAnimeInfo] = useState(null);
 
+    const effectiveTmdb = useMemo(() => {
+        if (!item) return null;
+        if (item.tmdbId && !/^(19\d\d|20\d\d)$/.test(String(item.tmdbId))) return String(item.tmdbId);
+        if (item.tmdb_id && !/^(19\d\d|20\d\d)$/.test(String(item.tmdb_id))) return String(item.tmdb_id);
+        if (item.id && !/^(19\d\d|20\d\d)$/.test(String(item.id)) && /^\d+$/.test(String(item.id))) return String(item.id);
+        if (typeof item.slug === 'string') {
+            const m = item.slug.match(/-(\d{4,9})$/);
+            if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) return m[1];
+        }
+        return null;
+    }, [item]);
+
+    const effectiveImdb = useMemo(() => {
+        return item?.imdbId || item?.imdb_id || null;
+    }, [item]);
+
     // Immediate playback teardown on unfocus / navigating away from Player
     useEffect(() => {
         if (!isFocused) {
@@ -435,30 +451,19 @@ export default function PlayerScreen({ route, navigation }) {
 
             let sourcesToUse = playableSources;
 
-            // Safe TMDB ID resolution: Never accept a 4-digit release year (1900-2099) from slug
-            let effectiveTmdb = null;
-            if (item.tmdbId && !/^(19\d\d|20\d\d)$/.test(String(item.tmdbId))) {
-                effectiveTmdb = String(item.tmdbId);
-            } else if (item.tmdb_id && !/^(19\d\d|20\d\d)$/.test(String(item.tmdb_id))) {
-                effectiveTmdb = String(item.tmdb_id);
-            }
-            if (!effectiveTmdb && Array.isArray(avList) && avList.length > 0) {
+            // Safe TMDB ID resolution fallback from availability list
+            let currentTmdb = effectiveTmdb;
+            if (!currentTmdb && Array.isArray(avList) && avList.length > 0) {
                 for (const a of avList) {
                     const u = a.playbackUrl || a.url || a.external_url || '';
                     const m = u.match(/(?:vidlink\.pro\/(?:movie|tv)\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/);
                     if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
-                        effectiveTmdb = m[1];
+                        currentTmdb = m[1];
                         break;
                     }
                 }
             }
-            if (!effectiveTmdb && typeof item.slug === 'string') {
-                const m = item.slug.match(/-(\d{4,9})$/);
-                if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
-                    effectiveTmdb = m[1];
-                }
-            }
-            const effectiveImdb = item.imdbId || item.imdb_id;
+            const finalTmdb = currentTmdb || effectiveTmdb;
 
             // Fetch worker-side multi-language & regional dub streams (SmashyStream, Vidlink, AnimeSalt, etc.)
             let workerMultiLangStreams = [];
@@ -498,7 +503,7 @@ export default function PlayerScreen({ route, navigation }) {
             try {
                 const openSubs = await fetchOpenSubtitles({
                     imdbId: effectiveImdb,
-                    tmdbId: effectiveTmdb,
+                    tmdbId: finalTmdb,
                     title: item.title || item.name,
                     season: activeS,
                     episode: activeE,
@@ -535,42 +540,38 @@ export default function PlayerScreen({ route, navigation }) {
             } else if (sourcesToUse.length === 0 && (effectiveTmdb || effectiveImdb)) {
                 const isMovie = item.type === 'movie';
                 const dyn = [];
-                if (effectiveTmdb) {
+                if (finalTmdb) {
                     if (isMovie) {
-// AutoEmbed Primary
-                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveTmdb}` });
-                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${effectiveTmdb}` });
-                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${effectiveTmdb}?color=FFA500` });
-                        dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${effectiveTmdb}&tmdb=1` });
-                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${effectiveTmdb}` });
-                        dyn.push({ source: 'vidsrc_rip', sourceName: 'VidSrc RIP (Fast)', kind: 'embed', playbackUrl: `https://vidsrc.rip/embed/movie/${effectiveTmdb}` });
-                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${effectiveTmdb}` });
-                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${effectiveTmdb}` });
-                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${effectiveTmdb}` });
+                        // 1. Clean Primary Donkey.to Engine (Multi-Audio, zero popups)
+                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${finalTmdb}?color=FFA500` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${finalTmdb}` });
+                        dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${finalTmdb}&tmdb=1` });
+                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${finalTmdb}` });
+                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${finalTmdb}` });
+                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}` });
+                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${finalTmdb}` });
+                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${finalTmdb}` });
                     } else {
-// AutoEmbed Primary TV
-                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
-                        dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${effectiveTmdb}&tmdb=1&s=${activeS || 1}&e=${activeE || 1}` });
-                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${effectiveTmdb}&season=${activeS || 1}&episode=${activeE || 1}` });
-                        dyn.push({ source: 'vidsrc_rip', sourceName: 'VidSrc RIP (Fast)', kind: 'embed', playbackUrl: `https://vidsrc.rip/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${effectiveTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
+                        // 1. Clean Primary TV Engine (Multi-Audio, zero popups)
+                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${finalTmdb}&tmdb=1&s=${activeS || 1}&e=${activeE || 1}` });
+                        dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${finalTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
+                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}&season=${activeS || 1}&episode=${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                     }
                 }
                 if (effectiveImdb) {
                     if (isMovie) {
-// AutoEmbed Primary IMDb Movie
-                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveImdb}` });
                         dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${effectiveImdb}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/movie?imdb=${effectiveImdb}` });
+                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveImdb}` });
                     } else {
-// AutoEmbed Primary IMDb TV
-                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/tv?imdb=${effectiveImdb}&season=${activeS || 1}&episode=${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}` });
                     }
                 }
                 sourcesToUse = dyn;
@@ -580,19 +581,20 @@ export default function PlayerScreen({ route, navigation }) {
                 const PROVIDER_RANK = [
                     'archive_org',
                     'direct',
-                    'autoembed',
+                    'vidy',
                     'vidsrc',
                     'multiembed',
                     '2embed',
-                    'vidy',
+                    'nontongo',
                     'smashystream',
+                    'vidy_imdb',
+                    'vidsrc_imdb',
+                    'multiembed_imdb',
                     'vidlink_dub',
                     'vidlink_sub',
                     'vidlink',
+                    'vidsrc_buzz',
                     'vidsrc_buzz_imdb',
-                    'vidsrc_imdb',
-                    'vidy_imdb',
-                    'multiembed_imdb',
                     'vidsrc_rip'
                 ];
                 const MAX_MIRRORS = 10;
@@ -828,7 +830,7 @@ export default function PlayerScreen({ route, navigation }) {
     }
 
     // Main Player: Full Screen, Edge-to-Edge
-    if (streamUrl && (streamKind === 'direct' || streamKind === 'embed')) {
+    if (isFocused && streamUrl && (streamKind === 'direct' || streamKind === 'embed')) {
         return (
             <SafeAreaView style={styles.screen}>
                 <ShadowStreamPlayer
@@ -848,6 +850,9 @@ export default function PlayerScreen({ route, navigation }) {
                     onNextEpisode={handleNextEpisode}
                     onBack={handleBack}
                     mediaId={item?.id || item?.slug}
+                    tmdbId={effectiveTmdb}
+                    imdbId={effectiveImdb}
+                    mediaType={item?.type || (isTv ? 'tv' : 'movie')}
                     renditions={renditions}
                     notice={resolveNote}
                     isLive={Boolean(item?.isLive || item?.type === 'live_tv')}

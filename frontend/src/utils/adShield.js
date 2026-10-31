@@ -53,6 +53,7 @@ const FIRST_PARTY = [
     'multiembed.mov',
     'streamingnow.mov',
     'vidy.st',
+    'donkey.to',
     'vidsrc.buzz',
     'nontongo.win',
     'vidsrc.to',

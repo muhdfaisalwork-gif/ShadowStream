@@ -1,10 +1,10 @@
 {
-  "version": "2.4.35",
-  "versionCode": 275,
+  "version": "2.4.36",
+  "versionCode": 276,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-31",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.35: Fixed autoembed.me ERR_BLOCKED_BY_RESPONSE (X-Frame-Options: SAMEORIGIN) by replacing autoembed with VidSrc Buzz HD and NontonGo HD (frame-ancestors * / no XFO restrictions), keeping the Zero-Server Frictionless UX and 1-tap Audio Dub selector."
+  "releaseNotes": "v2.4.36: Hardened AdShield popup & 3rd-party link interception with enforced iframe sandbox, promoted clean Vidy (Donkey.to) multi-audio engine to #1 primary stream, enabled 1-tap Hindi & multi-lingual Dubbed switching, and eliminated background audio leak when returning home."
 }
