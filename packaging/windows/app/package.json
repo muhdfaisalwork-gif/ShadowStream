@@ -1,0 +1,54 @@
+{
+  "name": "shadowstream-windows",
+  "version": "2.4.41",
+  "description": "ShadowStream desktop app for Windows",
+  "main": "resources/app/main.js",
+  "author": "ShadowStream",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-updater": "^6.8.9"
+  },
+  "build": {
+    "appId": "com.streamapp.app",
+    "productName": "ShadowStream",
+    "copyright": "ShadowStream",
+    "directories": {
+      "output": "dist-v2411",
+      "buildResources": "build-res"
+    },
+    "files": [
+      "resources/app/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ShadowStream-Setup-x64.${ext}",
+      "sign": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://ssmoviestvs.site/downloads/"
+    }
+  }
+}

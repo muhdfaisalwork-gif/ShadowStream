@@ -107,7 +107,23 @@ downloads/ShadowStream.apk
 packaging/windows/*.exe
 packaging/windows/*.zip
 packaging/windows/ShadowStream-win-x64/
-packaging/windows/app/
+# Electron desktop: keep the runtime and build output out of git, but TRACK
+# the source that defines the shipped version and the native ad-blocklist
+# (packaging/windows/app/package.json, resources/app/main.js). Without this
+# the desktop version bump cannot be reproduced from a fresh clone.
+packaging/windows/app/node_modules/
+packaging/windows/app/dist-*/
+packaging/windows/app/locales/
+packaging/windows/app/__uninstaller-nsis-*
+packaging/windows/app/*.pak
+packaging/windows/app/*.dll
+packaging/windows/app/*.dat
+packaging/windows/app/*.bin
+packaging/windows/app/LICENSE
+packaging/windows/app/LICENSES.chromium.html
+packaging/windows/app/version
+packaging/windows/app/resources/default_app.asar
+packaging/windows/app/resources/app/node_modules/
 *.exe
 *.zip
 *.pdf
