@@ -13,6 +13,7 @@ import { WatchlistAPI, HistoryAPI, Storage } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
 import { fetchOpenSubtitles } from '../utils/subtitleFetcher';
 import { resolveAnimeInfo } from '../utils/animeResolver';
+import { useIsFocused } from '@react-navigation/native';
 
 export function resolveCanonicalSeasonAndEpisode(seasonsList, reqSeason, reqEpisode) {
     if (!Array.isArray(seasonsList) || seasonsList.length === 0) {
@@ -82,6 +83,8 @@ export default function PlayerScreen({ route, navigation }) {
     const [item, setItem] = useState(initialItem);
     const slug = routeSlug || initialItem?.slug || (initialItem?.id ? String(initialItem.id) : null);
     const prevKeyRef = useRef(slug || (initialItem?.id ? String(initialItem.id) : null));
+    const isFocused = useIsFocused();
+
 
     const isTv = (item?.type || initialItem?.type) === 'tv' ||
         (item?.type || initialItem?.type) === 'short_drama' ||
@@ -139,6 +142,37 @@ export default function PlayerScreen({ route, navigation }) {
     const [renditions, setRenditions] = useState([]);
     const [animeInfo, setAnimeInfo] = useState(null);
 
+    // Immediate playback teardown on unfocus / navigating away from Player
+    useEffect(() => {
+        if (!isFocused) {
+            setStreamUrl(null);
+            setStreamKind(null);
+            setMirrorList([]);
+            setLoading(false);
+        }
+    }, [isFocused]);
+
+    // Navigation blur listener: clean address bar query params and terminate audio
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('blur', () => {
+            setStreamUrl(null);
+            setStreamKind(null);
+            setMirrorList([]);
+            setLoading(false);
+            if (typeof window !== 'undefined' && window.location) {
+                try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('season');
+                    url.searchParams.delete('episode');
+                    url.searchParams.delete('targetLanguage');
+                    url.searchParams.delete('lang');
+                    window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+                } catch (_) {}
+            }
+        });
+        return unsubscribe;
+    }, [navigation]);
+
     // Sync route.params when PlayerScreen stays mounted in Drawer.Navigator
     useEffect(() => {
         const nextKey = routeSlug || (rawItem?.slug) || (rawItem?.id ? String(rawItem.id) : null);
@@ -185,15 +219,17 @@ export default function PlayerScreen({ route, navigation }) {
     // Keep the address bar honest so a reload or a shared link lands on the
     // episode actually being watched.
     useEffect(() => {
+        if (!isFocused) return;
         if (typeof window === 'undefined' || !window.history?.replaceState) return;
         if (!isTv || currentSeason == null || currentEpisode == null) return;
         const url = new URL(window.location.href);
+        if (!url.pathname.includes('/play/')) return;
         if (url.searchParams.get('season') === String(currentSeason)
             && url.searchParams.get('episode') === String(currentEpisode)) return;
         url.searchParams.set('season', String(currentSeason));
         url.searchParams.set('episode', String(currentEpisode));
         window.history.replaceState({}, '', url.toString());
-    }, [isTv, currentSeason, currentEpisode]);
+    }, [isTv, currentSeason, currentEpisode, isFocused]);
 
 
     // NOTE: the global popup guard lives in src/utils/adShield.js, installed
@@ -718,6 +754,20 @@ export default function PlayerScreen({ route, navigation }) {
     }, []);
 
     const handleBack = useCallback(() => {
+        setStreamUrl(null);
+        setStreamKind(null);
+        setMirrorList([]);
+        setLoading(false);
+        if (typeof window !== 'undefined' && window.location) {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('season');
+                url.searchParams.delete('episode');
+                url.searchParams.delete('targetLanguage');
+                url.searchParams.delete('lang');
+                window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+            } catch (_) {}
+        }
         if (typeof window !== 'undefined') {
             if (window.ShadowStreamNative && typeof window.ShadowStreamNative.unlockOrientation === 'function') {
                 try { window.ShadowStreamNative.unlockOrientation(); } catch (_) {}
@@ -749,6 +799,10 @@ export default function PlayerScreen({ route, navigation }) {
             return eps.some(e => !e.air_date || new Date(e.air_date) <= now);
         }).sort((a, b) => a.season_number - b.season_number);
     }, [seasons]);
+
+    if (!isFocused) {
+        return <SafeAreaView style={styles.screen} />;
+    }
 
     if (loading) {
         return (

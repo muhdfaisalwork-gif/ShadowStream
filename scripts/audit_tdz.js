@@ -89,6 +89,7 @@ function checkFile(relPath) {
 
 const err1 = checkFile('frontend/src/components/ShadowStreamPlayer.js');
 const err2 = checkFile('frontend/src/screens/PlayerScreen.js');
+checkFile('frontend/src/screens/HomeScreen.js');
 
 if (err1 + err2 === 0) {
     console.log('\n>>> ALL REACT COMPONENTS PASSED TDZ & INITIALIZATION AUDIT 100% <<<\n');

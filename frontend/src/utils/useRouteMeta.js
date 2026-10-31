@@ -1,6 +1,6 @@
 /**
  * useRouteMeta.js — Tiny hook that fires setRouteMeta whenever the screen
- * or its relevant params change.
+ * or its relevant params change or when the screen regains navigation focus.
  *
  * Usage:
  *   useRouteMeta('TitleDetail', { item });
@@ -9,9 +9,16 @@
  * hook that runs in any screen that calls it.
  */
 import { useEffect, useRef } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { setRouteMeta } from './seo';
 
 export function useRouteMeta(screen, params) {
+    let isFocused = true;
+    try {
+        isFocused = useIsFocused();
+    } catch (_) {
+        isFocused = true;
+    }
     const paramsRef = useRef(params || {});
     paramsRef.current = params || {};
     const screenRef = useRef(screen);
@@ -22,6 +29,8 @@ export function useRouteMeta(screen, params) {
         : `${screen?.title || ''}:${screen?.url || ''}:${screen?.description || ''}`;
 
     useEffect(() => {
-        setRouteMeta(screenRef.current, paramsRef.current);
-    }, [depKey]);
+        if (isFocused) {
+            setRouteMeta(screenRef.current, paramsRef.current);
+        }
+    }, [depKey, isFocused]);
 }

@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.30",
+    version: "2.4.32",
 
-    versionCode: 270,
+    versionCode: 272,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "High-speed streaming architecture overhaul: integrated Videasy (multi-audio dubbing & subtitles directly in player) and VidStuck (sub-300ms ultra fast HTML5 streaming inspired by donkey.to); replaced dead autoembed.cc with autoembed.co; re-enabled multiembed VIP audio dubs; optimized mirror resolution.",
+    releaseNotes: "v2.4.32: Instant player teardown on navigation (stops background audio when returning to Home), enhanced AdShield with transparent clickjacking disarm & ad-network keyword expansion, streamlined multi-audio dub switching, and vidy.st universal DNS stability.",
 
 };
 

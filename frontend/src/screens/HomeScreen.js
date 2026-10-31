@@ -72,6 +72,22 @@ export default function HomeScreen({ navigation }) {
 
     useRouteMeta('Home');
 
+    // Clean any residual playback query params if returning to Home
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.location && window.history?.replaceState) {
+            try {
+                const url = new URL(window.location.href);
+                if (url.searchParams.has('season') || url.searchParams.has('episode') || url.searchParams.has('targetLanguage') || url.searchParams.has('lang')) {
+                    url.searchParams.delete('season');
+                    url.searchParams.delete('episode');
+                    url.searchParams.delete('targetLanguage');
+                    url.searchParams.delete('lang');
+                    window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+                }
+            } catch (_) {}
+        }
+    }, []);
+
     // Load static "Top Picks" baked into /featured.json — used when API is unreachable
     // so the offline hub always has real movie cards instead of just empty tiles.
     useEffect(() => {

@@ -1,7 +1,7 @@
 // Single source of truth for app versioning across all frontend targets
-export const CURRENT_VERSION = '2.4.29';
-export const CURRENT_CODE = 269;
-export const CURRENT_RELEASE_DATE = '2026-10-27';
+export const CURRENT_VERSION = '2.4.32';
+export const CURRENT_CODE = 272;
+export const CURRENT_RELEASE_DATE = '2026-10-31';
 
 /**
  * Compare two semver strings (e.g. '2.4.28' vs '2.4.27').

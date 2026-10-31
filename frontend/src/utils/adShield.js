@@ -46,6 +46,22 @@ const FIRST_PARTY = [
     'themoviedb.org',
     'tmdb.org',
     'imdb.com',
+    'vidstuck.cc',
+    'vidy.st',
+    'autoembed.co',
+    'multiembed.mov',
+    'vidsrc.rip',
+    'vidsrc.to',
+    'vidsrc.me',
+    'smashystream.com',
+    'animesalt.cx',
+    'opensubtitles.org',
+    'opensubtitles.com',
+    'streamingnow.mov',
+    'autoembed.me',
+    'vidlink.pro',
+    'vidlink.org',
+    '2embed.cc',
 ];
 
 /** Safe external player schemes (VLC, PotPlayer, MPV) */
@@ -77,7 +93,11 @@ const AD_KEYWORDS = [
     'tremorhub', 'sovrn', 'lijit', 'yieldmo', 'sharethrough', 'teads.tv', 'unruly',
     'triplelift', 'gumgum', 'undertone', 'kargo', 'inmobi', 'ironsrc', 'applovin',
     'vungle', 'chartboost', 'fyber', 'mintegral', 'tapjoy', 'flurry', 'adjust.com',
-    'appsflyer', 'branch.io', 'singular.net', 'kochava'
+    'appsflyer', 'branch.io', 'singular.net', 'kochava',
+    'aclib', 'histats', 'llvpn', 'notix', 'webpushr', 'popmyads', 'bidvertiser',
+    'pushwelcome', 'ad-score', 'adtelligent', 'pubmine', 'clickfair', 'adserver',
+    'adservice', 'adnuntius', 'trafficjunky', 'cryptoloot', 'zergnet', 'adcash',
+    'creative-serving', 'trackvoluum', 'propeller'
 ];
 
 let noAdsActive = readStoredPreference();
@@ -227,6 +247,27 @@ function globalCaptureClickHandler(e) {
     if (!noAdsActive) return;
 
     try {
+        // Disarm transparent clickjacking overlay traps
+        const el = e.target;
+        if (el && el !== document.body && el !== document.documentElement && typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+            const style = window.getComputedStyle(el);
+            const isPos = style.position === 'fixed' || style.position === 'absolute';
+            const isHighZ = parseInt(style.zIndex, 10) >= 900;
+            const isTransparent = style.opacity === '0' || style.visibility === 'hidden' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
+            const hasNoContent = !el.innerText || el.innerText.trim().length === 0;
+            const isLarge = el.offsetWidth > 150 && el.offsetHeight > 150;
+            const isAnchor = el.tagName === 'A' || Boolean(el.closest && el.closest('a'));
+
+            if (isPos && isHighZ && (isTransparent || isAnchor) && hasNoContent && isLarge) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                try { el.remove(); } catch (_) { el.style.display = 'none'; }
+                recordBlocked('clickjacking_overlay', 'transparent click-trap overlay');
+                return;
+            }
+        }
+
         const anchor = e.target && typeof e.target.closest === 'function' ? e.target.closest('a') : null;
         if (anchor && anchor.href) {
             if (!isAllowed(anchor.href)) {
@@ -269,11 +310,11 @@ export function installAdShield() {
             if (!noAdsActive) {
                 return originalOpen.call(window, url, target, features);
             }
-            if (isAllowed(url)) {
-                return originalOpen.call(window, url, target, features);
+            if (!url || url === 'about:blank' || url === '' || !isAllowed(url)) {
+                recordBlocked(url || 'blank popup', 'popup attempt');
+                return createMockWindow();
             }
-            recordBlocked(url, 'popup attempt');
-            return createMockWindow();
+            return originalOpen.call(window, url, target, features);
         };
         try {
             Object.defineProperty(window, 'open', {
@@ -347,9 +388,9 @@ export function installAdShield() {
             if (!noAdsActive) return;
             if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
                 recordBlocked(document.activeElement.getAttribute('src') || 'embed', 'background popup/popunder');
-                setTimeout(() => {
-                    try { window.focus(); } catch (_) {}
-                }, 50);
+                try { window.focus(); } catch (_) {}
+                setTimeout(() => { try { window.focus(); } catch (_) {} }, 40);
+                setTimeout(() => { try { window.focus(); } catch (_) {} }, 120);
             }
         };
         window.addEventListener('blur', blurGuard);

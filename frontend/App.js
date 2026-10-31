@@ -175,7 +175,7 @@ export default function App() {
                     <Drawer.Screen name="Watchlist" component={WatchlistScreen} />
                     <Drawer.Screen name="History" component={HistoryScreen} />
                     <Drawer.Screen name="TitleDetail" component={TitleDetailScreen} />
-                    <Drawer.Screen name="Player" component={PlayerScreen} />
+                    <Drawer.Screen name="Player" component={PlayerScreen} options={{ unmountOnBlur: true }} />
                     <Drawer.Screen name="Settings" component={SettingsScreen} />
                     <Drawer.Screen name="Apps" component={AppsScreen} />
                     <Drawer.Screen name="Admin" component={AdminScreen} />

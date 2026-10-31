@@ -287,6 +287,26 @@ export default function ShadowStreamPlayer({
             } catch (_) {}
             setAdBlockedToast(`🛡️ Blocked 3rd-party ${event.reason || 'ad'}: ${domain}`);
             if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+            // Hard stop media on unmount
+            if (videoRef.current) {
+                try {
+                    videoRef.current.pause();
+                    videoRef.current.removeAttribute('src');
+                    videoRef.current.load();
+                } catch (_) {}
+            }
+            if (hlsRef.current) {
+                try {
+                    hlsRef.current.stopLoad();
+                    hlsRef.current.destroy();
+                    hlsRef.current = null;
+                } catch (_) {}
+            }
+            if (iframeRef.current) {
+                try {
+                    iframeRef.current.src = 'about:blank';
+                } catch (_) {}
+            }
             adToastTimerRef.current = setTimeout(() => {
                 setAdBlockedToast(null);
             }, 3000);
