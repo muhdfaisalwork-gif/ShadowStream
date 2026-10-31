@@ -1,10 +1,10 @@
 {
-  "version": "2.4.40",
-  "versionCode": 280,
+  "version": "2.4.41",
+  "versionCode": 281,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-11-01",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.40: VidStuck ultra-fast HTML5 engine promoted to #1 Main (Donkey.to parity), purged broken videasy/vidy DNS failures, NontonGo HD & VidSrc backups, zero-popup sandboxed AdShield, and zero audio leak."
+  "releaseNotes": "v2.4.41: Player fixed. The v2.4.39 iframe sandbox made every provider refuse to play (Videasy 'Iframe Sandbox Detected', VidStuck 'Sandbox Detected'), so the sandbox is removed and popup defence stays in the AdShield JS layer. Purged player.videasy.to (hostile popunder/redirect trackers, soft-404 pages) and dead embed.smashystream.com. VidStuck is #1 with native dubbed audio, server-side content-presence probe, and a manual playback-source switcher in the player menu."
 }

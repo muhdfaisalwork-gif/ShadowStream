@@ -46,9 +46,6 @@ const FIRST_PARTY = [
     'themoviedb.org',
     'tmdb.org',
     'imdb.com',
-    'player.videasy.to',
-    'videasy.to',
-    'backend.videasy.to',
     'vidstuck.cc',
     'vidy.st',
     'www.vidy.st',
@@ -60,14 +57,27 @@ const FIRST_PARTY = [
     'www.2embed.cc',
     'nontongo.win',
     'www.nontongo.win',
-    'smashystream.com',
-    'embed.smashystream.com',
     'vidlink.pro',
     'vidlink.org',
-    'animesalt.cx',
     'opensubtitles.org',
     'opensubtitles.com',
 ];
+
+// REMOVED from the trusted list on v2.4.41:
+//
+//   player.videasy.to / videasy.to / backend.videasy.to
+//   smashystream.com / embed.smashystream.com
+//   animesalt.cx
+//
+// player.videasy.to was trusted in v2.4.39 and it is actively harmful:
+//   * it refuses to play inside a sandboxed iframe ("Iframe Sandbox Detected")
+//   * it answers HTTP 200 with its own "We couldn't find that" page for any
+//     title it does not host, which our client cannot detect as a failure
+//   * it loads popunder + hostile-redirect trackers, and the hostile redirect
+//     payload embeds OUR OWN domain (https://ssmoviestvs.site)
+//
+// embed.smashystream.com no longer resolves in DNS at all (NXDOMAIN), and
+// animesalt.cx is the same class of hostile host.
 
 /** Safe external player schemes (VLC, PotPlayer, MPV) */
 const ALLOWED_SCHEMES = [
@@ -102,7 +112,16 @@ const AD_KEYWORDS = [
     'aclib', 'histats', 'llvpn', 'notix', 'webpushr', 'popmyads', 'bidvertiser',
     'pushwelcome', 'ad-score', 'adtelligent', 'pubmine', 'clickfair', 'adserver',
     'adservice', 'adnuntius', 'trafficjunky', 'cryptoloot', 'zergnet', 'adcash',
-    'creative-serving', 'trackvoluum', 'propeller', 'unfortunatelyejectinflected'
+    'creative-serving', 'trackvoluum', 'propeller', 'unfortunatelyejectinflected',
+    // Observed live on player.videasy.to and vidstuck.cc (v2.4.41):
+    //   meatusbyway.cfd            -> popunder ("cuid") tracker
+    //   wonnotscroganisoin.cyou    -> hostile redirect whose payload embeds
+    //                                our own domain (https://ssmoviestvs.site)
+    //   speedracelight.com         -> videasy's dead source API
+    'meatusbyway', 'wonnotscroganisoin', 'speedracelight',
+    // Videasy itself is no longer trusted, so its own hosts are rejected here
+    // too rather than being reachable through a stale first-party entry.
+    'videasy.to'
 ];
 
 let noAdsActive = readStoredPreference();

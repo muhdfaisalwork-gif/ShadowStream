@@ -549,7 +549,6 @@ export default function PlayerScreen({ route, navigation }) {
                         dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${finalTmdb}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${finalTmdb}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${finalTmdb}` });
-                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}` });
                         dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${finalTmdb}` });
                     } else {
                         // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 TV Streaming (Primary donkey.to backup)
@@ -557,7 +556,6 @@ export default function PlayerScreen({ route, navigation }) {
                         dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${finalTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
-                        dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}&season=${activeS || 1}&episode=${activeE || 1}` });
                         dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                     }
                 }
@@ -583,13 +581,10 @@ export default function PlayerScreen({ route, navigation }) {
                     'nontongo',
                     'vidsrc',
                     '2embed',
-                    'smashystream',
                     'vidy',
                     'vidsrc',
                     '2embed',
                     'nontongo',
-                    'smashystream',
-                    'videasy_imdb',
                     'vidstuck_imdb',
                     'vidy_imdb',
                     'vidsrc_imdb',
@@ -643,8 +638,11 @@ export default function PlayerScreen({ route, navigation }) {
                     const matchIdx = resolved.findIndex(m => 
                         (m.isDub && m.language === wantedLang) ||
                         (m.language === wantedLang && m.provider && m.provider.includes('animesalt')) ||
-                        (wantedLang === 'hi' && (m.provider === 'videasy' || m.provider === 'smashystream')) ||
-                        (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(wantedLang) && (m.provider === 'smashystream' || m.label?.toLowerCase().includes('smashystream')))
+                        // VidStuck serves dubbed audio natively (it carries ?dubLang=<code>&dubType=1
+                        // on the embed URL), so it is the dub-capable provider now that
+                        // player.videasy.to is out of rotation.
+                        (wantedLang === 'hi' && m.provider === 'vidstuck') ||
+                        (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(wantedLang) && m.provider === 'vidstuck')
                     );
                     if (matchIdx !== -1) {
                         chosenMirror = resolved[matchIdx];

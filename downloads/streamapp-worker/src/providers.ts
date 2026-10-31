@@ -57,7 +57,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
             isTv(type, s)
                 ? `https://vidstuck.cc/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}?loading=2&color=FFA500`
                 : `https://vidstuck.cc/embed/movie/${id}?loading=2&color=FFA500`,
-        note: 'Disabled: backend.videasy.to DNS NXDOMAIN; superseded by vidstuck.cc.',
+        note: 'Disabled (v2.4.41): player.videasy.to refuses to play inside a sandboxed iframe ("Iframe Sandbox Detected"), answers HTTP 200 with its own "We couldn\'t find that" page for titles it does not host, and loads popunder + hostile-redirect trackers whose payload embeds our own domain. Superseded by vidstuck.cc.',
     },
 
     vidstuck: {
@@ -208,8 +208,14 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
     },
 };
 
-/** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'nontongo', 'vidsrc', '2embed', 'smashystream'];
+/**
+ * Order the user sees. Disabled providers are filtered out of this list.
+ *
+ * smashystream was removed in v2.4.41: embed.smashystream.com no longer
+ * resolves in DNS (NXDOMAIN), so it could only ever hand the player a dead
+ * host.
+ */
+export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'nontongo', 'vidsrc', '2embed', 'vidlink'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {

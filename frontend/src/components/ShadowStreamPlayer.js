@@ -249,8 +249,8 @@ export default function ShadowStreamPlayer({
         const isDubMirror = currentMirror && (
             currentMirror.isDub ||
             currentMirror.provider?.includes('animesalt') ||
-            (cleanLang === 'hi' && (currentMirror.provider === 'vidstuck' || currentMirror.provider === 'smashystream')) ||
-            (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanLang) && (currentMirror.provider === 'vidstuck' || currentMirror.provider === 'smashystream'))
+            (cleanLang === 'hi' && currentMirror.provider === 'vidstuck') ||
+            (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanLang) && currentMirror.provider === 'vidstuck')
         );
 
         const langLabel = LANGUAGE_NAMES[cleanLang] || cleanLang.toUpperCase();
@@ -695,7 +695,7 @@ export default function ShadowStreamPlayer({
 
     const availableLanguageMirrors = useMemo(() => {
         return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => 
-            (m.isDub || m.isSub || m.provider === 'videasy' || m.provider === 'smashystream' || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
+            (m.isDub || m.isSub || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
             !m.provider?.startsWith('vidlink_') && !m.provider?.startsWith('vidsrc_')
         );
     }, [mirrorList]);
@@ -740,13 +740,20 @@ export default function ShadowStreamPlayer({
             if (isDirect && availableAudioTracks.length > 0) {
                 selectAudioTrack(0);
             }
-            // Switch back to master Donkey.to English stream
+            // Switch back to the English master track.
+            //
+            // VidStuck, not Videasy. player.videasy.to is out of rotation: it
+            // refuses sandboxed embeds, it answers HTTP 200 with its own
+            // "We couldn't find that" page for titles it does not host, and it
+            // fires popunder/hostile-redirect trackers that embed our own
+            // domain in the payload. VidStuck plays the title, exposes native
+            // dubbed audio, and ships its own in-player server switcher.
             const masterUrl = isTvTitle
-                ? (effectiveId ? `https://player.videasy.to/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500` : `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2`)
-                : (effectiveId ? `https://player.videasy.to/movie/${effectiveId}?color=FFA500` : `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2`);
+                ? `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2&color=FFA500`
+                : `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2&color=FFA500`;
             const masterMirror = {
-                label: 'Videasy (Multi-Audio HD)',
-                provider: 'videasy',
+                label: 'VidStuck Ultra Fast (HD)',
+                provider: 'vidstuck',
                 url: masterUrl,
                 format: 'embed',
                 quality: '1080p',
@@ -827,6 +834,36 @@ export default function ShadowStreamPlayer({
         }
 
         // 4. Universal Dub & Subtitle pairing (VidStuck HTML5 + OpenSubtitles sync)
+        //
+        // For embed sources we swap the whole provider URL to the same title on
+        // VidStuck with its native dubbed-audio parameters. VidStuck accepts
+        // `dubLang=<iso>&dubType=1` on the embed URL and plays that dubbed
+        // audio track - confirmed live (it rewrites its own URL to exactly this
+        // shape, e.g. `?loading=2&dubLang=ar&dubType=1`, and the dubbed track
+        // plays). Without this the dub menu only ever set a subtitle flag and
+        // the audio never actually changed.
+        if (!isDirect && effectiveId && onSelectMirror) {
+            const dubUrl = isTvTitle
+                ? `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2&color=FFA500&dubLang=${cleanCode}&dubType=1`
+                : `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2&color=FFA500&dubLang=${cleanCode}&dubType=1`;
+            const dubMirror = {
+                label: `🎙️ ${langLabel} Dub`,
+                provider: 'vidstuck',
+                url: dubUrl,
+                format: 'embed',
+                quality: '1080p',
+                language: cleanCode,
+                languageName: `${langLabel} Dub`,
+                isDub: true,
+            };
+            onSelectMirror(dubMirror, activeMirrorIdx);
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`🎙️ Audio: ${langLabel} Dub`);
+            setTimeout(() => setDubToast(null), 3500);
+            setShowDubMenu(false);
+            return;
+        }
+
         setSelectedSubtitle(cleanCode);
         setDubToast(`🎙️ Audio: ${langLabel} Track (Subtitles Paired)`);
         setTimeout(() => setDubToast(null), 3500);
@@ -1618,7 +1655,24 @@ export default function ShadowStreamPlayer({
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
-                                sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation" : undefined}
+                                // NO `sandbox` attribute here, on purpose.
+                                //
+                                // v2.4.39 added `sandbox="allow-scripts allow-same-origin
+                                // allow-forms allow-presentation"` to hard-block popups.
+                                // Every provider we ship refuses to play inside it:
+                                //   player.videasy.to -> "Iframe Sandbox Detected"
+                                //   vidstuck.cc        -> "Sandbox Detected"
+                                // The check is presence-based, not flag-based: five
+                                // different token sets were tried (base 4, plus
+                                // allow-popups, plus allow-popups-to-escape-sandbox,
+                                // plus allow-top-navigation-by-user-activation, plus a
+                                // scripts+same-origin-only pair) and every one of them
+                                // was rejected. Only removing the attribute plays.
+                                //
+                                // Popup defence therefore lives in src/utils/adShield.js
+                                // (window.open lock, anchor.click guard, form.submit
+                                // guard, capture-phase click/auxclick interception,
+                                // location.assign/replace guard) instead of here.
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             />
                         </View>
@@ -1911,6 +1965,23 @@ export default function ShadowStreamPlayer({
                                             >
                                                 <Text style={styles.popupMenuText}>🌐 Audio & Dubs: {activeDubLang !== 'native' ? (LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase() : (hasSubAndDubMirrors ? (activeMirrorIdx === dubMirrorIdx ? 'DUB' : 'SUB') : 'Original')} ›</Text>
                                             </TouchableOpacity>
+                                            {/* Manual playback source.
+                                                Kept out of the top bar on purpose - the
+                                                player should never make the user pick a
+                                                server in the normal path. But a provider
+                                                that answers HTTP 200 with its own
+                                                "not found" page is invisible to us
+                                                (cross-origin iframes expose no playback
+                                                signal), so without this the user can be
+                                                stranded on a dead source with no way out. */}
+                                            {mirrorList && mirrorList.length > 1 ? (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={() => setMoreSubmenu('server')}
+                                                >
+                                                    <Text style={styles.popupMenuText}>🔁 Playback source: {activeMirrorIdx + 1}/{mirrorList.length} ›</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
                                                 onPress={nextViewMode}
@@ -2046,6 +2117,31 @@ export default function ShadowStreamPlayer({
                                                 >
                                                     <Text style={[styles.popupMenuText, activeAudioIdx === idx && styles.popupMenuTextActive]}>
                                                         {activeAudioIdx === idx ? '▶ ' : ''}{tr.label || tr.language || `Track ${idx + 1}`}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
+                                    ) : moreSubmenu === 'server' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={styles.popupMenuItem}
+                                                onPress={() => setMoreSubmenu(null)}
+                                            >
+                                                <Text style={styles.popupMenuText}>‹ Back</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.popupMenuHeader}>Playback source</Text>
+                                            {(mirrorList || []).map((m, idx) => (
+                                                <TouchableOpacity
+                                                    key={`${m.provider || 'src'}-${idx}`}
+                                                    style={[styles.popupMenuItem, activeMirrorIdx === idx && styles.popupMenuItemActive]}
+                                                    onPress={() => {
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                        if (onSelectMirror) onSelectMirror(m, idx);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, activeMirrorIdx === idx && styles.popupMenuTextActive]}>
+                                                        {activeMirrorIdx === idx ? '▶ ' : ''}{m.label || m.sourceName || m.provider || `Source ${idx + 1}`}
                                                     </Text>
                                                 </TouchableOpacity>
                                             ))}

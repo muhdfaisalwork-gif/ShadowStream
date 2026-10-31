@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.40",
+    version: "2.4.41",
 
-    versionCode: 280,
+    versionCode: 281,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.40: Promote VidStuck ultra-fast HTML5 engine to #1 Main (Donkey.to parity), purge broken videasy/vidy DNS failures, NontonGo HD & VidSrc backups, hardened AdShield sandbox, zero background audio leak.",
+    releaseNotes: "v2.4.41: Player fix - the v2.4.39 iframe sandbox made every provider refuse to play (Videasy 'Iframe Sandbox Detected', VidStuck 'Sandbox Detected'); sandbox removed, popup defence stays in the AdShield JS layer. Purged hostile player.videasy.to and dead embed.smashystream.com, VidStuck #1 with native dubbed audio, server-side content-presence probe, manual playback-source switcher in the player menu.",
 
 };
 
@@ -2552,6 +2552,64 @@ async function getFullTitleData(idOrSlug: string, env: Env): Promise<any | null>
 
 
 
+/**
+ * Server-side content-presence probe.
+ *
+ * A provider that does not host the episode usually answers with an error
+ * page. Some of them answer HTTP 200 with their own "not found" page, which no
+ * client can detect - a cross-origin iframe exposes no playback signal at all
+ * (verified: childFrames, location.href and the load event are identical for a
+ * working provider and a soft-404 one). The providers that answer 404/5xx,
+ * however, can be filtered out here so they never reach the top of the
+ * rotation.
+ *
+ * Fail-open on purpose. A timeout, a network error, or a 403 (some providers
+ * block datacenter egress) keeps the provider in the list. We only drop a
+ * provider when it clearly says the content is gone.
+ */
+async function probeProviderPresence(url: string): Promise<boolean> {
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 2500);
+        try {
+            const res = await fetch(url, {
+                method: 'HEAD',
+                redirect: 'follow',
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': '*/*',
+                },
+            });
+            if (res.status === 404 || res.status === 410 || res.status === 451 || res.status >= 500) {
+                return false;
+            }
+            return true;
+        } finally {
+            clearTimeout(timer);
+        }
+    } catch (_) {
+        return true; // fail open - never drop a provider on an inconclusive probe
+    }
+}
+
+/**
+ * Probe the leading embed candidates in parallel and drop the ones that
+ * explicitly report the content as missing.
+ */
+async function filterAbsentProviders(entries: AvailabilityEntry[]): Promise<AvailabilityEntry[]> {
+    const probeable = entries.filter((e) => e.kind === 'embed' && typeof e.url === 'string' && e.url.startsWith('http'));
+    if (probeable.length === 0) return entries;
+
+    // Only the head of the rotation is probed - the tail is a fallback list and
+    // probing all of it would cost more latency than it is worth.
+    const targets = probeable.slice(0, 3);
+    const results = await Promise.all(targets.map(async (e) => ({ entry: e, present: await probeProviderPresence(e.url as string) })));
+    const absent = new Set(results.filter((r) => !r.present).map((r) => r.entry));
+    if (absent.size === 0) return entries;
+    return entries.filter((e) => !absent.has(e));
+}
+
 function buildFallbackAvailability(title: any, seasonNum?: string | number, episodeNum?: string | number, langSuffix = ""): AvailabilityEntry[] {
 
     const list: AvailabilityEntry[] = [];
@@ -2714,17 +2772,6 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             });
         }
 
-        // 8. SmashyStream Multi-Lang (HD)
-        list.push({
-            source: "smashystream",
-            sourceName: "SmashyStream Multi-Lang (HD)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-            playbackUrl: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-        });
-
         // 9. 2Embed Multi-Server
         list.push({
             source: "2embed",
@@ -2771,15 +2818,8 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: `https://vidsrc.me/embed/${imdbTv}`,
         });
 
-        list.push({
-            source: "vidsrc_buzz_imdb",
-            sourceName: "VidSrc Buzz (IMDb)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
-            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
-        });
+        // vidsrc.buzz removed (v2.4.41): hostile host - ad injection and hostile
+        // redirect scripts. It was still being handed to the player.
     }
 
 
@@ -3216,12 +3256,26 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
     const combined = [...fallbacks, ...existingPlayback];
     const seen = new Set<string>();
     const deduplicated: AvailabilityEntry[] = [];
-    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'nontongo', 'vidsrc', '2embed', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'nontongo', 'vidsrc', '2embed', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+
+    // Hosts and sources that must never be served, whatever the catalog says.
+    //
+    // The catalog rows are stale: they still carry videasy / smashystream
+    // entries from earlier releases, and those rows outrank the healthy
+    // providers when they are not filtered out here.
+    //
+    //   player.videasy.to - refuses sandboxed embeds, answers HTTP 200 with
+    //                       its own "We couldn't find that" page for titles it
+    //                       does not host, and fires popunder + hostile
+    //                       redirect trackers that embed our own domain.
+    //   smashystream      - embed.smashystream.com no longer resolves (NXDOMAIN).
+    const BLOCKED_SOURCES = ['autoembed', 'vidsrc_buzz', 'embedsu', 'multiembed', 'videasy', 'smashystream'];
+    const BLOCKED_HOSTS = ['autoembed', 'vidsrc.buzz', 'multiembed', 'streamingnow', 'videasy.to', 'smashystream.com'];
 
     for (const item of combined) {
         const src = String(item.source || (item as any).provider || '').toLowerCase();
-        if (src.includes('autoembed') || src.includes('vidsrc_buzz') || src.includes('embedsu') || src.includes('multiembed')) continue;
-        if (item.url && (item.url.includes('autoembed') || item.url.includes('vidsrc.buzz') || item.url.includes('multiembed') || item.url.includes('streamingnow'))) continue;
+        if (BLOCKED_SOURCES.some((b) => src.includes(b))) continue;
+        if (item.url && BLOCKED_HOSTS.some((h) => item.url.toLowerCase().includes(h))) continue;
         if (!seen.has(src)) {
             seen.add(src);
             deduplicated.push(item);
@@ -3236,7 +3290,9 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
 
     availability = deduplicated;
 
-
+    // Drop providers that explicitly report the episode as missing, so a dead
+    // source can never be handed to the player as the top pick.
+    availability = await filterAbsentProviders(availability);
 
     return jsonResponse({
 
@@ -5384,17 +5440,6 @@ export default {
                         languageName: "English"
                     });
 
-                    // 7. SmashyStream Multi-Lang (HD)
-                    streams.push({
-                        label: "⚡ SmashyStream Multi-Lang (HD)",
-                        provider: "smashystream",
-                        url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Language"
-                    });
-
                     // 8. Vidlink Pro (Ad-Free HD Server)
                     streams.push({
                         label: "⚡ Vidlink (Ad-Free 1080p HD)",
@@ -5430,19 +5475,11 @@ export default {
                         languageName: "English"
                     });
 
+                    // vidsrc.buzz was dropped here: it is a hostile host and the catalog
+                    // still carries rows for it.
                     streams.push({
-                        label: "⚡ VidSrc Buzz (IMDb Server)",
-                        provider: "vidsrc_buzz_imdb",
-                        url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "en",
-                        languageName: "English"
-                    });
-
-                    streams.push({
-                        label: "⚡ Videasy (IMDb Multi-Audio)",
-                        provider: "videasy_imdb",
+                        label: "⚡ Vidy (IMDb Multi-Audio)",
+                        provider: "vidy_imdb",
                         url: isTv ? `https://www.vidy.st/tv/${imdbId}/${season}/${episode}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
                         format: "embed",
                         quality: "1080p",
@@ -5454,16 +5491,6 @@ export default {
                         label: "⚡ VidSrc (IMDb Server)",
                         provider: "vidsrc_imdb",
                         url: isTv ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}` : `https://vidsrc.me/embed/movie?imdb=${imdbId}`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "en",
-                        languageName: "English"
-                    });
-
-                    streams.push({
-                        label: "⚡ VidSrc Buzz (IMDb Server)",
-                        provider: "vidsrc_buzz_imdb",
-                        url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",
