@@ -20,7 +20,6 @@ assert(playerScreenJs.includes('const isFocused = useIsFocused();'), 'PlayerScre
 assert(playerScreenJs.includes('if (!isFocused)'), 'PlayerScreen.js must check isFocused to stop playback');
 assert(playerScreenJs.includes('navigation.addListener(\'blur\''), 'PlayerScreen.js must clean up on navigation blur');
 assert(playerScreenJs.includes('url.searchParams.delete(\'season\')'), 'PlayerScreen.js must clean up URL search params on leave');
-assert(playerScreenJs.includes('player.videasy.to'), 'PlayerScreen.js must contain primary donkey player.videasy.to engine');
 assert(playerScreenJs.includes('vidstuck.cc'), 'PlayerScreen.js must contain backup donkey vidstuck.cc engine');
 assert(!playerScreenJs.includes('autoembed.co'), 'PlayerScreen.js must NOT contain XFO-blocked autoembed.co URLs');
 assert(!playerScreenJs.includes('multiembed.mov'), 'PlayerScreen.js must NOT contain ad-injecting multiembed.mov URLs');
@@ -39,23 +38,22 @@ assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must co
 assert(!shadowPlayerJs.includes('multiembed.mov'), 'ShadowStreamPlayer.js must NOT contain ad-injecting multiembed.mov URLs');
 console.log('[PASS] ShadowStreamPlayer.js: Zero-Server Frictionless UX, silent auto-failover, Audio Dub selector, enforced sandbox & hard media teardown verified');
 
-// 4. Verify version synchronization (v2.4.39 / code 279 / SW v48)
+// 4. Verify version synchronization (v2.4.40 / code 280 / SW v49)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.39'"), 'version.js must have CURRENT_VERSION = 2.4.39');
-assert(versionJs.includes("CURRENT_CODE = 279"), 'version.js must have CURRENT_CODE = 279');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.40'"), 'version.js must have CURRENT_VERSION = 2.4.40');
+assert(versionJs.includes("CURRENT_CODE = 280"), 'version.js must have CURRENT_CODE = 280');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.39"'), 'worker index.ts must have version 2.4.38');
-assert(workerIndexTs.includes('versionCode: 279'), 'worker index.ts must have versionCode 279');
+assert(workerIndexTs.includes('version: "2.4.40"'), 'worker index.ts must have version 2.4.38');
+assert(workerIndexTs.includes('versionCode: 280'), 'worker index.ts must have versionCode 280');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
-assert(workerIndexTs.includes('player.videasy.to'), 'worker index.ts must use videasy as clean #1 primary stream');
 assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must use vidstuck as clean #2 stream');
 assert(!workerIndexTs.includes('autoembed.co'), 'worker index.ts must NOT contain XFO-blocked autoembed.co URLs');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v48'"), 'public/sw.js must be v48');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.39 (code 279, SW v48) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v49'"), 'public/sw.js must be v49');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.40 (code 280, SW v49) strictly verified across all tiers');
 
 // 5. Test AdShield URL filtering logic
 const vm = require('vm');

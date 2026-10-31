@@ -51,13 +51,13 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 
     videasy: {
         slug: 'videasy',
-        displayName: 'Videasy (Multi-Audio HD)',
-        resolveMode: 'iframe_only',
+        displayName: 'Videasy HD',
+        resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type, s)
-                ? `https://player.videasy.to/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500`
-                : `https://player.videasy.to/movie/${id}?color=FFA500`,
-        note: 'Donkey.to primary multi-audio streaming engine with 17 built-in language tracks and subtitles.',
+                ? `https://vidstuck.cc/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}?loading=2&color=FFA500`
+                : `https://vidstuck.cc/embed/movie/${id}?loading=2&color=FFA500`,
+        note: 'Disabled: backend.videasy.to DNS NXDOMAIN; superseded by vidstuck.cc.',
     },
 
     vidstuck: {
@@ -209,7 +209,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['videasy', 'vidstuck', 'vidsrc', '2embed', 'nontongo', 'smashystream'];
+export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'nontongo', 'vidsrc', '2embed', 'smashystream'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {

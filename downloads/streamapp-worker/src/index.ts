@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.39",
+    version: "2.4.40",
 
-    versionCode: 279,
+    versionCode: 280,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.39: Videasy Full-Catalog Multi-Audio Engine (17 Audio Tracks & Subtitles), sub-200ms VidStuck backup, zero-popup sandboxed AdShield, and zero background audio leak.",
+    releaseNotes: "v2.4.40: Promote VidStuck ultra-fast HTML5 engine to #1 Main (Donkey.to parity), purge broken videasy/vidy DNS failures, NontonGo HD & VidSrc backups, hardened AdShield sandbox, zero background audio leak.",
 
 };
 
@@ -2600,17 +2600,6 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
-        // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
-        list.push({
-            source: "videasy",
-            sourceName: "Videasy (Multi-Audio HD)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://player.videasy.to/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
-            playbackUrl: isTv ? `https://player.videasy.to/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
-        });
-
         // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
         list.push({
             source: "vidstuck",
@@ -2618,8 +2607,8 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
-            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+            url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2&color=FFA500` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2&color=FFA500`,
+            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2&color=FFA500` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2&color=FFA500`,
         });
 
         // 2. Vidy - Donkey.to Secondary Multi-Audio Dubbing Engine & Subtitles
@@ -3227,7 +3216,7 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
     const combined = [...fallbacks, ...existingPlayback];
     const seen = new Set<string>();
     const deduplicated: AvailabilityEntry[] = [];
-    const PROVIDER_RANK = ['archive_org', 'direct', 'videasy', 'vidstuck', 'vidy', 'vidsrc', '2embed', 'nontongo', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'nontongo', 'vidsrc', '2embed', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
 
     for (const item of combined) {
         const src = String(item.source || (item as any).provider || '').toLowerCase();
@@ -5325,22 +5314,11 @@ export default {
 
                 // 2. TMDB-based providers (Verified 100% working high-uptime streams)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
-                    streams.push({
-                        label: "⚡ Videasy (Multi-Audio Dubs HD)",
-                        provider: "videasy",
-                        url: isTv ? `https://player.videasy.to/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Audio (17 Languages)"
-                    });
-
                     // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
                     streams.push({
                         label: "⚡ VidStuck Ultra Fast (HD)",
                         provider: "vidstuck",
-                        url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+                        url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2&color=FFA500`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",

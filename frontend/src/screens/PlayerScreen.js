@@ -544,20 +544,16 @@ export default function PlayerScreen({ route, navigation }) {
                 const dyn = [];
                 if (finalTmdb) {
                     if (isMovie) {
-                        // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
-                        dyn.push({ source: 'videasy', sourceName: 'Videasy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://player.videasy.to/movie/${finalTmdb}?color=FFA500` });
                         // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
-                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/movie/${finalTmdb}?loading=2` });
+                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/movie/${finalTmdb}?loading=2&color=FFA500` });
                         dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${finalTmdb}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${finalTmdb}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${finalTmdb}` });
                         dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}` });
                         dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${finalTmdb}` });
                     } else {
-                        // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
-                        dyn.push({ source: 'videasy', sourceName: 'Videasy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://player.videasy.to/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
                         // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 TV Streaming (Primary donkey.to backup)
-                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?loading=2` });
+                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?loading=2&color=FFA500` });
                         dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${finalTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
@@ -583,8 +579,11 @@ export default function PlayerScreen({ route, navigation }) {
                 const PROVIDER_RANK = [
                     'archive_org',
                     'direct',
-                    'videasy',
                     'vidstuck',
+                    'nontongo',
+                    'vidsrc',
+                    '2embed',
+                    'smashystream',
                     'vidy',
                     'vidsrc',
                     '2embed',

@@ -1,10 +1,10 @@
 {
-  "version": "2.4.39",
-  "versionCode": 279,
+  "version": "2.4.40",
+  "versionCode": 280,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-10-31",
+  "releaseDate": "2026-11-01",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.39: Videasy Full-Catalog Multi-Audio Engine (17 Audio Tracks & Subtitles), sub-200ms VidStuck backup, zero-popup sandboxed AdShield, and zero background audio leak."
+  "releaseNotes": "v2.4.40: VidStuck ultra-fast HTML5 engine promoted to #1 Main (Donkey.to parity), purged broken videasy/vidy DNS failures, NontonGo HD & VidSrc backups, zero-popup sandboxed AdShield, and zero audio leak."
 }
