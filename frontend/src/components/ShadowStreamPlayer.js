@@ -373,7 +373,10 @@ export default function ShadowStreamPlayer({
         if (!mirrorList || mirrorList.length < 2) return;
         setPlayerHandoffFailed(false);
         const next = (activeMirrorIdx + 1) % mirrorList.length;
-        if (onSelectMirror) onSelectMirror(mirrorList[next], next);
+        const targetMirror = mirrorList[next];
+        setDubToast(`⚡ Switched to ${targetMirror.label || 'Alternate Stream'}`);
+        setTimeout(() => setDubToast(null), 3000);
+        if (onSelectMirror) onSelectMirror(targetMirror, next);
     }, [mirrorList, activeMirrorIdx, onSelectMirror]);
 
     const handleEmbedLoaded = useCallback(() => {
@@ -402,13 +405,40 @@ export default function ShadowStreamPlayer({
     // at 12s we still beat it by 7s. Since we cannot read inside a
     // cross-origin frame, the only honest option is a long leash.
     useEffect(() => {
+        if (!streamUrl || isDirect) return;
         setEmbedState('loading');
+        let cancelled = false;
+
+        // Fast client-side DNS and network reachability check
+        if (typeof window !== 'undefined' && window.fetch && streamUrl.startsWith('http')) {
+            const probeCtrl = new AbortController();
+            const probeTimer = setTimeout(() => probeCtrl.abort(), 3500);
+            fetch(streamUrl, { mode: 'no-cors', cache: 'no-store', signal: probeCtrl.signal })
+                .then(() => {
+                    clearTimeout(probeTimer);
+                })
+                .catch((err) => {
+                    clearTimeout(probeTimer);
+                    if (cancelled) return;
+                    // If network failed (ERR_NAME_NOT_RESOLVED / ISP blocked domain), auto-failover!
+                    if (err && err.name !== 'AbortError' && mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < 3) {
+                        failoverAttemptsRef.current += 1;
+                        setDubToast('⚡ Stream unreachable on network. Switching to backup mirror...');
+                        setTimeout(() => setDubToast(null), 3500);
+                        tryNextMirror();
+                    }
+                });
+        }
+
         if (embedTimer.current) clearTimeout(embedTimer.current);
         embedTimer.current = setTimeout(() => {
             setEmbedState((prev) => (prev === 'loading' ? 'stalled' : prev));
-        }, 20000);
-        return () => { if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; } };
-    }, [streamUrl]);
+        }, 15000);
+        return () => {
+            cancelled = true;
+            if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; }
+        };
+    }, [streamUrl, isDirect, mirrorList, tryNextMirror]);
 
     // The watchdog firing does not mean the stream is dead — on a three-hop
     // provider it usually just means we ran out of patience first. Give the
@@ -1882,7 +1912,16 @@ export default function ShadowStreamPlayer({
                                             >
                                                 <Text style={styles.popupMenuText}>🛡️ AdShield Protection: {noAdsEnabled ? 'ON' : 'OFF'}</Text>
                                             </TouchableOpacity>
-                                            {/* Server selector removed from More menu: backend automatically picks optimal server */}
+                                            {mirrorList && mirrorList.length > 1 && (
+                                                <TouchableOpacity
+                                                    style={styles.popupMenuItem}
+                                                    onPress={tryNextMirror}
+                                                >
+                                                    <Text style={[styles.popupMenuText, { color: '#E50914', fontWeight: '700' }]}>
+                                                        ⚡ Switch Stream Source ({activeMirrorIdx + 1}/{mirrorList.length})
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
                                                 onPress={() => {
@@ -2082,7 +2121,16 @@ export default function ShadowStreamPlayer({
                         <Text style={styles.pillButtonText}>⬚ {VIEW_LABEL[viewMode]}</Text>
                     </TouchableOpacity>
 
-                    {/* Server Switcher removed: Unified Backend handles server routing automatically */}
+                    {/* Instant Stream Switcher — One tap failover if current source is blocked by ISP */}
+                    {mirrorList && mirrorList.length > 1 && (
+                        <TouchableOpacity
+                            style={[styles.pillButton, { borderColor: '#E50914', borderWidth: 1 }]}
+                            onPress={tryNextMirror}
+                            accessibilityLabel="Switch to next stream mirror"
+                        >
+                            <Text style={[styles.pillButtonText, { color: '#E50914', fontWeight: '700' }]}>⚡ Switch Source</Text>
+                        </TouchableOpacity>
+                    )}
 
                     {/* Subtitles — only when the track list is real */}
                     {canSelectSubtitles && (

@@ -5278,22 +5278,22 @@ export default {
 
                 // 2. TMDB-based providers (Fast High-Uptime & Multi-Audio Dubbing)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. Videasy - Sub-Second HD with Built-in Multi-Audio Dubbing & Subtitle Selector
-                    streams.push({
-                        label: "⚡ Videasy (Multi-Audio Dubs HD)",
-                        provider: "videasy",
-                        url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${tmdbId}?color=E50914`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Audio (In-Player Switcher)"
-                    });
-
-                    // 2. VidStuck - Sub-300ms Ultra Fast HTML5 Streaming (Primary donkey.to engine)
+                    // 1. VidStuck - Sub-300ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
                     streams.push({
                         label: "⚡ VidStuck Ultra Fast (HD)",
                         provider: "vidstuck",
                         url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    // 2. AutoEmbed HD (High-Speed Universal Co Mirror)
+                    streams.push({
+                        label: "⚡ AutoEmbed HD",
+                        provider: "autoembed",
+                        url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}` : `https://autoembed.co/movie/tmdb/${tmdbId}`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",
@@ -5311,15 +5311,15 @@ export default {
                         languageName: "Multi-Language Dub"
                     });
 
-                    // 4. AutoEmbed HD (High-Speed Co Mirror)
+                    // 4. Videasy - HD Multi-Audio Dubbing & Subtitle Selector
                     streams.push({
-                        label: "⚡ AutoEmbed HD",
-                        provider: "autoembed",
-                        url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}` : `https://autoembed.co/movie/tmdb/${tmdbId}`,
+                        label: "⚡ Videasy (Multi-Audio Dubs HD)",
+                        provider: "videasy",
+                        url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${tmdbId}?color=E50914`,
                         format: "embed",
                         quality: "1080p",
-                        language: "en",
-                        languageName: "English"
+                        language: "multi",
+                        languageName: "Multi-Audio (In-Player Switcher)"
                     });
 
                     // 5. VidSrc RIP Fast
@@ -5381,16 +5381,6 @@ export default {
                 // 3. IMDb-based providers (Working for international titles with IMDb IDs)
                 if (imdbId && imdbId !== "null") {
                     streams.push({
-                        label: "⚡ Videasy (IMDb Multi-Audio)",
-                        provider: "videasy_imdb",
-                        url: isTv ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${imdbId}?color=E50914`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Language"
-                    });
-
-                    streams.push({
                         label: "⚡ VidStuck (IMDb Server)",
                         provider: "vidstuck_imdb",
                         url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
@@ -5398,6 +5388,26 @@ export default {
                         quality: "1080p",
                         language: "en",
                         languageName: "English"
+                    });
+
+                    streams.push({
+                        label: "⚡ AutoEmbed (IMDb Server)",
+                        provider: "autoembed_imdb",
+                        url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${season}-${episode}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    streams.push({
+                        label: "⚡ Videasy (IMDb Multi-Audio)",
+                        provider: "videasy_imdb",
+                        url: isTv ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${imdbId}?color=E50914`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "multi",
+                        languageName: "Multi-Language"
                     });
 
                     streams.push({
