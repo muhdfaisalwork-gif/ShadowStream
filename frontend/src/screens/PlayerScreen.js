@@ -578,25 +578,20 @@ export default function PlayerScreen({ route, navigation }) {
                 const PROVIDER_RANK = [
                     'archive_org',
                     'direct',
-                    'vidstuck',
                     'autoembed',
-                    'vidy',
-                    'videasy',
-                    'multiembed',
-                    'vidsrc_rip',
                     'vidsrc',
+                    'multiembed',
+                    '2embed',
+                    'vidy',
                     'smashystream',
                     'vidlink_dub',
                     'vidlink_sub',
                     'vidlink',
-                    'vidstuck_imdb',
                     'autoembed_imdb',
-                    'vidy_imdb',
-                    'videasy_imdb',
                     'vidsrc_imdb',
+                    'vidy_imdb',
                     'multiembed_imdb',
-                    '2embed',
-                    'vid_src'
+                    'vidsrc_rip'
                 ];
                 const MAX_MIRRORS = 10;
 

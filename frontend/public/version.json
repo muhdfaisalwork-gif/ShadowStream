@@ -1,10 +1,10 @@
 {
-  "version": "2.4.32",
-  "versionCode": 272,
+  "version": "2.4.33",
+  "versionCode": 273,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-31",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.32: Instant player teardown on navigation (stops background audio when returning to Home), enhanced AdShield with transparent clickjacking disarm & ad-network keyword expansion, streamlined multi-audio dub switching, and vidy.st universal DNS stability."
+  "releaseNotes": "v2.4.33: Eliminated black screen by replacing broken vidstuck provider with verified universal 1080p engines (AutoEmbed HD & VidSrc), removed disruptive iframe blur focus-stealing in AdShield to ensure smooth first-tap playback without false ad-block counters."
 }

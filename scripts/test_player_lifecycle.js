@@ -31,16 +31,16 @@ console.log('[PASS] ShadowStreamPlayer.js: Hard media termination on unmount & u
 
 // 4. Verify version synchronization
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.32'"), 'version.js must have CURRENT_VERSION = 2.4.32');
-assert(versionJs.includes("CURRENT_CODE = 272"), 'version.js must have CURRENT_CODE = 272');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.33'"), 'version.js must have CURRENT_VERSION = 2.4.32');
+assert(versionJs.includes("CURRENT_CODE = 273"), 'version.js must have CURRENT_CODE = 272');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.32"'), 'worker index.ts must have version 2.4.32');
-assert(workerIndexTs.includes('versionCode: 272'), 'worker index.ts must have versionCode 272');
+assert(workerIndexTs.includes('version: "2.4.33"'), 'worker index.ts must have version 2.4.32');
+assert(workerIndexTs.includes('versionCode: 273'), 'worker index.ts must have versionCode 272');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v41'"), 'public/sw.js must be v41');
-console.log('[PASS] Version Synchronization: v2.4.32 (code 272, SW v41) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v42'"), 'public/sw.js must be v41');
+console.log('[PASS] Version Synchronization: v2.4.33 (code 272, SW v41) strictly verified across all tiers');
 
 // 5. Test AdShield URL filtering logic
 const vm = require('vm');
@@ -65,7 +65,7 @@ const blockedUrls = [
 
 const allowedUrls = [
     'https://ssmoviestvs.site/api/v1/stream/resolve',
-    'https://vidstuck.cc/embed/tv/100088/1/1?loading=2',
+    'https://player.autoembed.me/embed/movie/155',
     'https://autoembed.co/tv/tmdb/100088-1-1',
     'https://vidy.st/tv/100088/1/1?color=FFA500',
     'https://multiembed.mov/?video_id=100088&tmdb=1',

@@ -339,20 +339,7 @@ export default function ShadowStreamPlayer({
         }, 2500);
     }, []);
 
-    // AdShield iframe blur trap: if focus shifts to the embed iframe due to a popunder/popup click attempt, immediately pull focus back to the player
-    useEffect(() => {
-        if (!noAdsEnabled || typeof window === 'undefined') return;
-        const handleWindowBlur = () => {
-            if (document.activeElement && (document.activeElement.tagName === 'IFRAME' || document.activeElement === iframeRef.current)) {
-                recordBlocked(streamUrl || 'embed', 'background popup/popunder');
-                setTimeout(() => {
-                    try { window.focus(); } catch (_) {}
-                }, 50);
-            }
-        };
-        window.addEventListener('blur', handleWindowBlur);
-        return () => window.removeEventListener('blur', handleWindowBlur);
-    }, [noAdsEnabled, streamUrl]);
+// Focus shifts naturally into player iframe for uninterrupted user playback gestures
 
     // Overlay & UI State
     const [controlsVisible, setControlsVisible] = useState(true);
@@ -376,7 +363,7 @@ export default function ShadowStreamPlayer({
     const isCompactTopBar = width < 960;
     const isPortrait = height > width;
 
-    const [adHelperDismissed, setAdHelperDismissed] = useState(false);
+    const [adHelperDismissed, setAdHelperDismissed] = useState(true);
 
     // Embed failover.
     //

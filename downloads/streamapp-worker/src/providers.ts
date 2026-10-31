@@ -185,7 +185,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'autoembed', 'vidy', 'multiembed', 'vidlink', 'videasy', 'vidsrc', '2embed', 'vidsrc_rip'];
+export const DEFAULT_MIRROR_ORDER = ['autoembed', 'vidsrc', 'multiembed', '2embed', 'vidy', 'smashystream', 'vidlink'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {

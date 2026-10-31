@@ -6,6 +6,7 @@ if hasattr(sys.stdout, "reconfigure"):
 BASE_API = "https://ssmoviestvs.site/api/v1"
 
 test_items = [
+    ("The Dark Knight (155)", 155, "movie", None, None),
     ("The Last of Us (100088)", 100088, "tv", 1, 1),
     ("Fight Club (550)", 550, "movie", None, None),
     ("Breaking Bad (1396)", 1396, "tv", 1, 1),
