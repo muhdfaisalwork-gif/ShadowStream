@@ -1,6 +1,6 @@
 // Single source of truth for app versioning across all frontend targets
-export const CURRENT_VERSION = '2.4.34';
-export const CURRENT_CODE = 274;
+export const CURRENT_VERSION = '2.4.35';
+export const CURRENT_CODE = 275;
 export const CURRENT_RELEASE_DATE = '2026-10-31';
 
 /**

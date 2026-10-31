@@ -1,10 +1,10 @@
 {
-  "version": "2.4.34",
-  "versionCode": 274,
+  "version": "2.4.35",
+  "versionCode": 275,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-31",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.34: Unified 4-Source Backend Engine & Zero-Server Frictionless UX — completely eliminated manual server switching and Switch Source buttons; all stream resolution and failover run silently in the background with instant 1-tap Audio Dub / Language switching."
+  "releaseNotes": "v2.4.35: Fixed autoembed.me ERR_BLOCKED_BY_RESPONSE (X-Frame-Options: SAMEORIGIN) by replacing autoembed with VidSrc Buzz HD and NontonGo HD (frame-ancestors * / no XFO restrictions), keeping the Zero-Server Frictionless UX and 1-tap Audio Dub selector."
 }

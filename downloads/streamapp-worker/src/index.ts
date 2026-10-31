@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.34",
+    version: "2.4.35",
 
-    versionCode: 274,
+    versionCode: 275,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.34: Unified 4-Source Backend Engine & Zero-Server Frictionless UX — completely eliminated manual server switching and Switch Source buttons; all stream resolution and failover run silently in the background with instant 1-tap Audio Dub / Language switching.",
+    releaseNotes: "v2.4.35: Fixed autoembed.me ERR_BLOCKED_BY_RESPONSE (X-Frame-Options: SAMEORIGIN) by replacing autoembed with VidSrc Buzz HD and NontonGo HD (frame-ancestors * / no XFO restrictions), keeping the Zero-Server Frictionless UX and 1-tap Audio Dub selector.",
 
 };
 
@@ -2600,15 +2600,26 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
-        // 1. AutoEmbed HD (High-Speed Universal 1080p Engine)
+        // 1. VidSrc Buzz HD (Primary Zero-XFO HTML5 1080p Engine)
         list.push({
-            source: "autoembed",
-            sourceName: "AutoEmbed HD",
+            source: "vidsrc_buzz",
+            sourceName: "VidSrc Buzz HD",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: `https://autoembed.co/${tvAutoEmbed}`,
-            playbackUrl: `https://autoembed.co/${tvAutoEmbed}`,
+            url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+        });
+
+        // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
+        list.push({
+            source: "nontongo",
+            sourceName: "NontonGo HD",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://www.NontonGo.win/embed/tv/${tmdbId}/${s}/${e}` : `https://www.NontonGo.win/embed/movie/${tmdbId}`,
+            playbackUrl: isTv ? `https://www.NontonGo.win/embed/tv/${tmdbId}/${s}/${e}` : `https://www.NontonGo.win/embed/movie/${tmdbId}`,
         });
 
         // 2. VidSrc HD
@@ -2758,13 +2769,13 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         });
 
         list.push({
-            source: "autoembed_imdb",
-            sourceName: "AutoEmbed (IMDb Server)",
+            source: "vidsrc_buzz_imdb",
+            sourceName: "VidSrc Buzz (IMDb)",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${s}-${e}` : `https://autoembed.co/movie/imdb/${imdbId}`,
-            playbackUrl: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${s}-${e}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+            url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
+            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
         });
     }
 
@@ -5279,11 +5290,22 @@ export default {
 
                 // 2. TMDB-based providers (Verified 100% working high-uptime streams)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. AutoEmbed HD (Primary Ultra-Fast Universal Engine)
+                    // 1. VidSrc Buzz HD (Primary Zero-XFO HTML5 1080p Engine)
                     streams.push({
-                        label: "⚡ AutoEmbed HD",
-                        provider: "autoembed",
-                        url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}` : `https://autoembed.co/movie/tmdb/${tmdbId}`,
+                        label: "⚡ VidSrc Buzz HD",
+                        provider: "vidsrc_buzz",
+                        url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
+                    streams.push({
+                        label: "⚡ NontonGo HD",
+                        provider: "nontongo",
+                        url: isTv ? `https://www.NontonGo.win/embed/tv/${tmdbId}/${season}/${episode}` : `https://www.NontonGo.win/embed/movie/${tmdbId}`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",
@@ -5393,9 +5415,9 @@ export default {
                 // 3. IMDb-based providers (Working for international titles with IMDb IDs)
                 if (imdbId && imdbId !== "null") {
                     streams.push({
-                        label: "⚡ AutoEmbed (IMDb Server)",
-                        provider: "autoembed_imdb",
-                        url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${season}-${episode}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+                        label: "⚡ VidSrc Buzz (IMDb Server)",
+                        provider: "vidsrc_buzz_imdb",
+                        url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",
@@ -5423,9 +5445,9 @@ export default {
                     });
 
                     streams.push({
-                        label: "⚡ AutoEmbed (IMDb Server)",
-                        provider: "autoembed_imdb",
-                        url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${season}-${episode}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+                        label: "⚡ VidSrc Buzz (IMDb Server)",
+                        provider: "vidsrc_buzz_imdb",
+                        url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
                         format: "embed",
                         quality: "1080p",
                         language: "en",

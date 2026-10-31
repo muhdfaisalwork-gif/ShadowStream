@@ -13,7 +13,7 @@ assert(
 );
 console.log('[PASS] App.js: Player screen configured with unmountOnBlur: true');
 
-// 2. Verify PlayerScreen.js focus & teardown hooks & no vidstuck
+// 2. Verify PlayerScreen.js focus & teardown hooks & no vidstuck/autoembed XFO block
 const playerScreenJs = fs.readFileSync('frontend/src/screens/PlayerScreen.js', 'utf-8');
 assert(playerScreenJs.includes('useIsFocused'), 'PlayerScreen.js must import useIsFocused');
 assert(playerScreenJs.includes('const isFocused = useIsFocused();'), 'PlayerScreen.js must call useIsFocused hook');
@@ -21,7 +21,9 @@ assert(playerScreenJs.includes('if (!isFocused)'), 'PlayerScreen.js must check i
 assert(playerScreenJs.includes('navigation.addListener(\'blur\''), 'PlayerScreen.js must clean up on navigation blur');
 assert(playerScreenJs.includes('url.searchParams.delete(\'season\')'), 'PlayerScreen.js must clean up URL search params on leave');
 assert(!playerScreenJs.includes('vidstuck.cc'), 'PlayerScreen.js must NOT contain dead vidstuck.cc URLs');
-console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, URL cleanup, and clean provider list verified');
+assert(!playerScreenJs.includes('autoembed.co'), 'PlayerScreen.js must NOT contain XFO-blocked autoembed.co URLs');
+assert(playerScreenJs.includes('vidsrc.buzz'), 'PlayerScreen.js must include primary vidsrc.buzz HTML5 engine');
+console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, URL cleanup, and XFO-free provider list verified');
 
 // 3. Verify ShadowStreamPlayer.js hard unmount cleanup & ZERO manual server buttons
 const shadowPlayerJs = fs.readFileSync('frontend/src/components/ShadowStreamPlayer.js', 'utf-8');
@@ -35,21 +37,23 @@ assert(!shadowPlayerJs.includes('Switch to backup stream?'), 'ShadowStreamPlayer
 assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must contain unified selectDubAudio handler');
 console.log('[PASS] ShadowStreamPlayer.js: Zero-Server Frictionless UX, silent auto-failover, Audio Dub selector & hard media teardown verified');
 
-// 4. Verify version synchronization (v2.4.34 / code 274 / SW v43)
+// 4. Verify version synchronization (v2.4.35 / code 275 / SW v44)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.34'"), 'version.js must have CURRENT_VERSION = 2.4.34');
-assert(versionJs.includes("CURRENT_CODE = 274"), 'version.js must have CURRENT_CODE = 274');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.35'"), 'version.js must have CURRENT_VERSION = 2.4.35');
+assert(versionJs.includes("CURRENT_CODE = 275"), 'version.js must have CURRENT_CODE = 275');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.34"'), 'worker index.ts must have version 2.4.34');
-assert(workerIndexTs.includes('versionCode: 274'), 'worker index.ts must have versionCode 274');
+assert(workerIndexTs.includes('version: "2.4.35"'), 'worker index.ts must have version 2.4.35');
+assert(workerIndexTs.includes('versionCode: 275'), 'worker index.ts must have versionCode 275');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
 assert(!workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must NOT contain dead vidstuck.cc URLs');
+assert(!workerIndexTs.includes('autoembed.co'), 'worker index.ts must NOT contain XFO-blocked autoembed.co URLs');
+assert(workerIndexTs.includes('vidsrc.buzz'), 'worker index.ts must use vidsrc.buzz as #1 XFO-free primary stream');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v43'"), 'public/sw.js must be v43');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.34 (code 274, SW v43) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v44'"), 'public/sw.js must be v44');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.35 (code 275, SW v44) strictly verified across all tiers');
 
 // 5. Test AdShield URL filtering logic
 const vm = require('vm');
@@ -74,8 +78,8 @@ const blockedUrls = [
 
 const allowedUrls = [
     'https://ssmoviestvs.site/api/v1/stream/resolve',
-    'https://player.autoembed.me/embed/movie/155',
-    'https://autoembed.co/tv/tmdb/100088-1-1',
+    'https://vidsrc.buzz/embed/movie/155',
+    'https://www.NontonGo.win/embed/tv/100088/1/1',
     'https://vidy.st/tv/100088/1/1?color=FFA500',
     'https://multiembed.mov/?video_id=100088&tmdb=1',
     '/play/the-last-of-us-2023',

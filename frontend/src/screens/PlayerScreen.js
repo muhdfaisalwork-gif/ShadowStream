@@ -538,7 +538,8 @@ export default function PlayerScreen({ route, navigation }) {
                 if (effectiveTmdb) {
                     if (isMovie) {
 // AutoEmbed Primary
-                        dyn.push({ source: 'autoembed', sourceName: 'AutoEmbed HD', kind: 'embed', playbackUrl: `https://autoembed.co/movie/tmdb/${effectiveTmdb}` });
+                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveTmdb}` });
+                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${effectiveTmdb}` });
                         dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${effectiveTmdb}?color=FFA500` });
                         dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${effectiveTmdb}&tmdb=1` });
                         dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${effectiveTmdb}` });
@@ -548,7 +549,8 @@ export default function PlayerScreen({ route, navigation }) {
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${effectiveTmdb}` });
                     } else {
 // AutoEmbed Primary TV
-                        dyn.push({ source: 'autoembed', sourceName: 'AutoEmbed HD', kind: 'embed', playbackUrl: `https://autoembed.co/tv/tmdb/${effectiveTmdb}-${activeS || 1}-${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
+                        dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${effectiveTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
                         dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${effectiveTmdb}&tmdb=1&s=${activeS || 1}&e=${activeE || 1}` });
                         dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${effectiveTmdb}&season=${activeS || 1}&episode=${activeE || 1}` });
@@ -561,12 +563,12 @@ export default function PlayerScreen({ route, navigation }) {
                 if (effectiveImdb) {
                     if (isMovie) {
 // AutoEmbed Primary IMDb Movie
-                        dyn.push({ source: 'autoembed_imdb', sourceName: 'AutoEmbed (IMDb Server)', kind: 'embed', playbackUrl: `https://autoembed.co/movie/imdb/${effectiveImdb}` });
+                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveImdb}` });
                         dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${effectiveImdb}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/movie?imdb=${effectiveImdb}` });
                     } else {
 // AutoEmbed Primary IMDb TV
-                        dyn.push({ source: 'autoembed_imdb', sourceName: 'AutoEmbed (IMDb Server)', kind: 'embed', playbackUrl: `https://autoembed.co/tv/imdb/${effectiveImdb}-${activeS || 1}-${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/tv?imdb=${effectiveImdb}&season=${activeS || 1}&episode=${activeE || 1}` });
                     }
@@ -587,7 +589,7 @@ export default function PlayerScreen({ route, navigation }) {
                     'vidlink_dub',
                     'vidlink_sub',
                     'vidlink',
-                    'autoembed_imdb',
+                    'vidsrc_buzz_imdb',
                     'vidsrc_imdb',
                     'vidy_imdb',
                     'multiembed_imdb',

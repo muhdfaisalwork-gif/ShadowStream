@@ -747,7 +747,7 @@ export default function ShadowStreamPlayer({
             }
             // Switch back to master stream (vidstuck or autoembed)
             const masterIdx = (mirrorList || []).findIndex(m => 
-                m.provider === 'autoembed' || m.provider === 'vidsrc' || (!m.isDub && !m.provider?.includes('sub'))
+                m.provider === 'vidsrc_buzz' || m.provider === 'nontongo' || m.provider === 'vidsrc' || (!m.isDub && !m.provider?.includes('sub'))
             );
             if (masterIdx !== -1 && masterIdx !== activeMirrorIdx && onSelectMirror) {
                 onSelectMirror(mirrorList[masterIdx], masterIdx);

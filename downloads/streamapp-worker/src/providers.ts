@@ -78,15 +78,37 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         note: 'High-uptime VIP server with built-in multi-language audio dubbing and subtitle selection.',
     },
 
-    autoembed: {
-        slug: 'autoembed',
-        displayName: 'AutoEmbed HD',
+    vidsrc_buzz: {
+        slug: 'vidsrc_buzz',
+        displayName: 'VidSrc Buzz HD',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
             isTv(type, s)
-                ? `https://autoembed.co/tv/tmdb/${id}-${cleanS(s)}-${cleanE(e)}`
-                : `https://autoembed.co/movie/tmdb/${id}`,
-        note: 'Fast modern AutoEmbed mirror (replaces dead autoembed.cc).',
+                ? `https://vidsrc.buzz/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}`
+                : `https://vidsrc.buzz/embed/movie/${id}`,
+        note: 'Primary zero-XFO HTML5 streaming engine with built-in multi-server & subtitle switcher.',
+    },
+
+    nontongo: {
+        slug: 'nontongo',
+        displayName: 'NontonGo HD',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s)
+                ? `https://www.NontonGo.win/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}`
+                : `https://www.NontonGo.win/embed/movie/${id}`,
+        note: 'Explicitly permits iframe embedding (X-Frame-Options: ALLOWALL, frame-ancestors *).',
+    },
+
+    autoembed: {
+        slug: 'autoembed',
+        displayName: 'AutoEmbed HD',
+        resolveMode: 'disabled',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s)
+                ? `https://vidsrc.buzz/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}`
+                : `https://vidsrc.buzz/embed/movie/${id}`,
+        note: 'Disabled: autoembed.me sends X-Frame-Options: SAMEORIGIN which blocks iframe embedding.',
     },
 
     vidsrc_rip: {
@@ -185,7 +207,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['autoembed', 'vidsrc', 'multiembed', '2embed', 'vidy', 'smashystream', 'vidlink'];
+export const DEFAULT_MIRROR_ORDER = ['vidsrc_buzz', 'nontongo', '2embed', 'vidsrc', 'multiembed', 'vidy', 'smashystream'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {
