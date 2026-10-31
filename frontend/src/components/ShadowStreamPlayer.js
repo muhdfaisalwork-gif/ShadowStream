@@ -249,15 +249,15 @@ export default function ShadowStreamPlayer({
         const isDubMirror = currentMirror && (
             currentMirror.isDub ||
             currentMirror.provider?.includes('animesalt') ||
-            (cleanLang === 'hi' && (currentMirror.provider === 'multiembed' || currentMirror.label?.toLowerCase().includes('multiembed'))) ||
-            (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanLang) && (currentMirror.provider === 'smashystream' || currentMirror.label?.toLowerCase().includes('smashystream')))
+            (cleanLang === 'hi' && (currentMirror.provider === 'videasy' || currentMirror.provider === 'smashystream')) ||
+            (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanLang) && (currentMirror.provider === 'videasy' || currentMirror.provider === 'smashystream'))
         );
 
         const langLabel = LANGUAGE_NAMES[cleanLang] || cleanLang.toUpperCase();
         if (isDubMirror) {
-            if (currentMirror.provider === 'multiembed' || currentMirror.label?.toLowerCase().includes('multiembed')) {
-                setDubToast(`🎙️ MultiEmbed Dual Audio Server: Tap "Server 2 (Hindi Dub)" inside player for Hindi voice.`);
-                setTimeout(() => setDubToast(null), 6000);
+            if (currentMirror.provider === 'videasy' || currentMirror.label?.toLowerCase().includes('videasy')) {
+                setDubToast(`🎙️ Videasy Multi-Audio HD: In-player audio track switcher active (${langLabel}).`);
+                setTimeout(() => setDubToast(null), 4000);
             } else if (currentMirror.provider?.includes('animesalt')) {
                 setDubToast(`🎙️ Playing ${currentMirror.label || 'Dubbed Audio'} (${langLabel})`);
                 setTimeout(() => setDubToast(null), 4000);
@@ -695,7 +695,7 @@ export default function ShadowStreamPlayer({
 
     const availableLanguageMirrors = useMemo(() => {
         return (mirrorList || []).map((m, idx) => ({ ...m, originalIdx: idx })).filter(m => 
-            (m.isDub || m.isSub || m.provider === 'multiembed' || m.provider === 'smashystream' || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
+            (m.isDub || m.isSub || m.provider === 'videasy' || m.provider === 'smashystream' || (m.language && m.language !== 'en' && m.language !== 'multi')) &&
             !m.provider?.startsWith('vidlink_') && !m.provider?.startsWith('vidsrc_')
         );
     }, [mirrorList]);
@@ -734,25 +734,6 @@ export default function ShadowStreamPlayer({
         const effectiveId = extractNumericId(tmdbId) || extractNumericId(streamUrl) || extractNumericId(mediaId);
         const isTvTitle = Boolean(season != null || episode != null || mediaType === 'tv');
 
-        const MULTIEMBED_LANG_MAP = {
-            hi: 'hindi',
-            ta: 'tamil',
-            te: 'telugu',
-            ml: 'malayalam',
-            bn: 'bengali',
-            es: 'spanish',
-            fr: 'french',
-            de: 'german',
-            it: 'italian',
-            pt: 'portuguese',
-            ru: 'russian',
-            ja: 'japanese',
-            ko: 'korean',
-            zh: 'chinese',
-            ar: 'arabic',
-            tr: 'turkish',
-        };
-
         if (!dubCode || dubCode === 'native') {
             setActiveDubLang('native');
             AudioPreferencesAPI.setPreferred('auto');
@@ -761,11 +742,11 @@ export default function ShadowStreamPlayer({
             }
             // Switch back to master Donkey.to English stream
             const masterUrl = isTvTitle
-                ? (effectiveId ? `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2` : `https://www.vidy.st/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500`)
-                : (effectiveId ? `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2` : `https://www.vidy.st/movie/${effectiveId}?color=FFA500`);
+                ? (effectiveId ? `https://player.videasy.to/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500` : `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2`)
+                : (effectiveId ? `https://player.videasy.to/movie/${effectiveId}?color=FFA500` : `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2`);
             const masterMirror = {
-                label: 'VidStuck Ultra Fast (HD)',
-                provider: 'vidstuck',
+                label: 'Videasy (Multi-Audio HD)',
+                provider: 'videasy',
                 url: masterUrl,
                 format: 'embed',
                 quality: '1080p',
@@ -787,7 +768,6 @@ export default function ShadowStreamPlayer({
         setActiveDubLang(cleanCode);
         AudioPreferencesAPI.setPreferred(cleanCode);
         const langLabel = LANGUAGE_NAMES[cleanCode] || cleanCode.toUpperCase();
-        const dubWord = MULTIEMBED_LANG_MAP[cleanCode] || cleanCode;
 
         // 1. Direct Mode with multiple embedded audio tracks
         if (isDirect && availableAudioTracks.length > 1) {
@@ -804,9 +784,9 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 2. Check if a mirror in mirrorList specifically matches this language
+        // 2. Check if a mirror in mirrorList specifically matches this language (e.g. AnimeSalt)
         const mirrorMatchIdx = (mirrorList || []).findIndex(m => 
-            (m.isDub || (m.provider && (m.provider.includes('animesalt') || m.provider.includes('multiembed')))) &&
+            (m.isDub || (m.provider && m.provider.includes('animesalt'))) &&
             (
                 m.language === cleanCode || 
                 (m.languageName && m.languageName.toLowerCase() === langLabel.toLowerCase()) ||
@@ -846,15 +826,15 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 4. Hindi & Indian Regional Dubs: MultiEmbed Server 2 VIP
-        if (['hi', 'ta', 'te', 'ml', 'bn'].includes(cleanCode) && effectiveId) {
-            const regionalUrl = isTvTitle
-                ? `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&s=${season || 1}&e=${episode || 1}&server=2&dub=${dubWord}`
-                : `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&server=2&dub=${dubWord}`;
-            const regionalMirror = {
-                label: `MultiEmbed (${langLabel} Dub VIP)`,
-                provider: 'multiembed',
-                url: regionalUrl,
+        // 4. Full-Catalog Audio Dubs: Videasy Multi-Audio HD Engine (Zero Popups)
+        if (effectiveId) {
+            const videasyUrl = isTvTitle
+                ? `https://player.videasy.to/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500`
+                : `https://player.videasy.to/movie/${effectiveId}?color=FFA500`;
+            const videasyMirror = {
+                label: `Videasy (${langLabel} Multi-Audio HD)`,
+                provider: 'videasy',
+                url: videasyUrl,
                 format: 'embed',
                 quality: '1080p',
                 language: cleanCode,
@@ -862,41 +842,16 @@ export default function ShadowStreamPlayer({
                 isDub: true,
             };
             if (onSelectMirror) {
-                onSelectMirror(regionalMirror, activeMirrorIdx >= 0 ? activeMirrorIdx : 0);
+                onSelectMirror(videasyMirror, activeMirrorIdx >= 0 ? activeMirrorIdx : 0);
             }
             setSelectedSubtitle(cleanCode);
-            setDubToast(`🎙️ Audio: ${langLabel} Dub Track`);
+            setDubToast(`🎙️ Audio: ${langLabel} (In-Player Audio & Subtitles Active)`);
             setTimeout(() => setDubToast(null), 3500);
             setShowDubMenu(false);
             return;
         }
 
-        // 5. European Multi-Language (Spanish, French, German, Italian, Portuguese, Russian): SmashyStream / MultiEmbed
-        if (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanCode) && effectiveId) {
-            const smashyUrl = isTvTitle
-                ? `https://embed.smashystream.com/playere.php?tmdb=${effectiveId}&season=${season || 1}&episode=${episode || 1}`
-                : `https://embed.smashystream.com/playere.php?tmdb=${effectiveId}`;
-            const europeanMirror = {
-                label: `SmashyStream (${langLabel} Multi-Lang)`,
-                provider: 'smashystream',
-                url: smashyUrl,
-                format: 'embed',
-                quality: '1080p',
-                language: cleanCode,
-                languageName: langLabel,
-                isDub: true,
-            };
-            if (onSelectMirror) {
-                onSelectMirror(europeanMirror, activeMirrorIdx >= 0 ? activeMirrorIdx : 0);
-            }
-            setSelectedSubtitle(cleanCode);
-            setDubToast(`🎙️ Audio: ${langLabel} Track Loaded`);
-            setTimeout(() => setDubToast(null), 3500);
-            setShowDubMenu(false);
-            return;
-        }
-
-        // 6. Universal Dub & Subtitle pairing
+        // 5. Universal Dub & Subtitle pairing
         setSelectedSubtitle(cleanCode);
         setDubToast(`🎙️ Audio: ${langLabel} Track (Subtitles Paired)`);
         setTimeout(() => setDubToast(null), 3500);

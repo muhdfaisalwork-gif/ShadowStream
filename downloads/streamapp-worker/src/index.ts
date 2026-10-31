@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.37",
+    version: "2.4.39",
 
-    versionCode: 277,
+    versionCode: 279,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.37: Unified 4-Source Backend Engine strictly implementing Donkey.to (VidStuck ultra-fast & Vidy multi-audio), AnimeSalt regional dubs, MovieBox OneRoom CDN failover, multi-key TMDB rotation, and zero-popup sandboxed frictionless UX.",
+    releaseNotes: "v2.4.39: Videasy Full-Catalog Multi-Audio Engine (17 Audio Tracks & Subtitles), sub-200ms VidStuck backup, zero-popup sandboxed AdShield, and zero background audio leak.",
 
 };
 
@@ -2600,7 +2600,18 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
-        // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
+        // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
+        list.push({
+            source: "videasy",
+            sourceName: "Videasy (Multi-Audio HD)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://player.videasy.to/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
+            playbackUrl: isTv ? `https://player.videasy.to/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
+        });
+
+        // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
         list.push({
             source: "vidstuck",
             sourceName: "VidStuck Ultra Fast",
@@ -2644,16 +2655,7 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: `https://vidsrc.to/embed/${tvVidSrc}`,
         });
 
-        // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
-        list.push({
-            source: "multiembed",
-            sourceName: "MultiEmbed (VIP Audio Dub)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: `https://multiembed.mov/${tvMultiEmbed}`,
-            playbackUrl: `https://multiembed.mov/${tvMultiEmbed}`,
-        });
+        
 
         // 4. 2Embed Multi-Server
         list.push({
@@ -3225,12 +3227,12 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
     const combined = [...fallbacks, ...existingPlayback];
     const seen = new Set<string>();
     const deduplicated: AvailabilityEntry[] = [];
-    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'vidy', 'multiembed', 'vidsrc', '2embed', 'nontongo', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+    const PROVIDER_RANK = ['archive_org', 'direct', 'videasy', 'vidstuck', 'vidy', 'vidsrc', '2embed', 'nontongo', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
 
     for (const item of combined) {
         const src = String(item.source || (item as any).provider || '').toLowerCase();
-        if (src.includes('autoembed') || src.includes('vidsrc_buzz') || src.includes('embedsu')) continue;
-        if (item.url && (item.url.includes('autoembed') || item.url.includes('vidsrc.buzz'))) continue;
+        if (src.includes('autoembed') || src.includes('vidsrc_buzz') || src.includes('embedsu') || src.includes('multiembed')) continue;
+        if (item.url && (item.url.includes('autoembed') || item.url.includes('vidsrc.buzz') || item.url.includes('multiembed') || item.url.includes('streamingnow'))) continue;
         if (!seen.has(src)) {
             seen.add(src);
             deduplicated.push(item);
@@ -5323,7 +5325,18 @@ export default {
 
                 // 2. TMDB-based providers (Verified 100% working high-uptime streams)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
+                    // 1. Videasy - Donkey.to Primary Multi-Audio HD Engine (17 Audio Tracks & Subtitles)
+                    streams.push({
+                        label: "⚡ Videasy (Multi-Audio Dubs HD)",
+                        provider: "videasy",
+                        url: isTv ? `https://player.videasy.to/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://player.videasy.to/movie/${tmdbId}?color=FFA500`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "multi",
+                        languageName: "Multi-Audio (17 Languages)"
+                    });
+
+                    // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
                     streams.push({
                         label: "⚡ VidStuck Ultra Fast (HD)",
                         provider: "vidstuck",
@@ -5332,17 +5345,6 @@ export default {
                         quality: "1080p",
                         language: "en",
                         languageName: "English"
-                    });
-
-                    // 2. Vidy (Multi-Audio Dubs HD) - Donkey.to Secondary Engine
-                    streams.push({
-                        label: "⚡ Vidy (Multi-Audio Dubs HD)",
-                        provider: "vidy",
-                        url: isTv ? `https://www.vidy.st/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Audio (In-Player Switcher)"
                     });
 
                     // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
@@ -5367,16 +5369,7 @@ export default {
                         languageName: "English"
                     });
 
-                    // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
-                    streams.push({
-                        label: "⚡ MultiEmbed VIP (Multi-Lang Dub)",
-                        provider: "multiembed",
-                        url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Language Dub"
-                    });
+                    
 
                     // 4. 2Embed Multi-Server
                     streams.push({

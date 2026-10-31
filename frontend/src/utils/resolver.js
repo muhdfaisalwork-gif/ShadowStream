@@ -107,7 +107,7 @@ export async function resolveMirrors(mirrors, ctx) {
             }
             // 2. Known iframe embed providers - skip redundant remote worker round-trips for instantaneous loading
             if (m.format === 'embed' || m.resolveMode === 'iframe_only' ||
-                ['vidstuck', 'vidstuck_imdb', 'autoembed', 'autoembed_imdb', 'vidy', 'vidy_imdb', 'videasy', 'videasy_imdb', 'multiembed', 'multiembed_imdb', 'vidsrc_rip', 'vidsrc', '2embed', 'smashystream', 'vidlink', 'vidlink_sub', 'vidlink_dub', 'nontongo', 'nontongo_imdb'].includes(String(m.provider || '').toLowerCase())) {
+                ['videasy', 'videasy_imdb', 'vidstuck', 'vidstuck_imdb', 'vidy', 'vidy_imdb', 'vidsrc_rip', 'vidsrc', '2embed', 'smashystream', 'vidlink', 'vidlink_sub', 'vidlink_dub', 'nontongo', 'nontongo_imdb'].includes(String(m.provider || '').toLowerCase())) {
                 return { ...m, direct: null, resolveMode: 'iframe_only', mirror: m.url };
             }
             // 3. Fallback to worker resolver
@@ -150,8 +150,8 @@ export function toPlayerProps(mirror) {
         };
     }
     return {
-        streamUrl: mirror.mirror || mirror.url,
-        streamKind: 'embed',
-        sourceName: mirror.label,
+        streamUrl: mirror.mirror || mirror.url || mirror.playbackUrl,
+        streamKind: mirror.kind === 'playback' ? 'direct' : 'embed',
+        sourceName: mirror.label || mirror.sourceName,
     };
 }

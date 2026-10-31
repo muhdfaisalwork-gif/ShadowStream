@@ -54,8 +54,10 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         displayName: 'Videasy (Multi-Audio HD)',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
-            isTv(type, s) ? `https://www.vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://www.vidy.st/movie/${id}?color=FFA500`,
-        note: 'Sub-second embed with built-in multi-audio dubbing & subtitle switcher right in the player.',
+            isTv(type, s)
+                ? `https://player.videasy.to/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500`
+                : `https://player.videasy.to/movie/${id}?color=FFA500`,
+        note: 'Donkey.to primary multi-audio streaming engine with 17 built-in language tracks and subtitles.',
     },
 
     vidstuck: {
@@ -70,12 +72,12 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
     multiembed: {
         slug: 'multiembed',
         displayName: 'MultiEmbed (VIP Audio Dub)',
-        resolveMode: 'iframe_only',
+        resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type, s)
-                ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${cleanS(s)}&e=${cleanE(e)}`
-                : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-        note: 'High-uptime VIP server with built-in multi-language audio dubbing and subtitle selection.',
+                ? `https://player.videasy.to/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500`
+                : `https://player.videasy.to/movie/${id}?color=FFA500`,
+        note: 'Disabled: ad scripts (aclib.runPop); superseded by player.videasy.to.',
     },
 
     vidsrc_buzz: {
@@ -180,12 +182,12 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
     superembed: {
         slug: 'superembed',
         displayName: 'MultiEmbed (VIP Audio Dub)',
-        resolveMode: 'iframe_only',
+        resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type, s)
-                ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${cleanS(s)}&e=${cleanE(e)}`
-                : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-        note: 'Alias for multiembed.',
+                ? `https://player.videasy.to/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500`
+                : `https://player.videasy.to/movie/${id}?color=FFA500`,
+        note: 'Disabled: ad scripts (aclib.runPop); superseded by player.videasy.to.',
     },
 
     // Genuinely direct public-domain / CC sources. These are the only rows in
@@ -207,7 +209,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'vidy', 'multiembed', 'vidsrc', '2embed', 'nontongo', 'smashystream'];
+export const DEFAULT_MIRROR_ORDER = ['videasy', 'vidstuck', 'vidsrc', '2embed', 'nontongo', 'smashystream'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {

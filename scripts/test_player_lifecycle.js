@@ -13,17 +13,18 @@ assert(
 );
 console.log('[PASS] App.js: Player screen configured with unmountOnBlur: true');
 
-// 2. Verify PlayerScreen.js focus & teardown hooks & Donkey VidStuck primary engine
+// 2. Verify PlayerScreen.js focus & teardown hooks & Videasy primary engine
 const playerScreenJs = fs.readFileSync('frontend/src/screens/PlayerScreen.js', 'utf-8');
 assert(playerScreenJs.includes('useIsFocused'), 'PlayerScreen.js must import useIsFocused');
 assert(playerScreenJs.includes('const isFocused = useIsFocused();'), 'PlayerScreen.js must call useIsFocused hook');
 assert(playerScreenJs.includes('if (!isFocused)'), 'PlayerScreen.js must check isFocused to stop playback');
 assert(playerScreenJs.includes('navigation.addListener(\'blur\''), 'PlayerScreen.js must clean up on navigation blur');
 assert(playerScreenJs.includes('url.searchParams.delete(\'season\')'), 'PlayerScreen.js must clean up URL search params on leave');
-assert(playerScreenJs.includes('vidstuck.cc'), 'PlayerScreen.js must contain flagship donkey vidstuck.cc engine');
+assert(playerScreenJs.includes('player.videasy.to'), 'PlayerScreen.js must contain primary donkey player.videasy.to engine');
+assert(playerScreenJs.includes('vidstuck.cc'), 'PlayerScreen.js must contain backup donkey vidstuck.cc engine');
 assert(!playerScreenJs.includes('autoembed.co'), 'PlayerScreen.js must NOT contain XFO-blocked autoembed.co URLs');
-assert(playerScreenJs.includes('vidy'), 'PlayerScreen.js must include primary clean Donkey.to vidy engine');
-console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, URL cleanup, and clean primary engine verified');
+assert(!playerScreenJs.includes('multiembed.mov'), 'PlayerScreen.js must NOT contain ad-injecting multiembed.mov URLs');
+console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, URL cleanup, and clean Videasy #1 engine verified');
 
 // 3. Verify ShadowStreamPlayer.js hard unmount cleanup & ZERO manual server buttons
 const shadowPlayerJs = fs.readFileSync('frontend/src/components/ShadowStreamPlayer.js', 'utf-8');
@@ -35,25 +36,26 @@ assert(!shadowPlayerJs.includes('Switch Stream Source'), 'ShadowStreamPlayer.js 
 assert(!shadowPlayerJs.includes('Select Stream Server'), 'ShadowStreamPlayer.js must NOT contain manual Select Stream Server menu');
 assert(!shadowPlayerJs.includes('Switch to backup stream?'), 'ShadowStreamPlayer.js must NOT contain manual stalled failover prompt');
 assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must contain unified selectDubAudio handler');
+assert(!shadowPlayerJs.includes('multiembed.mov'), 'ShadowStreamPlayer.js must NOT contain ad-injecting multiembed.mov URLs');
 console.log('[PASS] ShadowStreamPlayer.js: Zero-Server Frictionless UX, silent auto-failover, Audio Dub selector, enforced sandbox & hard media teardown verified');
 
-// 4. Verify version synchronization (v2.4.37 / code 277 / SW v46)
+// 4. Verify version synchronization (v2.4.39 / code 279 / SW v48)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.37'"), 'version.js must have CURRENT_VERSION = 2.4.37');
-assert(versionJs.includes("CURRENT_CODE = 277"), 'version.js must have CURRENT_CODE = 277');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.39'"), 'version.js must have CURRENT_VERSION = 2.4.39');
+assert(versionJs.includes("CURRENT_CODE = 279"), 'version.js must have CURRENT_CODE = 279');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.37"'), 'worker index.ts must have version 2.4.37');
-assert(workerIndexTs.includes('versionCode: 277'), 'worker index.ts must have versionCode 277');
+assert(workerIndexTs.includes('version: "2.4.39"'), 'worker index.ts must have version 2.4.38');
+assert(workerIndexTs.includes('versionCode: 279'), 'worker index.ts must have versionCode 279');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
-assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must contain flagship donkey vidstuck.cc engine');
+assert(workerIndexTs.includes('player.videasy.to'), 'worker index.ts must use videasy as clean #1 primary stream');
+assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must use vidstuck as clean #2 stream');
 assert(!workerIndexTs.includes('autoembed.co'), 'worker index.ts must NOT contain XFO-blocked autoembed.co URLs');
-assert(workerIndexTs.includes('vidy'), 'worker index.ts must use vidy as clean #2 secondary stream');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v46'"), 'public/sw.js must be v46');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.37 (code 277, SW v46) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v48'"), 'public/sw.js must be v48');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.39 (code 279, SW v48) strictly verified across all tiers');
 
 // 5. Test AdShield URL filtering logic
 const vm = require('vm');
@@ -75,15 +77,16 @@ const blockedUrls = [
     'https://deloton.com/ad',
     'https://vdo.ai/banner',
     'https://unfortunatelyejectinflected.com/bundle.js',
+    'https://multiembed.mov/?video_id=123',
+    'https://streamingnow.mov/?play=123',
 ];
 
 const allowedUrls = [
     'https://ssmoviestvs.site/api/v1/stream/resolve',
+    'https://player.videasy.to/movie/155?color=FFA500',
+    'https://player.videasy.to/tv/100088/1/1?color=FFA500',
     'https://vidstuck.cc/embed/movie/155?loading=2',
     'https://www.NontonGo.win/embed/tv/100088/1/1',
-    'https://vidy.st/tv/100088/1/1?color=FFA500',
-    'https://www.vidy.st/movie/155?color=FFA500',
-    'https://multiembed.mov/?video_id=100088&tmdb=1',
     'https://vidsrc.to/embed/movie/155',
     'https://www.2embed.cc/embed/tmdb/movie?id=155',
     '/play/the-last-of-us-2023',
