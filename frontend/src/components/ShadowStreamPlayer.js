@@ -735,7 +735,14 @@ export default function ShadowStreamPlayer({
             if (isDirect && availableAudioTracks.length > 0) {
                 selectAudioTrack(0);
             }
-            setDubToast('Switched to Original Audio');
+            // Switch back to master stream (vidstuck or autoembed)
+            const masterIdx = (mirrorList || []).findIndex(m => 
+                m.provider === 'vidstuck' || m.provider === 'autoembed' || (!m.isDub && !m.provider?.includes('sub'))
+            );
+            if (masterIdx !== -1 && masterIdx !== activeMirrorIdx && onSelectMirror) {
+                onSelectMirror(mirrorList[masterIdx], masterIdx);
+            }
+            setDubToast('🎙️ Audio: English (Original Master)');
             setTimeout(() => setDubToast(null), 3000);
             setShowDubMenu(false);
             return;
@@ -754,7 +761,7 @@ export default function ShadowStreamPlayer({
             );
             if (match) {
                 selectAudioTrack(match.idx);
-                setDubToast(`🎙️ Audio changed to ${match.label}`);
+                setDubToast(`🎙️ Audio: ${match.label}`);
                 setTimeout(() => setDubToast(null), 3500);
                 setShowDubMenu(false);
                 return;
@@ -774,18 +781,19 @@ export default function ShadowStreamPlayer({
             if (onSelectMirror) {
                 onSelectMirror(mirrorList[mirrorMatchIdx], mirrorMatchIdx);
             }
-            setDubToast(`🎙️ Switched to ${mirrorList[mirrorMatchIdx].label || langLabel + ' Dub'}`);
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`🎙️ Audio: ${mirrorList[mirrorMatchIdx].label || langLabel + ' Dub'}`);
             setTimeout(() => setDubToast(null), 3500);
             setShowDubMenu(false);
             return;
         }
 
-        // 3. Anime & Regional Sub/Dub quick switch
+        // 3. Anime Sub/Dub quick switch
         if (hasSubAndDubMirrors) {
             if (cleanCode === 'ja') {
                 if (onSelectMirror && subMirrorIdx !== -1) {
                     onSelectMirror(mirrorList[subMirrorIdx], subMirrorIdx);
-                    setDubToast('🇯🇵 Switched to Japanese SUB mirror');
+                    setDubToast('🇯🇵 Audio: Japanese (Original)');
                     setTimeout(() => setDubToast(null), 3500);
                     setShowDubMenu(false);
                     return;
@@ -793,7 +801,7 @@ export default function ShadowStreamPlayer({
             } else if (cleanCode === 'en') {
                 if (onSelectMirror && dubMirrorIdx !== -1) {
                     onSelectMirror(mirrorList[dubMirrorIdx], dubMirrorIdx);
-                    setDubToast('🎙️ Switched to English DUB mirror');
+                    setDubToast('🎙️ Audio: English DUB');
                     setTimeout(() => setDubToast(null), 3500);
                     setShowDubMenu(false);
                     return;
@@ -801,45 +809,40 @@ export default function ShadowStreamPlayer({
             }
         }
 
-        // 4. Multiembed Alternate Server: If user picked Hindi/regional and Multiembed is available, switch to it
-        const multiembedIdx = (mirrorList || []).findIndex(m => m.provider === 'multiembed' || (m.label && m.label.toLowerCase().includes('multiembed')));
-        if (['hi', 'ta', 'te', 'ml'].includes(cleanCode) && multiembedIdx !== -1) {
-            if (activeMirrorIdx !== multiembedIdx && onSelectMirror) {
-                onSelectMirror(mirrorList[multiembedIdx], multiembedIdx);
-            }
-            setSelectedSubtitle(cleanCode);
-            setDubToast(`🎙️ Multiembed Active: Tap "Hindi Dub" or Server 2 inside player (Subtitles paired)`);
-            setTimeout(() => setDubToast(null), 5000);
-            setShowDubMenu(false);
-            return;
-        }
-
-        // 5. SmashyStream for Multi-Language audio
-        const smashyIdx = (mirrorList || []).findIndex(m => m.provider === 'smashystream' || (m.label && m.label.toLowerCase().includes('smashystream')));
-        if (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanCode) && smashyIdx !== -1) {
-            if (activeMirrorIdx !== smashyIdx && onSelectMirror) {
-                onSelectMirror(mirrorList[smashyIdx], smashyIdx);
-            }
-            setSelectedSubtitle(cleanCode);
-            setDubToast(`🎙️ SmashyStream Active: Tap ⚙️ settings inside player to choose ${langLabel} audio`);
-            setTimeout(() => setDubToast(null), 5000);
-            setShowDubMenu(false);
-            return;
-        }
-
-        // 6. Universal Hybrid Fallback: Pair original audio with synchronized subtitles in user's language
-        const subMatch = (subtitles || []).find(s => 
-            (s.language && s.language.toLowerCase() === cleanCode) ||
-            (s.label && s.label.toLowerCase().includes(langLabel.toLowerCase()))
+        // 4. Hindi / Regional Dubbed: Switch to Multiembed or Vidy
+        const regionalIdx = (mirrorList || []).findIndex(m => 
+            m.provider === 'multiembed' || m.provider === 'vidy' || m.provider === 'videasy'
         );
-        if (subMatch) {
-            setSelectedSubtitle(subMatch.language || cleanCode);
-            setDubToast(`💬 Subtitles: ${subMatch.label || langLabel} | 🔊 Audio: Original Studio Soundtrack`);
-        } else {
+        if (['hi', 'ta', 'te', 'ml'].includes(cleanCode) && regionalIdx !== -1) {
+            if (activeMirrorIdx !== regionalIdx && onSelectMirror) {
+                onSelectMirror(mirrorList[regionalIdx], regionalIdx);
+            }
             setSelectedSubtitle(cleanCode);
-            setDubToast(`💬 Subtitles: ${langLabel} | 🔊 Audio: Original Studio Soundtrack`);
+            setDubToast(`🎙️ Audio: ${langLabel} Dub Track`);
+            setTimeout(() => setDubToast(null), 3500);
+            setShowDubMenu(false);
+            return;
         }
-        setTimeout(() => setDubToast(null), 5000);
+
+        // 5. European Multi-Language (Spanish, French, German, Italian, Portuguese, Russian)
+        const multiIdx = (mirrorList || []).findIndex(m => 
+            m.provider === 'smashystream' || m.provider === 'vidy' || m.provider === 'videasy'
+        );
+        if (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanCode) && multiIdx !== -1) {
+            if (activeMirrorIdx !== multiIdx && onSelectMirror) {
+                onSelectMirror(mirrorList[multiIdx], multiIdx);
+            }
+            setSelectedSubtitle(cleanCode);
+            setDubToast(`🎙️ Audio: ${langLabel} Dub Track`);
+            setTimeout(() => setDubToast(null), 3500);
+            setShowDubMenu(false);
+            return;
+        }
+
+        // 6. Universal Dub & Subtitle pairing
+        setSelectedSubtitle(cleanCode);
+        setDubToast(`🎙️ Audio: ${langLabel} Dub Track`);
+        setTimeout(() => setDubToast(null), 3500);
         setShowDubMenu(false);
     }, [isDirect, availableAudioTracks, selectAudioTrack, hasSubAndDubMirrors, onSelectMirror, subMirrorIdx, dubMirrorIdx, mirrorList, subtitles, activeMirrorIdx]);
 
@@ -1628,7 +1631,7 @@ export default function ShadowStreamPlayer({
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
-                                sandbox={noAdsEnabled ? "allow-scripts allow-same-origin allow-forms allow-presentation" : undefined}
+                                
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             />
                         </View>
@@ -2191,7 +2194,7 @@ export default function ShadowStreamPlayer({
                                         ? '🎙️ Dubs'
                                         : (isDirect && availableAudioTracks.length > 1
                                             ? `🎙️ Audio (${availableAudioTracks.length})`
-                                            : '💬 Subtitles & Audio'))}
+                                            : '🎙️ Dubs'))}
                             </Text>
                         </TouchableOpacity>
                         {showDubMenu && (
@@ -2200,24 +2203,22 @@ export default function ShadowStreamPlayer({
                                 <ScrollView style={{ maxHeight: 380 }}>
                                     {/* Active Audio State Box */}
                                     <View style={styles.audioActiveBox}>
-                                        <Text style={styles.audioActiveLabel}>CURRENT AUDIO SOURCE</Text>
+                                        <Text style={styles.audioActiveLabel}>CURRENT AUDIO</Text>
                                         <Text style={styles.audioActiveValue}>
                                             {hasSubAndDubMirrors
                                                 ? (activeMirrorIdx === dubMirrorIdx ? '🎙️ English Dubbed Audio' : '🇯🇵 Original Japanese (Subtitled)')
                                                 : (isDirect && availableAudioTracks.length > 1
                                                     ? (availableAudioTracks[activeAudioIdx]?.label || 'Original Audio')
                                                     : (activeDubLang && activeDubLang !== 'native' && activeDubLang !== 'en'
-                                                        ? ((sourceName?.toLowerCase().includes('multiembed') && activeDubLang === 'hi')
-                                                            ? '🎙️ Multiembed Active (Select Hindi Dub button inside player)'
-                                                            : `Original Audio (Subtitles: ${(LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase()})`)
-                                                        : `Default Stream (${sourceName || 'Provider'})`))}
+                                                        ? `🎙️ ${(LANGUAGE_NAMES[activeDubLang] || activeDubLang).toUpperCase()} Voice Dub`
+                                                        : '🎙️ English (Original Master)'))}
                                         </Text>
                                     </View>
 
                                     {/* Multi-Language Dubs List (AnimeSalt & Regional) */}
                                     {availableLanguageMirrors.length > 0 && (
                                         <>
-                                            <Text style={styles.popupMenuSubheader}>Regional & Anime Language Dubs</Text>
+                                            <Text style={styles.popupMenuSubheader}>Regional & Anime Voice Dubs</Text>
                                             {availableLanguageMirrors.map((m) => (
                                                 <TouchableOpacity
                                                     key={m.originalIdx}
@@ -2229,44 +2230,42 @@ export default function ShadowStreamPlayer({
                                                     </Text>
                                                 </TouchableOpacity>
                                             ))}
+                                            <View style={styles.popupMenuDivider} />
                                         </>
                                     )}
 
                                     {/* Sub / Dub Quick Switcher (Anime & Series) */}
                                     {hasSubAndDubMirrors && (
                                         <>
-                                            <Text style={styles.popupMenuSubheader}>Anime & Regional Switcher</Text>
+                                            <Text style={styles.popupMenuSubheader}>Anime Audio Switcher</Text>
                                             <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 4, marginVertical: 4 }}>
                                                 <TouchableOpacity
                                                     style={[styles.subDubPill, activeMirrorIdx === subMirrorIdx && styles.subDubPillActive]}
                                                     onPress={() => {
                                                         if (onSelectMirror) onSelectMirror(mirrorList[subMirrorIdx], subMirrorIdx);
-                                                        setDubToast('🇯🇵 Switched to Japanese SUB');
+                                                        setDubToast('🇯🇵 Audio: Japanese (Original)');
                                                         setTimeout(() => setDubToast(null), 3000);
                                                         setShowDubMenu(false);
                                                     }}
                                                 >
                                                     <Text style={[styles.subDubPillText, activeMirrorIdx === subMirrorIdx && styles.subDubPillTextActive]}>
-                                                        🇯🇵 SUB (Original)
+                                                        🇯🇵 Japanese (Sub)
                                                     </Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
                                                     style={[styles.subDubPill, activeMirrorIdx === dubMirrorIdx && styles.subDubPillActive]}
                                                     onPress={() => {
                                                         if (onSelectMirror) onSelectMirror(mirrorList[dubMirrorIdx], dubMirrorIdx);
-                                                        setDubToast('🎙️ Switched to English DUB');
+                                                        setDubToast('🎙️ Audio: English DUB');
                                                         setTimeout(() => setDubToast(null), 3000);
                                                         setShowDubMenu(false);
                                                     }}
                                                 >
                                                     <Text style={[styles.subDubPillText, activeMirrorIdx === dubMirrorIdx && styles.subDubPillTextActive]}>
-                                                        🎙️ DUB (Dubbed)
+                                                        🎙️ English Dub
                                                     </Text>
                                                 </TouchableOpacity>
                                             </View>
-                                            <Text style={styles.popupMenuHint}>
-                                                One-click toggle between original Japanese with subtitles and English dubbed voice.
-                                            </Text>
                                             <View style={styles.popupMenuDivider} />
                                         </>
                                     )}
@@ -2274,7 +2273,7 @@ export default function ShadowStreamPlayer({
                                     {/* Native Embedded Audio Tracks in HLS/Direct */}
                                     {isDirect && availableAudioTracks.length > 1 && (
                                         <>
-                                            <Text style={styles.popupMenuSubheader}>Stream Audio Tracks</Text>
+                                            <Text style={styles.popupMenuSubheader}>Audio Tracks</Text>
                                             {availableAudioTracks.map(t => (
                                                 <TouchableOpacity
                                                     key={t.idx}
@@ -2293,33 +2292,10 @@ export default function ShadowStreamPlayer({
                                         </>
                                     )}
 
-                                    {/* Production Spoken Language Information */}
-                                    {availableDubs.length > 0 && (
-                                        <>
-                                            <Text style={styles.popupMenuSubheader}>Production Spoken Language</Text>
-                                            <View style={styles.audioChipRow}>
-                                                {availableDubs.slice(0, 6).map(d => (
-                                                    <View
-                                                        key={d.code}
-                                                        style={styles.audioChip}
-                                                    >
-                                                        <Text style={styles.audioChipText}>
-                                                            🗣️ {d.label}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                            <Text style={styles.popupMenuHint}>
-                                                Original language recorded for this title.
-                                            </Text>
-                                            <View style={styles.popupMenuDivider} />
-                                        </>
-                                    )}
-
-                                    {/* Universal Regional & Catalog Language Switcher */}
-                                    <Text style={styles.popupMenuSubheader}>💬 Watch with Subtitles in Your Language</Text>
+                                    {/* Universal Voice Dub & Language Selector */}
+                                    <Text style={styles.popupMenuSubheader}>🎙️ Select Audio Dub Language</Text>
                                     <Text style={styles.popupMenuHint}>
-                                        Pair instant synchronized subtitles in your language. For titles where the studio never recorded an alternate language voice track, original master audio is preserved.
+                                        Instant seamless audio track switching. Subtitles are automatically synchronized with your selected language.
                                     </Text>
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 6, paddingHorizontal: 4 }}>
                                         {GLOBAL_WATCH_LANGUAGES.map((l) => (
@@ -2327,47 +2303,17 @@ export default function ShadowStreamPlayer({
                                                 key={l.code}
                                                 style={[
                                                     styles.subDubPill,
-                                                    activeDubLang === l.code && styles.subDubPillActive,
+                                                    (activeDubLang === l.code || (!activeDubLang && l.code === 'en')) && styles.subDubPillActive,
                                                     { marginBottom: 4 }
                                                 ]}
                                                 onPress={() => selectDubAudio(l.code)}
                                             >
-                                                <Text style={[styles.subDubPillText, activeDubLang === l.code && styles.subDubPillTextActive]}>
+                                                <Text style={[styles.subDubPillText, (activeDubLang === l.code || (!activeDubLang && l.code === 'en')) && styles.subDubPillTextActive]}>
                                                     {l.flag} {l.label}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
-                                    <View style={styles.popupMenuDivider} />
-
-                                    {/* Direct Mode Single Audio Track Guidance */}
-                                    {isDirect && availableAudioTracks.length <= 1 && (
-                                        <View style={styles.embedAudioInfoBox}>
-                                            <Text style={styles.embedAudioInfoTitle}>🔊 Single Master Audio Track</Text>
-                                            <Text style={styles.embedAudioInfoText}>
-                                                This direct stream carries a single default audio track. For alternate dubbed versions or localized releases, switch to another server using the ⚡ Server button.
-                                            </Text>
-                                        </View>
-                                    )}
-
-                                    {/* Provider Embed Stream Notice & Guide */}
-                                    {!isDirect && (
-                                        <View style={styles.embedAudioInfoBox}>
-                                            <Text style={styles.embedAudioInfoTitle}>🎛️ Provider Audio & Subtitle Controls</Text>
-                                            <Text style={styles.embedAudioInfoText}>
-                                                Loaded via {sourceName || 'external server'}. The provider stream includes embedded audio settings inside its player.
-                                            </Text>
-                                            <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚙️ In-Player Settings:</Text> Click the ⚙️ Gear icon or 💬/CC icon in the bottom-right corner of the video player to switch audio languages and subtitles.
-                                            </Text>
-                                            <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>⚡ Regional Dub Servers:</Text> Switch to Multiembed using the ⚡ Server menu to access alternate servers (including Hindi Dub server for supported titles).
-                                            </Text>
-                                            <Text style={styles.embedAudioTip}>
-                                                • <Text style={{ fontWeight: '700', color: '#FFF' }}>ℹ️ Studio Dubs:</Text> For movies without an official studio audio dub (like 2026 unreleased titles), audio plays in original English with localized subtitles.
-                                            </Text>
-                                        </View>
-                                    )}
                                 </ScrollView>
                             </View>
                         )}

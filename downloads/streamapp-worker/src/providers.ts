@@ -40,12 +40,21 @@ const cleanS = (s?: number | null) => (s != null && s > 0 ? s : 1);
 const cleanE = (e?: number | null) => (e != null && e > 0 ? e : 1);
 
 export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
+    vidy: {
+        slug: 'vidy',
+        displayName: 'Vidy (Multi-Audio HD)',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s) ? `https://vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://vidy.st/movie/${id}?color=FFA500`,
+        note: 'Donkey.to verified high-speed engine with multi-audio dubbing & subtitle switcher.',
+    },
+
     videasy: {
         slug: 'videasy',
         displayName: 'Videasy (Multi-Audio HD)',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
-            isTv(type, s) ? `https://player.videasy.net/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=E50914` : `https://player.videasy.net/movie/${id}?color=E50914`,
+            isTv(type, s) ? `https://vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://vidy.st/movie/${id}?color=FFA500`,
         note: 'Sub-second embed with built-in multi-audio dubbing & subtitle switcher right in the player.',
     },
 
@@ -176,7 +185,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'autoembed', 'multiembed', 'videasy', 'vidsrc_rip', 'vidsrc', 'vidlink', '2embed'];
+export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'autoembed', 'vidy', 'multiembed', 'videasy', 'vidsrc_rip', 'vidsrc', 'vidlink', '2embed'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {
