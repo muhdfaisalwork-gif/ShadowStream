@@ -101,11 +101,16 @@ export async function resolveMirrors(mirrors, ctx) {
 
     const enriched = await Promise.all(
         mirrors.map(async (m) => {
-            // Only aggregate-looking mirrors are worth resolving. A row that
-            // already carries a real direct URL is used as-is.
+            // 1. Direct playable files (e.g. MP4, HLS m3u8)
             if (m.format === 'video' && m.url) {
                 return { ...m, direct: { url: m.url, type: guessType(m.url) }, resolveMode: 'direct' };
             }
+            // 2. Known iframe embed providers - skip redundant remote worker round-trips for instantaneous loading
+            if (m.format === 'embed' || m.resolveMode === 'iframe_only' ||
+                ['videasy', 'videasy_imdb', 'vidstuck', 'vidstuck_imdb', 'multiembed', 'multiembed_imdb', 'autoembed', 'autoembed_imdb', 'vidsrc_rip', 'vidsrc', '2embed', 'smashystream', 'vidlink', 'vidlink_sub', 'vidlink_dub'].includes(String(m.provider || '').toLowerCase())) {
+                return { ...m, direct: null, resolveMode: 'iframe_only', mirror: m.url };
+            }
+            // 3. Fallback to worker resolver
             const r = await resolveMirror({
                 tmdbId: ctx?.tmdbId,
                 type: ctx?.type,

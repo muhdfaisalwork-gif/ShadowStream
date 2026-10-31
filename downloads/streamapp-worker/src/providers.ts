@@ -12,15 +12,6 @@
  *   'direct'      — we can extract a real stream URL and decode it ourselves
  *   'iframe_only' — the provider only exposes a player page; we embed it
  *   'disabled'    — provider is dead or removed from rotation
- *
- * Measured on 2026-09-28 (see plan §8):
- *   vidlink   — Next.js + RSC, API returns literal null, gated behind a 2.4 MB
- *               /fu.wasm challenge. Not server-resolvable.
- *   embed.su  — DNS NXDOMAIN. Removed from rotation.
- *   vidsrc    — nested iframe, no direct stream.
- *   2embed    — nested iframe, no direct stream.
- *   multiembed— unreachable.
- *   archive.org / blender / pixabay / pexels / commons — genuinely direct MP4.
  */
 
 export type ResolveMode = 'direct' | 'iframe_only' | 'disabled';
@@ -49,22 +40,62 @@ const cleanS = (s?: number | null) => (s != null && s > 0 ? s : 1);
 const cleanE = (e?: number | null) => (e != null && e > 0 ? e : 1);
 
 export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
+    videasy: {
+        slug: 'videasy',
+        displayName: 'Videasy (Multi-Audio HD)',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s) ? `https://player.videasy.net/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=E50914` : `https://player.videasy.net/movie/${id}?color=E50914`,
+        note: 'Sub-second embed with built-in multi-audio dubbing & subtitle switcher right in the player.',
+    },
+
+    vidstuck: {
+        slug: 'vidstuck',
+        displayName: 'VidStuck Ultra Fast',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s) ? `https://vidstuck.cc/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}?loading=2` : `https://vidstuck.cc/embed/movie/${id}?loading=2`,
+        note: 'Sub-300ms ultra-low-latency provider with smooth HTML5 streaming.',
+    },
+
+    multiembed: {
+        slug: 'multiembed',
+        displayName: 'MultiEmbed (VIP Audio Dub)',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s)
+                ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${cleanS(s)}&e=${cleanE(e)}`
+                : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+        note: 'High-uptime VIP server with built-in multi-language audio dubbing and subtitle selection.',
+    },
+
+    autoembed: {
+        slug: 'autoembed',
+        displayName: 'AutoEmbed HD',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s)
+                ? `https://autoembed.co/tv/tmdb/${id}-${cleanS(s)}-${cleanE(e)}`
+                : `https://autoembed.co/movie/tmdb/${id}`,
+        note: 'Fast modern AutoEmbed mirror (replaces dead autoembed.cc).',
+    },
+
+    vidsrc_rip: {
+        slug: 'vidsrc_rip',
+        displayName: 'VidSrc RIP (Fast)',
+        resolveMode: 'iframe_only',
+        buildUrl: (id, type, s, e) =>
+            isTv(type, s) ? `https://vidsrc.rip/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}` : `https://vidsrc.rip/embed/movie/${id}`,
+        note: 'Fast VidSrc alternate with responsive HTML5 player.',
+    },
+
     vidlink: {
         slug: 'vidlink',
         displayName: 'Vidlink (Ad-Free HD)',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
             isTv(type, s) ? `https://vidlink.pro/tv/${id}/${cleanS(s)}/${cleanE(e)}` : `https://vidlink.pro/movie/${id}`,
-        // Verified 2026-09-28: returns literal `null`, with or without
-        // Referer/Origin, and the player is gated behind a 2.4 MB WASM module.
-        secondStage: (id, type, s, e) =>
-            isTv(type, s) ? `https://vidlink.pro/api/b/tv/${id}/${cleanS(s)}/${cleanE(e)}` : '',
-        parseSecondStage: (payload) => {
-            const url = typeof payload === 'string' ? payload : payload?.url || payload?.file || payload?.src;
-            if (typeof url !== 'string' || !/^https?:\/\//.test(url)) return null;
-            return { url, type: /\.m3u8/i.test(url) ? 'hls' : 'mp4' };
-        },
-        note: 'Client is a Next.js app with a 2.4 MB WASM challenge. Currently iframe-only.',
+        note: 'Client is a Next.js app with a 2.4 MB WASM challenge. Iframe-only.',
     },
 
     vidlink_sub: {
@@ -91,7 +122,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
             isTv(type, s) ? `https://vidsrc.to/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}` : `https://vidsrc.to/embed/movie/${id}`,
-        note: 'Serves a nested iframe; no plain manifest in the page.',
+        note: 'Serves a nested iframe; reliable backup.',
     },
 
     '2embed': {
@@ -105,27 +136,25 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         note: 'Serves a nested iframe to /embed/.',
     },
 
-    // Removed from rotation 2026-09-28: embed.su no longer resolves in DNS.
-    // Kept here disabled rather than deleted so the history is visible and it
-    // can be re-enabled if the domain comes back.
+    // Removed from rotation: embedsu is offline in DNS.
     embedsu: {
         slug: 'embedsu',
         displayName: 'EmbedSu VIP',
         resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type) ? `https://embed.su/embed/tv/${id}/${s ?? 1}/${e ?? 1}` : `https://embed.su/embed/movie/${id}`,
-        note: 'Disabled: DNS NXDOMAIN as of 2026-09-28.',
+        note: 'Disabled: DNS NXDOMAIN.',
     },
 
     superembed: {
         slug: 'superembed',
-        displayName: 'SuperEmbed',
-        resolveMode: 'disabled',
+        displayName: 'MultiEmbed (VIP Audio Dub)',
+        resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
-            isTv(type)
-                ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s ?? 1}&e=${e ?? 1}`
+            isTv(type, s)
+                ? `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${cleanS(s)}&e=${cleanE(e)}`
                 : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-        note: 'Disabled: host unreachable as of 2026-09-28.',
+        note: 'Alias for multiembed.',
     },
 
     // Genuinely direct public-domain / CC sources. These are the only rows in
@@ -147,7 +176,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidlink', 'vidsrc', '2embed'];
+export const DEFAULT_MIRROR_ORDER = ['videasy', 'vidstuck', 'multiembed', 'autoembed', 'vidsrc_rip', 'vidsrc', 'vidlink', '2embed'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {

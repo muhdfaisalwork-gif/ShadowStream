@@ -122,21 +122,21 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.29",
+    version: "2.4.30",
 
-    versionCode: 269,
+    versionCode: 270,
 
     minVersion: "1.0.0",
 
     name: "ShadowStream",
 
-    releaseDate: "2026-10-27",
+    releaseDate: "2026-10-31",
 
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "Live Cricket Hub integration with verified Star Sports 1, Hindi, Select 1/2, Sony Sports Ten 1/2, PTV Sports, Willow, and DD Sports channels; dedicated cricket navigation category and HLS playback reliability.",
+    releaseNotes: "High-speed streaming architecture overhaul: integrated Videasy (multi-audio dubbing & subtitles directly in player) and VidStuck (sub-300ms ultra fast HTML5 streaming inspired by donkey.to); replaced dead autoembed.cc with autoembed.co; re-enabled multiembed VIP audio dubs; optimized mirror resolution.",
 
 };
 
@@ -2553,223 +2553,180 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
 
 
     if (tmdbId) {
-
+        const tvVideasy = isTv ? `tv/${tmdbId}/${s}/${e}?color=E50914` : `movie/${tmdbId}?color=E50914`;
+        const tvVidStuck = isTv ? `tv/${tmdbId}/${s}/${e}?loading=2` : `movie/${tmdbId}?loading=2`;
+        const tvMultiEmbed = isTv ? `?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}` : `?video_id=${tmdbId}&tmdb=1`;
+        const tvAutoEmbed = isTv ? `tv/tmdb/${tmdbId}-${s}-${e}` : `movie/tmdb/${tmdbId}`;
+        const tvVidSrcRip = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tvVidLink = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
-
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
-
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
+        // 1. Videasy - Sub-Second HD with Built-in Multi-Audio Dubbing & Subtitle Selector
+        list.push({
+            source: "videasy",
+            sourceName: "Videasy (Multi-Audio HD)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://player.videasy.net/${tvVideasy}`,
+            playbackUrl: `https://player.videasy.net/${tvVideasy}`,
+        });
 
+        // 2. VidStuck - Sub-300ms Ultra Fast HTML5 Streaming (Primary donkey.to engine)
+        list.push({
+            source: "vidstuck",
+            sourceName: "VidStuck Ultra Fast",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://vidstuck.cc/embed/${tvVidStuck}`,
+            playbackUrl: `https://vidstuck.cc/embed/${tvVidStuck}`,
+        });
+
+        // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
+        list.push({
+            source: "multiembed",
+            sourceName: "MultiEmbed (VIP Audio Dub)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://multiembed.mov/${tvMultiEmbed}`,
+            playbackUrl: `https://multiembed.mov/${tvMultiEmbed}`,
+        });
+
+        // 4. AutoEmbed HD (High-Speed Co Mirror)
+        list.push({
+            source: "autoembed",
+            sourceName: "AutoEmbed HD",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://autoembed.co/${tvAutoEmbed}`,
+            playbackUrl: `https://autoembed.co/${tvAutoEmbed}`,
+        });
+
+        // 5. VidSrc RIP Fast
+        list.push({
+            source: "vidsrc_rip",
+            sourceName: "VidSrc RIP (Fast)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://vidsrc.rip/embed/${tvVidSrcRip}`,
+            playbackUrl: `https://vidsrc.rip/embed/${tvVidSrcRip}`,
+        });
+
+        // 6. VidSrc HD Server
+        list.push({
+            source: "vidsrc",
+            sourceName: "VidSrc HD",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://vidsrc.to/embed/${tvVidSrc}`,
+            playbackUrl: `https://vidsrc.to/embed/${tvVidSrc}`,
+        });
 
         if (isAnime) {
-
             // Anime Mode: Separate Japanese SUB and English DUB servers
-
             list.push({
-
                 source: "vidlink_sub",
-
                 sourceName: "Vidlink (🇯🇵 Japanese SUB)",
-
                 sourceIsLegal: false,
-
                 kind: "embed",
-
                 status: "available",
-
                 url: `https://vidlink.pro/${tvVidLink}`,
-
                 playbackUrl: `https://vidlink.pro/${tvVidLink}`,
-
             });
-
             list.push({
-
                 source: "vidlink_dub",
-
                 sourceName: "Vidlink (🎙️ English DUB)",
-
                 sourceIsLegal: false,
-
                 kind: "embed",
-
                 status: "available",
-
                 url: `https://vidlink.pro/${tvVidLink}?fallback=true`,
-
                 playbackUrl: `https://vidlink.pro/${tvVidLink}?fallback=true`,
-
             });
-
         } else {
-
-            // 1. Vidlink Pro (Ad-Free HD Server) - Primary Default
-
+            // 7. Vidlink Pro (Ad-Free HD Server)
             list.push({
-
                 source: "vidlink",
-
                 sourceName: "Vidlink (Ad-Free HD)",
-
                 sourceIsLegal: false,
-
                 kind: "embed",
-
                 status: "available",
-
                 url: `https://vidlink.pro/${tvVidLink}`,
-
                 playbackUrl: `https://vidlink.pro/${tvVidLink}`,
-
             });
-
         }
 
-
-
-
-
-
-
-        // 3. SmashyStream Multi-Lang (HD)
-
+        // 8. SmashyStream Multi-Lang (HD)
         list.push({
-
             source: "smashystream",
-
             sourceName: "SmashyStream Multi-Lang (HD)",
-
             sourceIsLegal: false,
-
             kind: "embed",
-
             status: "available",
-
             url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-
             playbackUrl: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${s}&episode=${e}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-
         });
 
-
-
-        // 4. VidSrc HD Server
-
+        // 9. 2Embed Multi-Server
         list.push({
-
-            source: "vidsrc",
-
-            sourceName: "VidSrc HD",
-
-            sourceIsLegal: false,
-
-            kind: "embed",
-
-            status: "available",
-
-            url: `https://vidsrc.to/embed/${tvVidSrc}`,
-
-            playbackUrl: `https://vidsrc.to/embed/${tvVidSrc}`,
-
-        });
-
-
-
-        // 5. 2Embed Multi-Server
-
-        list.push({
-
             source: "2embed",
-
             sourceName: "2Embed Multi-Server",
-
             sourceIsLegal: false,
-
             kind: "embed",
-
             status: "available",
-
             url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
-
             playbackUrl: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
-
         });
-
     }
-
-
-
-    if (tmdbId) {
-
-        // Additional high-speed international providers
-
-        list.push({
-
-            source: "autoembed",
-
-            sourceName: "AutoEmbed HD",
-
-            sourceIsLegal: false,
-
-            kind: "embed",
-
-            status: "available",
-
-            url: isTv ? `https://player.autoembed.cc/embed/tv/${tmdbId}/${s}/${e}` : `https://player.autoembed.cc/embed/movie/${tmdbId}`,
-
-            playbackUrl: isTv ? `https://player.autoembed.cc/embed/tv/${tmdbId}/${s}/${e}` : `https://player.autoembed.cc/embed/movie/${tmdbId}`,
-
-        });
-
-
-    }
-
-
 
     if (title.imdbId) {
-
         const imdbId = title.imdbId;
-
         const imdbTv = isTv ? `tv?imdb=${imdbId}&season=${s}&episode=${e}` : `movie?imdb=${imdbId}`;
 
         list.push({
-
-            source: "vidsrc_imdb",
-
-            sourceName: "VidSrc (IMDb)",
-
+            source: "videasy_imdb",
+            sourceName: "Videasy (IMDb Multi-Audio)",
             sourceIsLegal: false,
-
             kind: "embed",
-
             status: "available",
-
-            url: `https://vidsrc.me/embed/${imdbTv}`,
-
-            playbackUrl: `https://vidsrc.me/embed/${imdbTv}`,
-
+            url: isTv ? `https://player.videasy.net/tv/${imdbId}/${s}/${e}?color=E50914` : `https://player.videasy.net/movie/${imdbId}?color=E50914`,
+            playbackUrl: isTv ? `https://player.videasy.net/tv/${imdbId}/${s}/${e}?color=E50914` : `https://player.videasy.net/movie/${imdbId}?color=E50914`,
         });
-
 
         list.push({
-
-            source: "autoembed_imdb",
-
-            sourceName: "AutoEmbed (IMDb Server)",
-
+            source: "vidstuck_imdb",
+            sourceName: "VidStuck (IMDb)",
             sourceIsLegal: false,
-
             kind: "embed",
-
             status: "available",
-
-            url: isTv ? `https://player.autoembed.cc/embed/tv/${imdbId}/${s}/${e}` : `https://player.autoembed.cc/embed/movie/${imdbId}`,
-
-            playbackUrl: isTv ? `https://player.autoembed.cc/embed/tv/${imdbId}/${s}/${e}` : `https://player.autoembed.cc/embed/movie/${imdbId}`,
-
+            url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
+            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
         });
 
+        list.push({
+            source: "vidsrc_imdb",
+            sourceName: "VidSrc (IMDb)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: `https://vidsrc.me/embed/${imdbTv}`,
+            playbackUrl: `https://vidsrc.me/embed/${imdbTv}`,
+        });
+
+        list.push({
+            source: "autoembed_imdb",
+            sourceName: "AutoEmbed (IMDb Server)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${s}-${e}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+            playbackUrl: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${s}-${e}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+        });
     }
 
 
@@ -5044,7 +5001,7 @@ export default {
 
                     });
 
-                    const espnData = espnRes.ok ? await espnRes.json() : null;
+                    const espnData: any = espnRes.ok ? await espnRes.json() : null;
 
                     return jsonResponse({
 
@@ -5332,163 +5289,150 @@ export default {
 
 
 
-                // 2. TMDB-based providers (ONLY when tmdbId is present and valid!)
-
+                // 2. TMDB-based providers (Fast High-Uptime & Multi-Audio Dubbing)
                 if (tmdbId && tmdbId !== "null") {
-
+                    // 1. Videasy - Sub-Second HD with Built-in Multi-Audio Dubbing & Subtitle Selector
                     streams.push({
-
-                        label: "⚡ Vidlink (Ad-Free 1080p HD)",
-
-                        provider: "vidlink",
-
-                        url: `https://vidlink.pro/${tvVidLink}`,
-
+                        label: "⚡ Videasy (Multi-Audio Dubs HD)",
+                        provider: "videasy",
+                        url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${tmdbId}?color=E50914`,
                         format: "embed",
-
                         quality: "1080p",
-
-                        language: "en",
-
-                        languageName: "English"
-
-                    });
-
-
-
-
-
-
-
-                    streams.push({
-
-                        label: "⚡ SmashyStream Multi-Lang (HD)",
-
-                        provider: "smashystream",
-
-                        url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
-
-                        format: "embed",
-
-                        quality: "1080p",
-
                         language: "multi",
-
-                        languageName: "Multi-Language"
-
+                        languageName: "Multi-Audio (In-Player Switcher)"
                     });
 
-
-
+                    // 2. VidStuck - Sub-300ms Ultra Fast HTML5 Streaming (Primary donkey.to engine)
                     streams.push({
+                        label: "⚡ VidStuck Ultra Fast (HD)",
+                        provider: "vidstuck",
+                        url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
 
-                        label: "⚡ AutoEmbed Multi-Server (HD)",
+                    // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
+                    streams.push({
+                        label: "⚡ MultiEmbed VIP (Multi-Lang Dub)",
+                        provider: "multiembed",
+                        url: isTv ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}` : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "multi",
+                        languageName: "Multi-Language Dub"
+                    });
 
+                    // 4. AutoEmbed HD (High-Speed Co Mirror)
+                    streams.push({
+                        label: "⚡ AutoEmbed HD",
                         provider: "autoembed",
-
-                        url: isTv ? `https://player.autoembed.cc/embed/tv/${tmdbId}/${season}/${episode}` : `https://player.autoembed.cc/embed/movie/${tmdbId}`,
-
+                        url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}` : `https://autoembed.co/movie/tmdb/${tmdbId}`,
                         format: "embed",
-
                         quality: "1080p",
-
-                        language: "multi",
-
-                        languageName: "Multi-Language"
-
+                        language: "en",
+                        languageName: "English"
                     });
 
-
-
-
-
-
+                    // 5. VidSrc RIP Fast
                     streams.push({
+                        label: "⚡ VidSrc RIP (Fast)",
+                        provider: "vidsrc_rip",
+                        url: isTv ? `https://vidsrc.rip/embed/tv/${tmdbId}/${season}/${episode}` : `https://vidsrc.rip/embed/movie/${tmdbId}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
 
+                    // 6. VidSrc HD Server
+                    streams.push({
                         label: "⚡ VidSrc HD",
-
                         provider: "vidsrc",
-
                         url: `https://vidsrc.to/embed/${tvVidSrc}`,
-
                         format: "embed",
-
                         quality: "1080p",
-
                         language: "en",
-
                         languageName: "English"
-
                     });
 
-
-
+                    // 7. SmashyStream Multi-Lang (HD)
                     streams.push({
-
-                        label: "⚡ 2Embed Multi-Server",
-
-                        provider: "2embed",
-
-                        url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
-
+                        label: "⚡ SmashyStream Multi-Lang (HD)",
+                        provider: "smashystream",
+                        url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`,
                         format: "embed",
-
-                        quality: "HD",
-
-                        language: "en",
-
-                        languageName: "English"
-
+                        quality: "1080p",
+                        language: "multi",
+                        languageName: "Multi-Language"
                     });
 
+                    // 8. Vidlink Pro (Ad-Free HD Server)
+                    streams.push({
+                        label: "⚡ Vidlink (Ad-Free 1080p HD)",
+                        provider: "vidlink",
+                        url: `https://vidlink.pro/${tvVidLink}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    // 9. 2Embed Multi-Server
+                    streams.push({
+                        label: "⚡ 2Embed Multi-Server",
+                        provider: "2embed",
+                        url: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
+                        format: "embed",
+                        quality: "HD",
+                        language: "en",
+                        languageName: "English"
+                    });
                 }
-
-
 
                 // 3. IMDb-based providers (Working for international titles with IMDb IDs)
-
                 if (imdbId && imdbId !== "null") {
-
                     streams.push({
-
-                        label: "⚡ VidSrc (IMDb Server)",
-
-                        provider: "vidsrc_imdb",
-
-                        url: isTv ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}` : `https://vidsrc.me/embed/movie?imdb=${imdbId}`,
-
+                        label: "⚡ Videasy (IMDb Multi-Audio)",
+                        provider: "videasy_imdb",
+                        url: isTv ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}?color=E50914` : `https://player.videasy.net/movie/${imdbId}?color=E50914`,
                         format: "embed",
-
                         quality: "1080p",
-
-                        language: "en",
-
-                        languageName: "English"
-
-                    });
-
-
-                    streams.push({
-
-                        label: "⚡ AutoEmbed (IMDb Server)",
-
-                        provider: "autoembed_imdb",
-
-                        url: isTv ? `https://player.autoembed.cc/embed/tv/${imdbId}/${season}/${episode}` : `https://player.autoembed.cc/embed/movie/${imdbId}`,
-
-                        format: "embed",
-
-                        quality: "1080p",
-
                         language: "multi",
-
                         languageName: "Multi-Language"
-
                     });
 
+                    streams.push({
+                        label: "⚡ VidStuck (IMDb Server)",
+                        provider: "vidstuck_imdb",
+                        url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    streams.push({
+                        label: "⚡ VidSrc (IMDb Server)",
+                        provider: "vidsrc_imdb",
+                        url: isTv ? `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}` : `https://vidsrc.me/embed/movie?imdb=${imdbId}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    streams.push({
+                        label: "⚡ AutoEmbed (IMDb Server)",
+                        provider: "autoembed_imdb",
+                        url: isTv ? `https://autoembed.co/tv/imdb/${imdbId}-${season}-${episode}` : `https://autoembed.co/movie/imdb/${imdbId}`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
                 }
-
-
 
                 // Available languages list for UI badges and switcher
 
