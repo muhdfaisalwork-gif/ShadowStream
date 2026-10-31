@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 269
-VERSION_NAME = "2.4.29"
+VERSION_CODE = 281
+VERSION_NAME = "2.4.41"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -191,7 +191,9 @@ public class MainActivity extends Activity {{
         "adjust.com", "appsflyer.com", "branch.io", "singular.net",
         "kochava.com", "melbet.com", "mostbet.com", "parimatch.com",
         "dafabet.com", "stake.com",
-        "betwinner.com", "megapari.com", "linebet.com", "mostbet-pk.com", "pin-up.bet"
+        "betwinner.com", "megapari.com", "linebet.com", "mostbet-pk.com", "pin-up.bet",
+        // v2.4.41: trackers observed live on the old providers.
+        "meatusbyway.cfd", "wonnotscroganisoin.cyou", "speedracelight.com"
     }};
 
     private static final String[] AD_PATTERNS = new String[] {{
@@ -232,11 +234,14 @@ public class MainActivity extends Activity {{
         "ssmoviestvs.site", "workers.dev", "localhost", "127.0.0.1",
         "archive.org", "cloudflare", "google", "googleapis.com", "googleusercontent.com",
         "github.com", "themoviedb.org", "tmdb.org", "imdb.com",
-        "vidlink.pro", "vidsrc.to", "vidsrc.me", "vidsrc.net", "vidsrc.in", "vidsrc.pm",
-        "vidsrc.xyz", "vidsrc.cc", "2embed.cc", "2embed.to", "2embed.skin",
-        "smashystream.xyz", "smashystream.com", "multiembed.mov", "embed.su",
-        "superembed.stream", "moviesapi.club", "autoembed.co",
-        "animesalt.cc", "animesalt.com", "moviebox.ng",
+        // Live rotation (v2.4.41). vidstuck.cc is the #1 provider and
+        // sacdn.hakunaymatata.com is the CDN it serves the DASH segments from -
+        // without these two the WebView blocks the player frame itself.
+        "vidstuck.cc", "nontongo.win", "vidy.st", "vidlink.pro",
+        "sacdn.hakunaymatata.com",
+        "vidsrc.to", "vidsrc.me", "vidsrc.net", "vidsrc.in", "vidsrc.pm",
+        "vidsrc.xyz", "vidsrc.cc", "vidsrc.rip",
+        "2embed.cc", "2embed.to", "2embed.skin",
         "cloudorchestranova.com", "playercdn.net", "rabbitstream.net", "megacloud.tv",
         "dokicloud.one", "youtube.com", "googlevideo.com"
     }};
