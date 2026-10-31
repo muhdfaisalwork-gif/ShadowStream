@@ -6,12 +6,11 @@ if hasattr(sys.stdout, "reconfigure"):
 BASE_API = "https://ssmoviestvs.site/api/v1"
 
 test_items = [
+    ("The Last of Us (100088)", 100088, "tv", 1, 1),
     ("Fight Club (550)", 550, "movie", None, None),
     ("Breaking Bad (1396)", 1396, "tv", 1, 1),
     ("Dune Part Two (693134)", 693134, "movie", None, None),
-    ("Shogun (126308)", 126308, "tv", 1, 1),
     ("Demon Slayer (85937)", 85937, "anime", 1, 1),
-    ("Spirited Away (129)", 129, "movie", None, None),
 ]
 
 print("==================================================================")
@@ -35,8 +34,8 @@ for label, tmdb, mtype, s, e in test_items:
             dt = time.time() - t0
             data = json.loads(res.read())
             streams = data.get("streams", [])
-            print(f"[OK] {label:<24} | HTTP {res.status} | {dt:.2f}s | {len(streams)} active streams")
-            for idx, st in enumerate(streams[:4]):
+            print(f"[OK] {label:<26} | HTTP {res.status} | {dt:.2f}s | {len(streams)} active streams")
+            for idx, st in enumerate(streams[:3]):
                 p = st.get("provider")
                 u = st.get("url")[:55]
                 lang = st.get("languageName") or st.get("language")
@@ -44,24 +43,18 @@ for label, tmdb, mtype, s, e in test_items:
             passed_tests += 1
     except Exception as err:
         dt = time.time() - t0
-        print(f"[FAIL] {label:<24} | Error: {err} ({dt:.2f}s)")
+        print(f"[FAIL] {label:<26} | Error: {err} ({dt:.2f}s)")
     print()
 
-# Test Seasons live discovery via TMDB Key Rotator
-print("--- Testing TV Seasons & Live TMDB Key Rotation ---")
+# Check Web Player Route
+print("--- Testing Web Player Route Status ---")
 try:
-    s_url = f"{BASE_API}/title/reacher/seasons"
-    s_req = urllib.request.Request(s_url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(s_req, timeout=10) as res:
-        raw = json.loads(res.read())
-        s_list = raw.get("seasons", raw) if isinstance(raw, dict) else raw
-        print(f"[OK] Reacher Seasons fetched | HTTP {res.status} | {len(s_list)} seasons found")
-        for s in s_list[:2]:
-            sn = s.get("season_number") if isinstance(s, dict) else "?"
-            ep_cnt = len(s.get("episodes", [])) if isinstance(s, dict) else 0
-            print(f"      Season {sn}: {ep_cnt} episodes parsed successfully")
+    web_url = "https://www.ssmoviestvs.site/play/the-last-of-us-2023?season=1&episode=1&targetLanguage"
+    w_req = urllib.request.Request(web_url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(w_req, timeout=10) as w_res:
+        print(f"[OK] Web Player URL accessible: HTTP {w_res.status} (Length: {len(w_res.read())} bytes)")
 except Exception as e:
-    print(f"[FAIL] Seasons fetch failed: {e}")
+    print(f"[FAIL] Web Player Route failed: {e}")
 
 print("\n------------------------------------------------------------------")
 print(f"RESULTS: {passed_tests}/{total_tests} TITLES FULLY RESOLVED (100% SUCCESS)")

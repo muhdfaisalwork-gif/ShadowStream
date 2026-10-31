@@ -228,6 +228,9 @@ export default function ShadowStreamPlayer({
     const [activeDubLang, setActiveDubLang] = useState('native'); // 'native' | lang code like 'hi', 'en', 'ar'
     const [dubToast, setDubToast] = useState(null);
 
+    const [selectedSubtitle, setSelectedSubtitle] = useState('off');
+    const [activeTrackBlobUrls, setActiveTrackBlobUrls] = useState({});
+
     // Auto-apply targetLanguage on initial load
     const hasAppliedTargetLangRef = useRef(false);
     useEffect(() => {
@@ -366,6 +369,13 @@ export default function ShadowStreamPlayer({
     const failoverAttemptsRef = useRef(0);
     const embedTimer = useRef(null);
 
+    const tryNextMirror = useCallback(() => {
+        if (!mirrorList || mirrorList.length < 2) return;
+        setPlayerHandoffFailed(false);
+        const next = (activeMirrorIdx + 1) % mirrorList.length;
+        if (onSelectMirror) onSelectMirror(mirrorList[next], next);
+    }, [mirrorList, activeMirrorIdx, onSelectMirror]);
+
     const handleEmbedLoaded = useCallback(() => {
         setEmbedState('ready');
         if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; }
@@ -399,13 +409,6 @@ export default function ShadowStreamPlayer({
         }, 20000);
         return () => { if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; } };
     }, [streamUrl]);
-
-    const tryNextMirror = useCallback(() => {
-        if (!mirrorList || mirrorList.length < 2) return;
-        setPlayerHandoffFailed(false);
-        const next = (activeMirrorIdx + 1) % mirrorList.length;
-        if (onSelectMirror) onSelectMirror(mirrorList[next], next);
-    }, [mirrorList, activeMirrorIdx, onSelectMirror]);
 
     // The watchdog firing does not mean the stream is dead — on a three-hop
     // provider it usually just means we ran out of patience first. Give the
@@ -466,15 +469,6 @@ export default function ShadowStreamPlayer({
         const t = setInterval(() => setLoadSeconds(s => s + 1), 1000);
         return () => clearInterval(t);
     }, [isLoadingContent, streamUrl]);
-
-    // MUST be declared before the effect below reads it. It used to sit ~30
-    // lines further down with the other player state, and because the effect's
-    // DEPENDENCY ARRAY is evaluated during render, every mount hit the
-    // temporal dead zone and threw "Cannot access 'selectedSubtitle' before
-    // initialization" — which white-screened the entire player route. Hooks
-    // that appear earlier in the body must not depend on state declared later.
-    const [selectedSubtitle, setSelectedSubtitle] = useState('off');
-    const [activeTrackBlobUrls, setActiveTrackBlobUrls] = useState({});
 
     const normalizedSubtitles = useMemo(() => {
         if (!Array.isArray(subtitles)) return [];
