@@ -117,6 +117,10 @@ jobs:
           python-version: "3.11"
 
       - name: Verify live playback viability
+        # Only meaningful when a deploy actually happened. Without the Cloudflare
+        # token the deploy steps are skipped, so the live site still serves the
+        # previous release and the version check would fail for the wrong reason.
+        if: env.CLOUDFLARE_API_TOKEN != ''
         run: python scripts/verify_streaming_resolution.py
 
       - name: Summary
