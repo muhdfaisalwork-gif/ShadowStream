@@ -14,6 +14,7 @@ import SurpriseModal from '../components/SurpriseModal';
 import { getApiBase } from '../utils/api';
 import { Storage, HistoryAPI, WatchlistAPI } from '../utils/storage';
 import { useRouteMeta } from '../utils/useRouteMeta';
+import { useIsFocused } from '@react-navigation/native';
 import { useResponsive } from '../theme/scaling';
 
 function HomeSportsChannelCard({ channel, cardWidth, onPress }) {
@@ -72,8 +73,11 @@ export default function HomeScreen({ navigation }) {
 
     useRouteMeta('Home');
 
-    // Clean any residual playback query params if returning to Home
+    const isFocused = useIsFocused();
+
+    // Clean any residual playback query params and terminate audio on returning to Home
     useEffect(() => {
+        if (!isFocused) return;
         if (typeof window !== 'undefined' && window.location && window.history?.replaceState) {
             try {
                 const url = new URL(window.location.href);
@@ -86,7 +90,28 @@ export default function HomeScreen({ navigation }) {
                 }
             } catch (_) {}
         }
-    }, []);
+        // Hard terminate any background audio or video
+        if (typeof document !== 'undefined') {
+            try {
+                const mediaEls = document.querySelectorAll('video, audio');
+                mediaEls.forEach(el => {
+                    try {
+                        el.pause();
+                        el.removeAttribute('src');
+                        el.load();
+                    } catch (_) {}
+                });
+                const iframes = document.querySelectorAll('iframe');
+                iframes.forEach(f => {
+                    try {
+                        if (f.src && !f.src.startsWith('chrome-extension')) {
+                            f.src = 'about:blank';
+                        }
+                    } catch (_) {}
+                });
+            } catch (_) {}
+        }
+    }, [isFocused]);
 
     // Load static "Top Picks" baked into /featured.json — used when API is unreachable
     // so the offline hub always has real movie cards instead of just empty tiles.

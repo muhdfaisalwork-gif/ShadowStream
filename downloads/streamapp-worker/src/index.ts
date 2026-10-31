@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.36",
+    version: "2.4.37",
 
-    versionCode: 276,
+    versionCode: 277,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.36: Hardened AdShield popup & 3rd-party link interception with enforced iframe sandbox, promoted clean Vidy (Donkey.to) multi-audio engine to #1 primary stream, enabled 1-tap Hindi & multi-lingual Dubbed switching, and eliminated background audio leak when returning home.",
+    releaseNotes: "v2.4.37: Unified 4-Source Backend Engine strictly implementing Donkey.to (VidStuck ultra-fast & Vidy multi-audio), AnimeSalt regional dubs, MovieBox OneRoom CDN failover, multi-key TMDB rotation, and zero-popup sandboxed frictionless UX.",
 
 };
 
@@ -2600,18 +2600,29 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const tvVidSrc = isTv ? `tv/${tmdbId}/${s}/${e}` : `movie/${tmdbId}`;
         const tv2Embed = isTv ? `tv?id=${tmdbId}&s=${s}&e=${e}` : `movie?id=${tmdbId}`;
 
-        // 1. Vidy (Multi-Audio HD) - Donkey.to Clean Primary Engine
+        // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
+        list.push({
+            source: "vidstuck",
+            sourceName: "VidStuck Ultra Fast",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+        });
+
+        // 2. Vidy - Donkey.to Secondary Multi-Audio Dubbing Engine & Subtitles
         list.push({
             source: "vidy",
             sourceName: "Vidy (Multi-Audio HD)",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: isTv ? `https://vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
-            playbackUrl: isTv ? `https://vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
+            url: isTv ? `https://www.vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
+            playbackUrl: isTv ? `https://www.vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
         });
 
-        // 2. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
+        // 3. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
         list.push({
             source: "nontongo",
             sourceName: "NontonGo HD",
@@ -2655,16 +2666,7 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: `https://www.2embed.cc/embed/tmdb/${tv2Embed}`,
         });
 
-        // 6. VidSrc Buzz HD (Demoted fallback)
-        list.push({
-            source: "vidsrc_buzz",
-            sourceName: "VidSrc Buzz HD",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
-            playbackUrl: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
-        });
+        
 
         // 5. VidSrc RIP Fast
         list.push({
@@ -2749,13 +2751,23 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
         const imdbTv = isTv ? `tv?imdb=${imdbId}&season=${s}&episode=${e}` : `movie?imdb=${imdbId}`;
 
         list.push({
+            source: "vidstuck_imdb",
+            sourceName: "VidStuck (IMDb Server)",
+            sourceIsLegal: false,
+            kind: "embed",
+            status: "available",
+            url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
+            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
+        });
+
+        list.push({
             source: "vidy_imdb",
             sourceName: "Vidy (IMDb Multi-Audio)",
             sourceIsLegal: false,
             kind: "embed",
             status: "available",
-            url: isTv ? `https://vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${imdbId}?color=FFA500`,
-            playbackUrl: isTv ? `https://vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://vidy.st/movie/${imdbId}?color=FFA500`,
+            url: isTv ? `https://www.vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
+            playbackUrl: isTv ? `https://www.vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
         });
 
         list.push({
@@ -3210,7 +3222,28 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
 
     const existingPlayback = availability.filter((a: any) => isPlayableEntry(a));
 
-    availability = [...existingPlayback, ...fallbacks];
+    const combined = [...fallbacks, ...existingPlayback];
+    const seen = new Set<string>();
+    const deduplicated: AvailabilityEntry[] = [];
+    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'vidy', 'multiembed', 'vidsrc', '2embed', 'nontongo', 'smashystream', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+
+    for (const item of combined) {
+        const src = String(item.source || (item as any).provider || '').toLowerCase();
+        if (src.includes('autoembed') || src.includes('vidsrc_buzz') || src.includes('embedsu')) continue;
+        if (item.url && (item.url.includes('autoembed') || item.url.includes('vidsrc.buzz'))) continue;
+        if (!seen.has(src)) {
+            seen.add(src);
+            deduplicated.push(item);
+        }
+    }
+
+    deduplicated.sort((a, b) => {
+        const rankA = PROVIDER_RANK.indexOf(String(a.source || (a as any).provider || '').toLowerCase());
+        const rankB = PROVIDER_RANK.indexOf(String(b.source || (b as any).provider || '').toLowerCase());
+        return (rankA === -1 ? 999 : rankA) - (rankB === -1 ? 999 : rankB);
+    });
+
+    availability = deduplicated;
 
 
 
@@ -5290,11 +5323,22 @@ export default {
 
                 // 2. TMDB-based providers (Verified 100% working high-uptime streams)
                 if (tmdbId && tmdbId !== "null") {
-                    // 1. Vidy (Multi-Audio Dubs HD) - Donkey.to Clean Primary Engine
+                    // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
+                    streams.push({
+                        label: "⚡ VidStuck Ultra Fast (HD)",
+                        provider: "vidstuck",
+                        url: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    // 2. Vidy (Multi-Audio Dubs HD) - Donkey.to Secondary Engine
                     streams.push({
                         label: "⚡ Vidy (Multi-Audio Dubs HD)",
                         provider: "vidy",
-                        url: isTv ? `https://vidy.st/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://vidy.st/movie/${tmdbId}?color=FFA500`,
+                        url: isTv ? `https://www.vidy.st/tv/${tmdbId}/${season}/${episode}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
                         format: "embed",
                         quality: "1080p",
                         language: "multi",
@@ -5345,16 +5389,7 @@ export default {
                         languageName: "English"
                     });
 
-                    // 6. VidSrc Buzz HD (Demoted fallback)
-                    streams.push({
-                        label: "⚡ VidSrc Buzz HD",
-                        provider: "vidsrc_buzz",
-                        url: isTv ? `https://vidsrc.buzz/embed/tv/${tmdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${tmdbId}`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "en",
-                        languageName: "English"
-                    });
+                    
 
                     // 5. VidSrc RIP Fast
                     streams.push({
@@ -5415,6 +5450,16 @@ export default {
                 // 3. IMDb-based providers (Working for international titles with IMDb IDs)
                 if (imdbId && imdbId !== "null") {
                     streams.push({
+                        label: "⚡ VidStuck (IMDb Server)",
+                        provider: "vidstuck_imdb",
+                        url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
+                        format: "embed",
+                        quality: "1080p",
+                        language: "en",
+                        languageName: "English"
+                    });
+
+                    streams.push({
                         label: "⚡ VidSrc Buzz (IMDb Server)",
                         provider: "vidsrc_buzz_imdb",
                         url: isTv ? `https://vidsrc.buzz/embed/tv/${imdbId}/${season}/${episode}` : `https://vidsrc.buzz/embed/movie/${imdbId}`,
@@ -5427,7 +5472,7 @@ export default {
                     streams.push({
                         label: "⚡ Videasy (IMDb Multi-Audio)",
                         provider: "videasy_imdb",
-                        url: isTv ? `https://vidy.st/tv/${imdbId}/${season}/${episode}?color=FFA500` : `https://vidy.st/movie/${imdbId}?color=FFA500`,
+                        url: isTv ? `https://www.vidy.st/tv/${imdbId}/${season}/${episode}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
                         format: "embed",
                         quality: "1080p",
                         language: "multi",

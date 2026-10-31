@@ -417,26 +417,7 @@ export default function ShadowStreamPlayer({
         setEmbedState('loading');
         let cancelled = false;
 
-        // Fast client-side DNS and network reachability check
-        if (typeof window !== 'undefined' && window.fetch && streamUrl.startsWith('http')) {
-            const probeCtrl = new AbortController();
-            const probeTimer = setTimeout(() => probeCtrl.abort(), 3500);
-            fetch(streamUrl, { mode: 'no-cors', cache: 'no-store', signal: probeCtrl.signal })
-                .then(() => {
-                    clearTimeout(probeTimer);
-                })
-                .catch((err) => {
-                    clearTimeout(probeTimer);
-                    if (cancelled) return;
-                    // If network failed (ERR_NAME_NOT_RESOLVED / ISP blocked domain), auto-failover!
-                    if (err && err.name !== 'AbortError' && mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < 3) {
-                        failoverAttemptsRef.current += 1;
-                        setDubToast('⚡ Stream unreachable on network. Switching to backup mirror...');
-                        setTimeout(() => setDubToast(null), 3500);
-                        tryNextMirror();
-                    }
-                });
-        }
+// Stream watchdog handles iframe errors directly without fragile CORS fetch probes
 
         if (embedTimer.current) clearTimeout(embedTimer.current);
         embedTimer.current = setTimeout(() => {
@@ -742,14 +723,35 @@ export default function ShadowStreamPlayer({
     }, [onSelectMirror]);
 
     const selectDubAudio = useCallback((dubCode) => {
-        const effectiveId = tmdbId || mediaId || (() => {
-            if (typeof streamUrl === 'string') {
-                const m = streamUrl.match(/(?:movie\/|tv\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/);
-                if (m && m[1]) return m[1];
-            }
+        const extractNumericId = (val) => {
+            if (!val) return null;
+            const str = String(val).trim();
+            if (/^\d+$/.test(str) && !/^(19\d\d|20\d\d)$/.test(str)) return str;
+            const m = str.match(/(?:embed\/movie\/|embed\/tv\/|movie\/|tv\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/i);
+            if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) return m[1];
             return null;
-        })();
+        };
+        const effectiveId = extractNumericId(tmdbId) || extractNumericId(streamUrl) || extractNumericId(mediaId);
         const isTvTitle = Boolean(season != null || episode != null || mediaType === 'tv');
+
+        const MULTIEMBED_LANG_MAP = {
+            hi: 'hindi',
+            ta: 'tamil',
+            te: 'telugu',
+            ml: 'malayalam',
+            bn: 'bengali',
+            es: 'spanish',
+            fr: 'french',
+            de: 'german',
+            it: 'italian',
+            pt: 'portuguese',
+            ru: 'russian',
+            ja: 'japanese',
+            ko: 'korean',
+            zh: 'chinese',
+            ar: 'arabic',
+            tr: 'turkish',
+        };
 
         if (!dubCode || dubCode === 'native') {
             setActiveDubLang('native');
@@ -757,13 +759,13 @@ export default function ShadowStreamPlayer({
             if (isDirect && availableAudioTracks.length > 0) {
                 selectAudioTrack(0);
             }
-            // Switch back to master English stream
+            // Switch back to master Donkey.to English stream
             const masterUrl = isTvTitle
-                ? `https://vidy.st/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500`
-                : `https://vidy.st/movie/${effectiveId}?color=FFA500`;
+                ? (effectiveId ? `https://vidstuck.cc/embed/tv/${effectiveId}/${season || 1}/${episode || 1}?loading=2` : `https://www.vidy.st/tv/${effectiveId}/${season || 1}/${episode || 1}?color=FFA500`)
+                : (effectiveId ? `https://vidstuck.cc/embed/movie/${effectiveId}?loading=2` : `https://www.vidy.st/movie/${effectiveId}?color=FFA500`);
             const masterMirror = {
-                label: 'Vidy (Multi-Audio HD)',
-                provider: 'vidy',
+                label: 'VidStuck Ultra Fast (HD)',
+                provider: 'vidstuck',
                 url: masterUrl,
                 format: 'embed',
                 quality: '1080p',
@@ -785,6 +787,7 @@ export default function ShadowStreamPlayer({
         setActiveDubLang(cleanCode);
         AudioPreferencesAPI.setPreferred(cleanCode);
         const langLabel = LANGUAGE_NAMES[cleanCode] || cleanCode.toUpperCase();
+        const dubWord = MULTIEMBED_LANG_MAP[cleanCode] || cleanCode;
 
         // 1. Direct Mode with multiple embedded audio tracks
         if (isDirect && availableAudioTracks.length > 1) {
@@ -844,10 +847,10 @@ export default function ShadowStreamPlayer({
         }
 
         // 4. Hindi & Indian Regional Dubs: MultiEmbed Server 2 VIP
-        if (['hi', 'ta', 'te', 'ml'].includes(cleanCode) && effectiveId) {
+        if (['hi', 'ta', 'te', 'ml', 'bn'].includes(cleanCode) && effectiveId) {
             const regionalUrl = isTvTitle
-                ? `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&s=${season || 1}&e=${episode || 1}&server=2&dub=${cleanCode}`
-                : `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&server=2&dub=${cleanCode}`;
+                ? `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&s=${season || 1}&e=${episode || 1}&server=2&dub=${dubWord}`
+                : `https://multiembed.mov/?video_id=${effectiveId}&tmdb=1&server=2&dub=${dubWord}`;
             const regionalMirror = {
                 label: `MultiEmbed (${langLabel} Dub VIP)`,
                 provider: 'multiembed',
@@ -868,7 +871,7 @@ export default function ShadowStreamPlayer({
             return;
         }
 
-        // 5. European Multi-Language (Spanish, French, German, Italian, Portuguese, Russian): SmashyStream
+        // 5. European Multi-Language (Spanish, French, German, Italian, Portuguese, Russian): SmashyStream / MultiEmbed
         if (['es', 'fr', 'de', 'it', 'pt', 'ru'].includes(cleanCode) && effectiveId) {
             const smashyUrl = isTvTitle
                 ? `https://embed.smashystream.com/playere.php?tmdb=${effectiveId}&season=${season || 1}&episode=${episode || 1}`
@@ -3104,13 +3107,15 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     subDubPill: {
-        flex: 1,
-        paddingVertical: 6,
-        borderRadius: 4,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 6,
         alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.15)',
+        minWidth: 80,
     },
     subDubPillActive: {
         backgroundColor: 'rgba(229, 9, 20, 0.25)',

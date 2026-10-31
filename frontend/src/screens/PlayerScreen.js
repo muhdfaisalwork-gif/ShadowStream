@@ -138,6 +138,7 @@ export default function PlayerScreen({ route, navigation }) {
     const [sourceName, setSourceName] = useState(null);
     const [mirrorList, setMirrorList] = useState([]); // [{label, provider, url, quality, direct, resolveMode}]
     const [activeMirrorIdx, setActiveMirrorIdx] = useState(0);
+    const [resolvedTmdb, setResolvedTmdb] = useState(null);
     const [resolveNote, setResolveNote] = useState(null);
     const [renditions, setRenditions] = useState([]);
     const [animeInfo, setAnimeInfo] = useState(null);
@@ -464,6 +465,7 @@ export default function PlayerScreen({ route, navigation }) {
                 }
             }
             const finalTmdb = currentTmdb || effectiveTmdb;
+            if (finalTmdb && finalTmdb !== resolvedTmdb) setResolvedTmdb(String(finalTmdb));
 
             // Fetch worker-side multi-language & regional dub streams (SmashyStream, Vidlink, AnimeSalt, etc.)
             let workerMultiLangStreams = [];
@@ -542,36 +544,40 @@ export default function PlayerScreen({ route, navigation }) {
                 const dyn = [];
                 if (finalTmdb) {
                     if (isMovie) {
-                        // 1. Clean Primary Donkey.to Engine (Multi-Audio, zero popups)
-                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${finalTmdb}?color=FFA500` });
-                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${finalTmdb}` });
+                        // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to engine)
+                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/movie/${finalTmdb}?loading=2` });
+                        // 2. Vidy - Donkey.to Secondary Multi-Audio Engine
+                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://www.vidy.st/movie/${finalTmdb}?color=FFA500` });
+                        // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
                         dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${finalTmdb}&tmdb=1` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/movie/${finalTmdb}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/movie?id=${finalTmdb}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/movie/${finalTmdb}` });
                         dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}` });
-                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${finalTmdb}` });
                         dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/movie/${finalTmdb}` });
                     } else {
-                        // 1. Clean Primary TV Engine (Multi-Audio, zero popups)
-                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
-                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
+                        // 1. VidStuck - Sub-200ms Ultra Fast Universal HTML5 TV Streaming (Primary donkey.to engine)
+                        dyn.push({ source: 'vidstuck', sourceName: 'VidStuck Ultra Fast (HD)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?loading=2` });
+                        // 2. Vidy - Donkey.to Secondary Multi-Audio TV Engine
+                        dyn.push({ source: 'vidy', sourceName: 'Vidy (Multi-Audio HD)', kind: 'embed', playbackUrl: `https://www.vidy.st/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
+                        // 3. MultiEmbed - High Uptime VIP Multi-Language Audio Dubbed Server
                         dyn.push({ source: 'multiembed', sourceName: 'MultiEmbed (VIP Audio Dub)', kind: 'embed', playbackUrl: `https://multiembed.mov/?video_id=${finalTmdb}&tmdb=1&s=${activeS || 1}&e=${activeE || 1}` });
+                        dyn.push({ source: 'vidsrc', sourceName: 'VidSrc HD', kind: 'embed', playbackUrl: `https://vidsrc.to/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: '2embed', sourceName: '2Embed Multi-Server', kind: 'embed', playbackUrl: `https://www.2embed.cc/embed/tmdb/tv?id=${finalTmdb}&s=${activeS || 1}&e=${activeE || 1}` });
                         dyn.push({ source: 'nontongo', sourceName: 'NontonGo HD', kind: 'embed', playbackUrl: `https://www.NontonGo.win/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: 'smashystream', sourceName: 'SmashyStream Multi-Lang', kind: 'embed', playbackUrl: `https://embed.smashystream.com/playere.php?tmdb=${finalTmdb}&season=${activeS || 1}&episode=${activeE || 1}` });
-                        dyn.push({ source: 'vidsrc_buzz', sourceName: 'VidSrc Buzz HD', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                         dyn.push({ source: 'vidlink', sourceName: 'Vidlink (Ad-Free HD)', kind: 'embed', playbackUrl: `https://vidlink.pro/tv/${finalTmdb}/${activeS || 1}/${activeE || 1}` });
                     }
                 }
                 if (effectiveImdb) {
                     if (isMovie) {
-                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/movie/${effectiveImdb}?color=FFA500` });
+                        dyn.push({ source: 'vidstuck_imdb', sourceName: 'VidStuck (IMDb Server)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/movie/${effectiveImdb}?loading=2` });
+                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://www.vidy.st/movie/${effectiveImdb}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/movie?imdb=${effectiveImdb}` });
-                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/movie/${effectiveImdb}` });
                     } else {
-                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://vidy.st/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
+                        dyn.push({ source: 'vidstuck_imdb', sourceName: 'VidStuck (IMDb Server)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?loading=2` });
+                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://www.vidy.st/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/tv?imdb=${effectiveImdb}&season=${activeS || 1}&episode=${activeE || 1}` });
-                        dyn.push({ source: 'vidsrc_buzz_imdb', sourceName: 'VidSrc Buzz (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.buzz/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}` });
                     }
                 }
                 sourcesToUse = dyn;
@@ -581,20 +587,20 @@ export default function PlayerScreen({ route, navigation }) {
                 const PROVIDER_RANK = [
                     'archive_org',
                     'direct',
+                    'vidstuck',
                     'vidy',
-                    'vidsrc',
                     'multiembed',
+                    'vidsrc',
                     '2embed',
                     'nontongo',
                     'smashystream',
+                    'vidstuck_imdb',
                     'vidy_imdb',
                     'vidsrc_imdb',
                     'multiembed_imdb',
                     'vidlink_dub',
                     'vidlink_sub',
                     'vidlink',
-                    'vidsrc_buzz',
-                    'vidsrc_buzz_imdb',
                     'vidsrc_rip'
                 ];
                 const MAX_MIRRORS = 10;
@@ -850,7 +856,7 @@ export default function PlayerScreen({ route, navigation }) {
                     onNextEpisode={handleNextEpisode}
                     onBack={handleBack}
                     mediaId={item?.id || item?.slug}
-                    tmdbId={effectiveTmdb}
+                    tmdbId={resolvedTmdb || effectiveTmdb}
                     imdbId={effectiveImdb}
                     mediaType={item?.type || (isTv ? 'tv' : 'movie')}
                     renditions={renditions}

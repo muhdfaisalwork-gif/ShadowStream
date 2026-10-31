@@ -1,10 +1,10 @@
 {
-  "version": "2.4.36",
-  "versionCode": 276,
+  "version": "2.4.37",
+  "versionCode": 277,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-31",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.36: Hardened AdShield popup & 3rd-party link interception with enforced iframe sandbox, promoted clean Vidy (Donkey.to) multi-audio engine to #1 primary stream, enabled 1-tap Hindi & multi-lingual Dubbed switching, and eliminated background audio leak when returning home."
+  "releaseNotes": "v2.4.37: Unified 4-Source Backend Engine strictly implementing Donkey.to (VidStuck ultra-fast & Vidy multi-audio), AnimeSalt regional dubs, MovieBox OneRoom CDN failover, multi-key TMDB rotation, and zero-popup sandboxed frictionless UX."
 }

@@ -45,7 +45,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         displayName: 'Vidy (Multi-Audio HD)',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
-            isTv(type, s) ? `https://vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://vidy.st/movie/${id}?color=FFA500`,
+            isTv(type, s) ? `https://www.vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://www.vidy.st/movie/${id}?color=FFA500`,
         note: 'Donkey.to verified high-speed engine with multi-audio dubbing & subtitle switcher.',
     },
 
@@ -54,7 +54,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
         displayName: 'Videasy (Multi-Audio HD)',
         resolveMode: 'iframe_only',
         buildUrl: (id, type, s, e) =>
-            isTv(type, s) ? `https://vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://vidy.st/movie/${id}?color=FFA500`,
+            isTv(type, s) ? `https://www.vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://www.vidy.st/movie/${id}?color=FFA500`,
         note: 'Sub-second embed with built-in multi-audio dubbing & subtitle switcher right in the player.',
     },
 
@@ -81,12 +81,12 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
     vidsrc_buzz: {
         slug: 'vidsrc_buzz',
         displayName: 'VidSrc Buzz HD',
-        resolveMode: 'iframe_only',
+        resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type, s)
-                ? `https://vidsrc.buzz/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}`
-                : `https://vidsrc.buzz/embed/movie/${id}`,
-        note: 'Primary zero-XFO HTML5 streaming engine with built-in multi-server & subtitle switcher.',
+                ? `https://vidsrc.to/embed/tv/${id}/${cleanS(s)}/${cleanE(e)}`
+                : `https://vidsrc.to/embed/movie/${id}`,
+        note: 'Disabled: ad injection and hostile redirect scripts.',
     },
 
     nontongo: {
@@ -207,7 +207,7 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
 };
 
 /** Order the user sees. Disabled providers are filtered out of this list. */
-export const DEFAULT_MIRROR_ORDER = ['vidy', 'vidsrc', 'multiembed', '2embed', 'nontongo', 'smashystream'];
+export const DEFAULT_MIRROR_ORDER = ['vidstuck', 'vidy', 'multiembed', 'vidsrc', '2embed', 'nontongo', 'smashystream'];
 
 /** Merge an R2-published override over the compiled defaults. */
 export function mergeProviders(override: any): Record<string, ProviderEntry> {
