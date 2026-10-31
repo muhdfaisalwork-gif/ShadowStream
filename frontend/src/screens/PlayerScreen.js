@@ -595,11 +595,7 @@ export default function PlayerScreen({ route, navigation }) {
                 });
 
                 setMirrorList(resolved);
-                setResolveNote(
-                    anyDirect
-                        ? null
-                        : 'Playing via the provider’s own player — no direct stream was available to decode.'
-                );
+                setResolveNote(null);
                 const preferredLang = AudioPreferencesAPI.getPreferred();
                 const wantedLang = effectiveTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
                 let chosenMirror = playable;

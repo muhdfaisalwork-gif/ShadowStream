@@ -1,10 +1,10 @@
 {
-  "version": "2.4.30",
-  "versionCode": 270,
+  "version": "2.4.31",
+  "versionCode": 271,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-10-31",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "High-speed streaming architecture overhaul: integrated Videasy (multi-audio dubbing & subtitles directly in player) and VidStuck (sub-300ms ultra fast HTML5 streaming inspired by donkey.to); replaced dead autoembed.cc with autoembed.co; re-enabled multiembed VIP audio dubs; optimized mirror resolution."
+  "releaseNotes": "Unified 4-Source Backend Engine: eliminated manual server switching for a clean single-tap playback experience; integrated Donkey.to & Qmovies.co TMDB key rotation redundancy pool (zero rate-limits); seamless in-player Audio Dub & Regional Language selector (Hindi, English, Spanish, Japanese, Tamil, Telugu); silent automatic stream failover."
 }

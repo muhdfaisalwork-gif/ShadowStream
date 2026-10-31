@@ -363,6 +363,7 @@ export default function ShadowStreamPlayer({
     // loaded and then never became interactive, and offer the next mirror in
     // one tap rather than leaving the user on a black rectangle.
     const [embedState, setEmbedState] = useState('loading'); // loading | ready | stalled
+    const failoverAttemptsRef = useRef(0);
     const embedTimer = useRef(null);
 
     const handleEmbedLoaded = useCallback(() => {
@@ -371,8 +372,15 @@ export default function ShadowStreamPlayer({
     }, []);
 
     const handleEmbedFailed = useCallback(() => {
-        setEmbedState('stalled');
-    }, []);
+        if (mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < 3) {
+            failoverAttemptsRef.current += 1;
+            setDubToast('🔄 Optimizing playback stream (switching to backup mirror)...');
+            setTimeout(() => setDubToast(null), 3000);
+            tryNextMirror();
+        } else {
+            setEmbedState('stalled');
+        }
+    }, [mirrorList, tryNextMirror]);
 
     // Reset the watchdog whenever the active mirror changes.
     //
@@ -1880,14 +1888,7 @@ export default function ShadowStreamPlayer({
                                             >
                                                 <Text style={styles.popupMenuText}>🛡️ AdShield Protection: {noAdsEnabled ? 'ON' : 'OFF'}</Text>
                                             </TouchableOpacity>
-                                            {mirrorList && mirrorList.length > 0 && (
-                                                <TouchableOpacity
-                                                    style={styles.popupMenuItem}
-                                                    onPress={() => setMoreSubmenu('server')}
-                                                >
-                                                    <Text style={styles.popupMenuText}>⚡ Server: {sourceName || 'Auto'} ›</Text>
-                                                </TouchableOpacity>
-                                            )}
+                                            {/* Server selector removed from More menu: backend automatically picks optimal server */}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
                                                 onPress={() => {
@@ -2087,37 +2088,7 @@ export default function ShadowStreamPlayer({
                         <Text style={styles.pillButtonText}>⬚ {VIEW_LABEL[viewMode]}</Text>
                     </TouchableOpacity>
 
-                    {/* Server Switcher */}
-                    {mirrorList.length > 0 && (
-                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
-                            <TouchableOpacity
-                                style={styles.pillButton}
-                                onPress={() => setShowServerMenu(!showServerMenu)}
-                            >
-                                <Text style={styles.pillButtonText}>⚡ {sourceName || 'Server'}</Text>
-                            </TouchableOpacity>
-                            {showServerMenu && (
-                                <View style={styles.popupMenu}>
-                                    <Text style={styles.popupMenuHeader}>Select Stream Server</Text>
-                                    {mirrorList.map((m, idx) => (
-                                        <TouchableOpacity
-                                            key={idx}
-                                            style={[styles.popupMenuItem, idx === activeMirrorIdx && styles.popupMenuItemActive]}
-                                            onPress={() => {
-                                                setShowServerMenu(false);
-                                                if (onSelectMirror) onSelectMirror(m, idx);
-                                            }}
-                                        >
-                                            <Text style={[styles.popupMenuText, idx === activeMirrorIdx && styles.popupMenuTextActive]}>
-                                                {idx === activeMirrorIdx ? '▶ ' : ''}{m.label} ({m.quality || 'HD'})
-                                                {m.direct ? ' · direct' : ''}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
-                    )}
+                    {/* Server Switcher removed: Unified Backend handles server routing automatically */}
 
                     {/* Subtitles — only when the track list is real */}
                     {canSelectSubtitles && (
@@ -2537,13 +2508,13 @@ export default function ShadowStreamPlayer({
             {!isDirect && embedState === 'stalled' && mirrorList && mirrorList.length > 1 ? (
                 <View style={styles.failoverBar}>
                     <Text style={styles.failoverText}>
-                        Still nothing after 20s. This server may not have this episode.
+                        Playback connection is taking longer than expected. Switch to backup stream?
                     </Text>
                     <TouchableOpacity style={styles.failoverBtn} onPress={keepWaiting}>
                         <Text style={styles.failoverBtnText}>Keep waiting</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.failoverBtn} onPress={tryNextMirror}>
-                        <Text style={styles.failoverBtnText}>Try next server</Text>
+                        <Text style={styles.failoverBtnText}>Switch Stream</Text>
                     </TouchableOpacity>
                     {onBack ? (
                         <TouchableOpacity style={styles.failoverBtn} onPress={onBack}>
