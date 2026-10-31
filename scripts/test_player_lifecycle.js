@@ -2,7 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 
 console.log('==================================================================');
-console.log('   SHADOWSTREAM PLAYER LIFECYCLE & ADSHIELD AUDIT SUITE           ');
+console.log('   SHADOWSTREAM PLAYER LIFECYCLE, ZERO-SERVER UX & ADSHIELD AUDIT  ');
 console.log('==================================================================\n');
 
 // 1. Verify App.js unmountOnBlur configuration
@@ -13,34 +13,43 @@ assert(
 );
 console.log('[PASS] App.js: Player screen configured with unmountOnBlur: true');
 
-// 2. Verify PlayerScreen.js focus & teardown hooks
+// 2. Verify PlayerScreen.js focus & teardown hooks & no vidstuck
 const playerScreenJs = fs.readFileSync('frontend/src/screens/PlayerScreen.js', 'utf-8');
 assert(playerScreenJs.includes('useIsFocused'), 'PlayerScreen.js must import useIsFocused');
 assert(playerScreenJs.includes('const isFocused = useIsFocused();'), 'PlayerScreen.js must call useIsFocused hook');
 assert(playerScreenJs.includes('if (!isFocused)'), 'PlayerScreen.js must check isFocused to stop playback');
 assert(playerScreenJs.includes('navigation.addListener(\'blur\''), 'PlayerScreen.js must clean up on navigation blur');
 assert(playerScreenJs.includes('url.searchParams.delete(\'season\')'), 'PlayerScreen.js must clean up URL search params on leave');
-console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, and URL query cleanup verified');
+assert(!playerScreenJs.includes('vidstuck.cc'), 'PlayerScreen.js must NOT contain dead vidstuck.cc URLs');
+console.log('[PASS] PlayerScreen.js: Focus & blur listeners, state teardown, URL cleanup, and clean provider list verified');
 
-// 3. Verify ShadowStreamPlayer.js hard unmount cleanup
+// 3. Verify ShadowStreamPlayer.js hard unmount cleanup & ZERO manual server buttons
 const shadowPlayerJs = fs.readFileSync('frontend/src/components/ShadowStreamPlayer.js', 'utf-8');
 assert(shadowPlayerJs.includes('iframeRef.current.src = \'about:blank\''), 'ShadowStreamPlayer.js must clear iframe src on unmount');
 assert(shadowPlayerJs.includes('videoRef.current.pause()'), 'ShadowStreamPlayer.js must pause video on unmount');
 assert(!shadowPlayerJs.includes('sandbox={noAdsEnabled ?'), 'ShadowStreamPlayer.js must not restrict iframe sandbox');
-console.log('[PASS] ShadowStreamPlayer.js: Hard media termination on unmount & unblocked iframe verified');
+assert(!shadowPlayerJs.includes('Switch Source'), 'ShadowStreamPlayer.js must NOT contain manual Switch Source button');
+assert(!shadowPlayerJs.includes('Switch Stream Source'), 'ShadowStreamPlayer.js must NOT contain manual Switch Stream Source item');
+assert(!shadowPlayerJs.includes('Select Stream Server'), 'ShadowStreamPlayer.js must NOT contain manual Select Stream Server menu');
+assert(!shadowPlayerJs.includes('Switch to backup stream?'), 'ShadowStreamPlayer.js must NOT contain manual stalled failover prompt');
+assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must contain unified selectDubAudio handler');
+console.log('[PASS] ShadowStreamPlayer.js: Zero-Server Frictionless UX, silent auto-failover, Audio Dub selector & hard media teardown verified');
 
-// 4. Verify version synchronization
+// 4. Verify version synchronization (v2.4.34 / code 274 / SW v43)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.33'"), 'version.js must have CURRENT_VERSION = 2.4.32');
-assert(versionJs.includes("CURRENT_CODE = 273"), 'version.js must have CURRENT_CODE = 272');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.34'"), 'version.js must have CURRENT_VERSION = 2.4.34');
+assert(versionJs.includes("CURRENT_CODE = 274"), 'version.js must have CURRENT_CODE = 274');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.33"'), 'worker index.ts must have version 2.4.32');
-assert(workerIndexTs.includes('versionCode: 273'), 'worker index.ts must have versionCode 272');
+assert(workerIndexTs.includes('version: "2.4.34"'), 'worker index.ts must have version 2.4.34');
+assert(workerIndexTs.includes('versionCode: 274'), 'worker index.ts must have versionCode 274');
+assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
+assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
+assert(!workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must NOT contain dead vidstuck.cc URLs');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v42'"), 'public/sw.js must be v41');
-console.log('[PASS] Version Synchronization: v2.4.33 (code 272, SW v41) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v43'"), 'public/sw.js must be v43');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.34 (code 274, SW v43) strictly verified across all tiers');
 
 // 5. Test AdShield URL filtering logic
 const vm = require('vm');

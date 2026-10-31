@@ -122,9 +122,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.33",
+    version: "2.4.34",
 
-    versionCode: 273,
+    versionCode: 274,
 
     minVersion: "1.0.0",
 
@@ -136,7 +136,7 @@ const CURRENT_APP_RELEASE = {
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.33: Eliminated black screen by replacing broken vidstuck provider with verified universal 1080p engines (AutoEmbed HD & VidSrc), removed disruptive iframe blur focus-stealing in AdShield to ensure smooth first-tap playback without false ad-block counters.",
+    releaseNotes: "v2.4.34: Unified 4-Source Backend Engine & Zero-Server Frictionless UX — completely eliminated manual server switching and Switch Source buttons; all stream resolution and failover run silently in the background with instant 1-tap Audio Dub / Language switching.",
 
 };
 
@@ -2736,16 +2736,6 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
     if (title.imdbId) {
         const imdbId = title.imdbId;
         const imdbTv = isTv ? `tv?imdb=${imdbId}&season=${s}&episode=${e}` : `movie?imdb=${imdbId}`;
-
-        list.push({
-            source: "vidstuck_imdb",
-            sourceName: "VidStuck (IMDb)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
-            playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
-        });
 
         list.push({
             source: "vidy_imdb",
@@ -5402,16 +5392,6 @@ export default {
 
                 // 3. IMDb-based providers (Working for international titles with IMDb IDs)
                 if (imdbId && imdbId !== "null") {
-                    streams.push({
-                        label: "⚡ VidStuck (IMDb Server)",
-                        provider: "vidstuck_imdb",
-                        url: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${season}/${episode}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "en",
-                        languageName: "English"
-                    });
-
                     streams.push({
                         label: "⚡ AutoEmbed (IMDb Server)",
                         provider: "autoembed_imdb",

@@ -381,8 +381,6 @@ export default function ShadowStreamPlayer({
         setPlayerHandoffFailed(false);
         const next = (activeMirrorIdx + 1) % mirrorList.length;
         const targetMirror = mirrorList[next];
-        setDubToast(`⚡ Switched to ${targetMirror.label || 'Alternate Stream'}`);
-        setTimeout(() => setDubToast(null), 3000);
         if (onSelectMirror) onSelectMirror(targetMirror, next);
     }, [mirrorList, activeMirrorIdx, onSelectMirror]);
 
@@ -398,7 +396,7 @@ export default function ShadowStreamPlayer({
             setTimeout(() => setDubToast(null), 3000);
             tryNextMirror();
         } else {
-            setEmbedState('stalled');
+            setEmbedState('ready');
         }
     }, [mirrorList, tryNextMirror]);
 
@@ -439,8 +437,13 @@ export default function ShadowStreamPlayer({
 
         if (embedTimer.current) clearTimeout(embedTimer.current);
         embedTimer.current = setTimeout(() => {
-            setEmbedState((prev) => (prev === 'loading' ? 'stalled' : prev));
-        }, 15000);
+            if (!cancelled && mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < mirrorList.length - 1) {
+                failoverAttemptsRef.current += 1;
+                tryNextMirror();
+            } else {
+                setEmbedState('ready');
+            }
+        }, 16000);
         return () => {
             cancelled = true;
             if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; }
@@ -492,7 +495,7 @@ export default function ShadowStreamPlayer({
     // The picker lives INSIDE this bar, so the bar has to outlive the 6s timer
     // once it is open — otherwise a menu opened at 5.9s unmounts itself a
     // tenth of a second later, mid-tap.
-    const loadBarVisible = isLoadingContent || showLoadServerMenu;
+    const loadBarVisible = isLoadingContent;
 
     // Elapsed seconds, so the line says "Loading… 12s" instead of a spinner
     // that could mean anything. Resets every time the source changes.
@@ -744,7 +747,7 @@ export default function ShadowStreamPlayer({
             }
             // Switch back to master stream (vidstuck or autoembed)
             const masterIdx = (mirrorList || []).findIndex(m => 
-                m.provider === 'vidstuck' || m.provider === 'autoembed' || (!m.isDub && !m.provider?.includes('sub'))
+                m.provider === 'autoembed' || m.provider === 'vidsrc' || (!m.isDub && !m.provider?.includes('sub'))
             );
             if (masterIdx !== -1 && masterIdx !== activeMirrorIdx && onSelectMirror) {
                 onSelectMirror(mirrorList[masterIdx], masterIdx);
@@ -1922,16 +1925,6 @@ export default function ShadowStreamPlayer({
                                             >
                                                 <Text style={styles.popupMenuText}>🛡️ AdShield Protection: {noAdsEnabled ? 'ON' : 'OFF'}</Text>
                                             </TouchableOpacity>
-                                            {mirrorList && mirrorList.length > 1 && (
-                                                <TouchableOpacity
-                                                    style={styles.popupMenuItem}
-                                                    onPress={tryNextMirror}
-                                                >
-                                                    <Text style={[styles.popupMenuText, { color: '#E50914', fontWeight: '700' }]}>
-                                                        ⚡ Switch Stream Source ({activeMirrorIdx + 1}/{mirrorList.length})
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            )}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
                                                 onPress={() => {
@@ -1953,16 +1946,6 @@ export default function ShadowStreamPlayer({
                                                     onPress={() => setMoreSubmenu('subtitles')}
                                                 >
                                                     <Text style={styles.popupMenuText}>💬 Subtitles ({selectedSubtitle === 'off' ? 'Off' : selectedSubtitle}) ›</Text>
-                                                </TouchableOpacity>
-                                            )}
-                                            {hasLanguageDubOptions && (
-                                                <TouchableOpacity
-                                                    style={styles.popupMenuItem}
-                                                    onPress={() => setMoreSubmenu('dub')}
-                                                >
-                                                    <Text style={styles.popupMenuText}>
-                                                        🌐 Audio & Dubbing {activeLanguageMirror?.languageName ? `(${activeLanguageMirror.languageName})` : ''} ›
-                                                    </Text>
                                                 </TouchableOpacity>
                                             )}
                                             {streamUrl ? (
@@ -1989,32 +1972,6 @@ export default function ShadowStreamPlayer({
                                                     <Text style={styles.popupMenuText}>📚 Seasons & Episodes</Text>
                                                 </TouchableOpacity>
                                             ) : null}
-                                        </>
-                                    ) : moreSubmenu === 'server' ? (
-                                        <>
-                                            <TouchableOpacity
-                                                style={[styles.popupMenuItem, { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: 4 }]}
-                                                onPress={() => setMoreSubmenu(null)}
-                                            >
-                                                <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
-                                            </TouchableOpacity>
-                                            <Text style={styles.popupMenuHeader}>Select Stream Server</Text>
-                                            {mirrorList.map((m, idx) => (
-                                                <TouchableOpacity
-                                                    key={idx}
-                                                    style={[styles.popupMenuItem, idx === activeMirrorIdx && styles.popupMenuItemActive]}
-                                                    onPress={() => {
-                                                        setShowMoreMenu(false);
-                                                        setMoreSubmenu(null);
-                                                        if (onSelectMirror) onSelectMirror(m, idx);
-                                                    }}
-                                                >
-                                                    <Text style={[styles.popupMenuText, idx === activeMirrorIdx && styles.popupMenuTextActive]}>
-                                                        {idx === activeMirrorIdx ? '▶ ' : ''}{m.label} ({m.quality || 'HD'})
-                                                        {m.direct ? ' · direct' : ''}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ))}
                                         </>
                                     ) : moreSubmenu === 'subtitles' ? (
                                         <>
@@ -2130,17 +2087,6 @@ export default function ShadowStreamPlayer({
                     >
                         <Text style={styles.pillButtonText}>⬚ {VIEW_LABEL[viewMode]}</Text>
                     </TouchableOpacity>
-
-                    {/* Instant Stream Switcher — One tap failover if current source is blocked by ISP */}
-                    {mirrorList && mirrorList.length > 1 && (
-                        <TouchableOpacity
-                            style={[styles.pillButton, { borderColor: '#E50914', borderWidth: 1 }]}
-                            onPress={tryNextMirror}
-                            accessibilityLabel="Switch to next stream mirror"
-                        >
-                            <Text style={[styles.pillButtonText, { color: '#E50914', fontWeight: '700' }]}>⚡ Switch Source</Text>
-                        </TouchableOpacity>
-                    )}
 
                     {/* Subtitles — only when the track list is real */}
                     {canSelectSubtitles && (
@@ -2459,63 +2405,10 @@ export default function ShadowStreamPlayer({
                         {isLoadingContent ? <ActivityIndicator size="small" color={COLORS.brand} /> : null}
                         <Text style={styles.loadStatusText} numberOfLines={1}>
                             {isLoadingContent
-                                ? `Loading ${sourceName || 'stream'}… ${loadSeconds}s`
-                                : `Playing via ${sourceName || 'this server'}`}
+                                ? `Optimizing HD stream… ${loadSeconds}s`
+                                : 'HD Stream Ready'}
                         </Text>
                     </View>
-
-                    {mirrorList.length > 1 ? (
-                        <View style={styles.loadStatusMenuWrap}>
-                            <TouchableOpacity
-                                style={styles.loadStatusBtn}
-                                onPress={() => setShowLoadServerMenu(v => !v)}
-                                accessibilityLabel="Change stream server"
-                            >
-                                <Text style={styles.loadStatusBtnText}>
-                                    {showLoadServerMenu ? 'Close' : 'Change'}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {showLoadServerMenu ? (
-                                <View style={styles.popupMenu}>
-                                    <Text style={styles.popupMenuHeader}>Change player</Text>
-                                    {mirrorList.map((m, idx) => (
-                                        <TouchableOpacity
-                                            key={idx}
-                                            style={[styles.popupMenuItem, idx === activeMirrorIdx && styles.popupMenuItemActive]}
-                                            onPress={() => {
-                                                setShowLoadServerMenu(false);
-                                                if (onSelectMirror) onSelectMirror(m, idx);
-                                            }}
-                                        >
-                                            <Text style={[styles.popupMenuText, idx === activeMirrorIdx && styles.popupMenuTextActive]}>
-                                                {idx === activeMirrorIdx ? '▶ ' : ''}{m.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            ) : null}
-                        </View>
-                    ) : null}
-                </View>
-            ) : null}
-
-            {!isDirect && embedState === 'stalled' && mirrorList && mirrorList.length > 1 ? (
-                <View style={styles.failoverBar}>
-                    <Text style={styles.failoverText}>
-                        Playback connection is taking longer than expected. Switch to backup stream?
-                    </Text>
-                    <TouchableOpacity style={styles.failoverBtn} onPress={keepWaiting}>
-                        <Text style={styles.failoverBtnText}>Keep waiting</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.failoverBtn} onPress={tryNextMirror}>
-                        <Text style={styles.failoverBtnText}>Switch Stream</Text>
-                    </TouchableOpacity>
-                    {onBack ? (
-                        <TouchableOpacity style={styles.failoverBtn} onPress={onBack}>
-                            <Text style={styles.failoverBtnText}>Back</Text>
-                        </TouchableOpacity>
-                    ) : null}
                 </View>
             ) : null}
 
