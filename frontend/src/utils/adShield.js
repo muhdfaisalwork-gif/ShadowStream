@@ -55,6 +55,8 @@ const FIRST_PARTY = [
     'vidsrc.rip',
     '2embed.cc',
     'www.2embed.cc',
+    '2embed.skin',
+    'www.2embed.skin',
     'nontongo.win',
     'www.nontongo.win',
     'vidlink.pro',
@@ -121,7 +123,23 @@ const AD_KEYWORDS = [
     'meatusbyway', 'wonnotscroganisoin', 'speedracelight',
     // Videasy itself is no longer trusted, so its own hosts are rejected here
     // too rather than being reachable through a stale first-party entry.
-    'videasy.to'
+    'videasy.to',
+    // Measured live on the current rotation (v2.4.42):
+    //   googletagmanager.com / google-analytics.com -> analytics
+    //   static.cloudflareinsights.com                -> analytics
+    //   soycdn.lol                                   -> vidsrc ad script
+    //   adplox.com                                  -> 2embed ad link
+    //   crwdcntrl.net / lotame.com                   -> ad iframe + pixel
+    //   llvpn.com, histats.com, intelligenceadx.com,
+    //   rtmark.net, luugy.com                        -> trackers
+    //   *.cfd, *.qpon                                -> rotating ad hosts
+    'googletagmanager', 'google-analytics', 'cloudflareinsights',
+    'soycdn.lol', 'adplox', 'crwdcntrl', 'lotame',
+    'intelligenceadx', 'rtmark.net', 'luugy.com', 'umami',
+    '.cfd/', '.qpon/',
+    // Provider-side ad injectors, identified by path.
+    '/vidstuck.js', '/__ads/', '/cdn-cgi/rum', '/scripts/vidy.js', '/lt/shared/',
+    '/api/script.js'
 ];
 
 let noAdsActive = readStoredPreference();

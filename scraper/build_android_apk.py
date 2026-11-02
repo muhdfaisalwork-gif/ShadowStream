@@ -52,8 +52,8 @@ PACKAGE = "com.streamapp.app"
 APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
-VERSION_CODE = 281
-VERSION_NAME = "2.4.41"
+VERSION_CODE = 282
+VERSION_NAME = "2.4.42"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material
@@ -193,7 +193,13 @@ public class MainActivity extends Activity {{
         "dafabet.com", "stake.com",
         "betwinner.com", "megapari.com", "linebet.com", "mostbet-pk.com", "pin-up.bet",
         // v2.4.41: trackers observed live on the old providers.
-        "meatusbyway.cfd", "wonnotscroganisoin.cyou", "speedracelight.com"
+        "meatusbyway.cfd", "wonnotscroganisoin.cyou", "speedracelight.com",
+        // v2.4.42: third-party analytics and ad scripts observed live on the
+        // current provider rotation.
+        "googletagmanager.com", "google-analytics.com", "static.cloudflareinsights.com",
+        "cloud.umami.is", "umami.is", "soycdn.lol", "adplox.com",
+        // Lotame ad iframe + tracking pixel, loaded by nontongo and vidsrc.
+        "crwdcntrl.net", "lotame.com"
     }};
 
     private static final String[] AD_PATTERNS = new String[] {{
@@ -210,6 +216,13 @@ public class MainActivity extends Activity {{
         String host = uri.getHost();
         if (host == null) return false;
         host = host.toLowerCase();
+        // The rotating ad hosts live on throwaway TLDs and change on every
+        // load: t2f.<random>.cfd / zfz7hwz.<random>.cfd (the ad script),
+        // meatusbyway.cfd (popunder beacon), nifty.<random>.qpon (click
+        // tracker). A domain list can never keep up, but the TLD does not move.
+        if (host.endsWith(".cfd") || host.endsWith(".qpon")) {{
+            return true;
+        }}
         for (String adDomain : AD_DOMAINS) {{
             if (host.equals(adDomain) || host.endsWith("." + adDomain)) {{
                 return true;
@@ -221,6 +234,22 @@ public class MainActivity extends Activity {{
             }}
         }}
         String fullUrl = uri.toString().toLowerCase();
+        // Provider-side ad injectors are served from the provider's own host,
+        // so only the path identifies them.
+        //   /vidstuck.js       -> popunder + rotating tracker hosts
+        //   /__ads/            -> vidsrc ad script
+        //   /cdn-cgi/rum       -> analytics beacon
+        //   /scripts/vidy.js   -> vidy popunder injector
+        //   /api/script.js     -> vidy popunder injector (users.vidy.st)
+        //   /lt/shared/        -> Lotame ad iframe
+        if (fullUrl.contains("/vidstuck.js") || fullUrl.contains("/__ads/") ||
+            fullUrl.contains("/cdn-cgi/rum") || fullUrl.contains("/scripts/vidy.js") ||
+            fullUrl.contains("/lt/shared/")) {{
+            return true;
+        }}
+        if (fullUrl.contains("/api/script.js") && host.contains("vidy.st")) {{
+            return true;
+        }}
         if (fullUrl.contains("zoneid=") || fullUrl.contains("bannerid=") ||
             fullUrl.contains("ad_id=") || fullUrl.contains("campaignid=") ||
             fullUrl.contains("aff_id=") || fullUrl.contains("/popunder") ||
@@ -229,46 +258,6 @@ public class MainActivity extends Activity {{
         }}
         return false;
     }}
-
-    private static final String[] ALLOWED_MEDIA_HOSTS = new String[] {{
-        "ssmoviestvs.site", "workers.dev", "localhost", "127.0.0.1",
-        "archive.org", "cloudflare", "google", "googleapis.com", "googleusercontent.com",
-        "github.com", "themoviedb.org", "tmdb.org", "imdb.com",
-        // Live rotation (v2.4.41). vidstuck.cc is the #1 provider and
-        // sacdn.hakunaymatata.com is the CDN it serves the DASH segments from -
-        // without these two the WebView blocks the player frame itself.
-        "vidstuck.cc", "nontongo.win", "vidy.st", "vidlink.pro",
-        "sacdn.hakunaymatata.com",
-        "vidsrc.to", "vidsrc.me", "vidsrc.net", "vidsrc.in", "vidsrc.pm",
-        "vidsrc.xyz", "vidsrc.cc", "vidsrc.rip",
-        "2embed.cc", "2embed.to", "2embed.skin",
-        "cloudorchestranova.com", "playercdn.net", "rabbitstream.net", "megacloud.tv",
-        "dokicloud.one", "youtube.com", "googlevideo.com"
-    }};
-
-    private static boolean isAllowedMediaHost(Uri uri) {{
-        if (uri == null) return false;
-        String host = uri.getHost();
-        if (host == null) return false;
-        host = host.toLowerCase();
-        for (String allowed : ALLOWED_MEDIA_HOSTS) {{
-            if (host.equals(allowed) || host.endsWith("." + allowed) || host.contains(allowed)) {{
-                return true;
-            }}
-        }}
-        String path = uri.getPath();
-        if (path != null) {{
-            String lowerPath = path.toLowerCase();
-            if (lowerPath.endsWith(".m3u8") || lowerPath.endsWith(".mp4") ||
-                lowerPath.endsWith(".mpd") || lowerPath.endsWith(".ts") ||
-                lowerPath.endsWith(".m4s") || lowerPath.contains("/hls/") ||
-                lowerPath.contains("/stream/")) {{
-                return true;
-            }}
-        }}
-        return false;
-    }}
-
 
     private static final String DOMAIN = "ssmoviestvs.site";
     private static final String HOME_URL = "https://" + DOMAIN + "/";
@@ -485,14 +474,18 @@ public class MainActivity extends Activity {{
                 if (!scheme.equals("http") && !scheme.equals("https") && !scheme.equals("about") && !scheme.equals("data") && !scheme.equals("blob")) {{
                     return handleUrl(uri);
                 }}
-                // Subframes (embed player iframes and nested frames):
-                // Whitelist ONLY verified video providers and media CDNs.
-                // Any other domain attempting to navigate the subframe is an ad redirect and is BLOCKED!
+                // Subframes (embed player iframes and nested frames).
+                //
+                // There is deliberately no allowlist of player hosts here.
+                // Providers chain their player through hosts they invent per
+                // load - measured live on v2.4.42: vidsrc.to -> vidsrc.sh ->
+                // stellarconductornexus.com - and anime players live on yet
+                // other hosts. Blocking an unknown host breaks playback, so
+                // the guard is a denylist. Ad and tracker hosts were already
+                // dropped above, which also covers a subframe navigating to
+                // one of them.
                 if (!req.isForMainFrame()) {{
-                    if (isAllowedMediaHost(uri)) {{
-                        return false;
-                    }}
-                    return true; // Block unauthorized 3rd-party ad redirect in subframe
+                    return false;
                 }}
                 // Main frame navigation
                 return handleUrl(uri);

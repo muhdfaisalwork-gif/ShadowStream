@@ -1,5 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
+const vm = require('vm');
 
 console.log('==================================================================');
 console.log('   SHADOWSTREAM PLAYER LIFECYCLE, ZERO-SERVER UX & ADSHIELD AUDIT  ');
@@ -65,14 +66,14 @@ assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must co
 assert(!shadowPlayerJs.includes('multiembed.mov'), 'ShadowStreamPlayer.js must NOT contain ad-injecting multiembed.mov URLs');
 console.log('[PASS] ShadowStreamPlayer.js: unsandboxed iframe, VidStuck dub mapping, source escape hatch, hard media teardown verified');
 
-// 4. Verify version synchronization (v2.4.41 / code 281 / SW v50)
+// 4. Verify version synchronization (v2.4.42 / code 282 / SW v51)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.41'"), 'version.js must have CURRENT_VERSION = 2.4.41');
-assert(versionJs.includes("CURRENT_CODE = 281"), 'version.js must have CURRENT_CODE = 281');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.42'"), 'version.js must have CURRENT_VERSION = 2.4.42');
+assert(versionJs.includes("CURRENT_CODE = 282"), 'version.js must have CURRENT_CODE = 282');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.41"'), 'worker index.ts must have version 2.4.41');
-assert(workerIndexTs.includes('versionCode: 281'), 'worker index.ts must have versionCode 281');
+assert(workerIndexTs.includes('version: "2.4.42"'), 'worker index.ts must have version 2.4.42');
+assert(workerIndexTs.includes('versionCode: 282'), 'worker index.ts must have versionCode 282');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
 assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must use vidstuck as clean stream provider');
@@ -86,11 +87,126 @@ assert(workerIndexTs.includes('probeProviderPresence'), 'worker index.ts must co
 assert(workerIndexTs.includes('filterAbsentProviders'), 'worker index.ts must apply the content-presence probe to the availability list');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v50'"), 'public/sw.js must be v50');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.41 (code 281, SW v50) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v51'"), 'public/sw.js must be v51');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.42 (code 282, SW v51) strictly verified across all tiers');
+
+// 4b. REGRESSION GUARD (v2.4.42): the auto-switch and the app-side ad rules.
+//
+// The subframe guard used to be an allowlist of player hosts. Providers chain
+// their player through hosts they invent per load (vidsrc.to -> vidsrc.sh ->
+// stellarconductornexus.com) and anime players live on other hosts, so the
+// allowlist broke playback. Both apps must now guard with a denylist.
+const electronMain = fs.readFileSync('packaging/windows/app/resources/app/main.js', 'utf-8');
+assert(!electronMain.includes('isAllowedMediaHost'), 'main.js must NOT keep the player-host allowlist - it breaks provider chains');
+assert(!electronMain.includes('MEDIA_HOSTS'), 'main.js must NOT keep the player-host allowlist array');
+for (const rule of ['/vidstuck.js', '/__ads/', '/cdn-cgi/rum', '/scripts/vidy.js', '/lt/shared/']) {
+    assert(
+        electronMain.includes(rule),
+        `main.js must drop the provider ad script by path: ${rule}`
+    );
+}
+assert(electronMain.includes(".endsWith('.cfd')"), 'main.js must drop the rotating ad hosts by TLD (.cfd)');
+assert(electronMain.includes(".endsWith('.qpon')"), 'main.js must drop the rotating ad hosts by TLD (.qpon)');
+assert(electronMain.includes('crwdcntrl.net'), 'main.js must drop the Lotame ad iframe host');
+
+const androidBuilder = fs.readFileSync('scraper/build_android_apk.py', 'utf-8');
+assert(!androidBuilder.includes('ALLOWED_MEDIA_HOSTS'), 'build_android_apk.py must NOT keep the player-host allowlist');
+assert(!androidBuilder.includes('isAllowedMediaHost'), 'build_android_apk.py must NOT keep the player-host allowlist helper');
+for (const rule of ['/vidstuck.js', '/__ads/', '/cdn-cgi/rum', '/scripts/vidy.js', '/lt/shared/']) {
+    assert(
+        androidBuilder.includes(rule),
+        `build_android_apk.py must drop the provider ad script by path: ${rule}`
+    );
+}
+assert(androidBuilder.includes('host.endsWith(".cfd")'), 'build_android_apk.py must drop the rotating ad hosts by TLD (.cfd)');
+assert(androidBuilder.includes('host.endsWith(".qpon")'), 'build_android_apk.py must drop the rotating ad hosts by TLD (.qpon)');
+assert(androidBuilder.includes('crwdcntrl.net'), 'build_android_apk.py must drop the Lotame ad iframe host');
+console.log('[PASS] App AdShield: denylist subframe guard + provider ad script paths + rotating ad TLDs enforced in both apps');
+
+// 4c. The web player must switch servers on its own and must offer the user a
+// way out when every server has failed.
+assert(shadowPlayerJs.includes('watchdogBudgetFor'), 'ShadowStreamPlayer.js must use a per-provider watchdog budget');
+assert(shadowPlayerJs.includes('WATCHDOG_MULTIHOP_MS'), 'ShadowStreamPlayer.js must give multi-hop providers a longer budget');
+assert(shadowPlayerJs.includes('markProviderDead'), 'ShadowStreamPlayer.js must remember providers that failed');
+assert(shadowPlayerJs.includes('isProviderDead'), 'ShadowStreamPlayer.js must skip providers that already failed');
+assert(shadowPlayerJs.includes('styles.failoverBar'), 'ShadowStreamPlayer.js must render the failover bar');
+assert(shadowPlayerJs.includes('styles.failoverBtn'), 'ShadowStreamPlayer.js must render the failover buttons');
+assert(shadowPlayerJs.includes('openServerPicker'), 'ShadowStreamPlayer.js must expose a Change server action on the failover bar');
+assert(shadowPlayerJs.includes('onPress={keepWaiting}'), 'ShadowStreamPlayer.js must wire the Keep waiting action');
+console.log('[PASS] Auto-switch: per-provider budget, dead-provider memory and the inline failover bar are wired');
+
+// 4d. PLAYBACK GUARD (v2.4.42): the ad rules must never match a URL the
+// provider needs to play the video. Every URL below was captured from the
+// live rotation, including the chain hosts the provider invents per load.
+// A rule that matches one of these breaks the stream, which is worse than
+// an ad that slips through.
+const vm2 = require('vm');
+const mainSrc = fs.readFileSync('packaging/windows/app/resources/app/main.js', 'utf-8');
+const rulesStart = mainSrc.indexOf('const AD_DOMAINS');
+const fnStart = mainSrc.indexOf('function isAdUrl');
+let depth = 0;
+let fnEnd = -1;
+for (let i = fnStart; i < mainSrc.length; i++) {
+    if (mainSrc[i] === '{') depth++;
+    else if (mainSrc[i] === '}') { depth--; if (depth === 0) { fnEnd = i + 1; break; } }
+}
+assert(rulesStart > 0 && fnEnd > 0, 'main.js must expose the ad rules for the playback guard');
+const ruleSandbox = { URL, console };
+vm.createContext(ruleSandbox);
+vm.runInContext(mainSrc.slice(rulesStart, fnEnd), ruleSandbox);
+const isAdUrl = ruleSandbox.isAdUrl;
+
+const playbackUrls = [
+    'https://vidstuck.cc/embed/tv/100088/1/1?loading=2',
+    'https://vidstuck.cc/backend/tmdb/details/tv/100088?language=en-US',
+    'https://vidstuck.cc/_next/static/chunks/24uyhvvmdi5sa.js',
+    'https://sacdn.hakunaymatata.com/dash/100088/1/1/stream.mpd',
+    'https://sacdn.hakunaymatata.com/dash/100088/1/1/segment-1.m4s',
+    'https://vidsrc.to/embed/tv/100088/1/1',
+    'https://vidsrc.sh/embed/tv/100088/1-1',
+    'https://stellarconductornexus.com/embed/tv/100088/1/1?vs=Fup0JMP9_APDL6mso',
+    'https://www.2embed.skin/movie/tmdb/tv?id=100088&s=1&e=1',
+    'https://www.nontongo.win/embed/tv/100088/1/1',
+    'https://www.vidy.st/movie/tt3581920',
+    'https://users.vidy.st/api/track',
+    'https://animesalt.cx/episode/bleach-1x1/',
+    'https://abyssplayer.com/embed/bleach-1x1',
+    'https://ravok.net/embed/bleach-1x1',
+];
+for (const u of playbackUrls) {
+    assert.strictEqual(isAdUrl(u), false, `Ad rules must NOT flag a playback URL: ${u}`);
+}
+
+// The Android build carries the same rules in a different language. Check
+// its domain list and path rules against the same URLs.
+const androidSrc = fs.readFileSync('scraper/build_android_apk.py', 'utf-8');
+const adDomainsRaw = androidSrc.slice(
+    androidSrc.indexOf('private static final String[] AD_DOMAINS'),
+    androidSrc.indexOf('private static final String[] AD_PATTERNS')
+);
+const domainList = [...adDomainsRaw.matchAll(/"([^"]+)"/g)].map((m) => m[1].toLowerCase());
+assert(domainList.length > 20, 'Android AD_DOMAINS must still contain the ad domain list');
+const androidPathRules = ['/vidstuck.js', '/__ads/', '/cdn-cgi/rum', '/scripts/vidy.js', '/lt/shared/'];
+for (const u of playbackUrls) {
+    const parsed = new URL(u);
+    const host = parsed.hostname.toLowerCase();
+    const full = u.toLowerCase();
+    assert(!host.endsWith('.cfd') && !host.endsWith('.qpon'), `Android rules must NOT flag a playback TLD: ${u}`);
+    assert(
+        !domainList.some((d) => host === d || host.endsWith('.' + d)),
+        `Android ad domains must NOT contain the playback host: ${host}`
+    );
+    for (const rule of androidPathRules) {
+        assert(!full.includes(rule), `Android path rule must NOT match a playback URL: ${rule} in ${u}`);
+    }
+    assert(
+        !(full.includes('/api/script.js') && host.includes('vidy.st')) || !full.includes('/api/script.js'),
+        `Android vidy script rule must NOT match a playback URL: ${u}`
+    );
+}
+console.log(`[PASS] Playback Guard: ${playbackUrls.length} captured playback URLs survive the ad rules in both apps`);
 
 // 5. Test AdShield URL filtering logic
-const vm = require('vm');
 let adShieldRaw = fs.readFileSync('frontend/src/utils/adShield.js', 'utf-8');
 adShieldRaw = adShieldRaw.replace(/^export\s+const\s+/gm, 'var ').replace(/^export\s+function\s+/gm, 'function ');
 const sandbox = { window: { location: { origin: 'https://ssmoviestvs.site' } }, document: {}, localStorage: {}, console, URL };
@@ -117,6 +233,23 @@ const blockedUrls = [
     'https://backend.videasy.to/tv/100088/1/1',
     'https://meatusbyway.cfd/cuid/?f=https://vidstuck.cc',
     'https://hostile.wonnotscroganisoin.cyou/gd/115848?md=https%3A%2F%2Fssmoviestvs.site',
+    // v2.4.42: the rotating ad hosts (throwaway TLDs, new name every load),
+    // the analytics and ad scripts, and the provider-side injectors that are
+    // served from the provider's own host and are only identifiable by path.
+    'https://t2f.183nq1tht933j77g.cfd/knypqclZMOhr3FC1j14bPk/jAJQL',
+    'https://zfz7hwz.7nbebz9jo87v13nn3zexy52h1vc9.cfd/kb352YnZGOw4Q6/nrOne',
+    'https://nifty.macecuttyscallom.qpon/gd/155094?md=abc',
+    'https://aulete.chequesjuddersearle.qpon/gd/115848?md=abc',
+    'https://www.googletagmanager.com/gtag/js?id=G-176CLJRLPB',
+    'https://www.google-analytics.com/analytics.js',
+    'https://static.cloudflareinsights.com/beacon.min.js/vce7018',
+    'https://soycdn.lol/__ads/vidsrcto.js',
+    'https://adplox.com/promo/click',
+    'https://tags.crwdcntrl.net/lt/shared/2/lt.iframe.html?c=3825',
+    'https://bcp.crwdcntrl.net/pixels?src=LTJS',
+    'https://vidstuck.cc/vidstuck.js',
+    'https://www.vidy.st/scripts/vidy.js',
+    'https://users.vidy.st/api/script.js',
 ];
 
 const allowedUrls = [

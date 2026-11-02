@@ -47,7 +47,14 @@ const AD_DOMAINS = [
     'dafabet.com', 'stake.com', 'betwinner.com', 'megapari.com',
     'linebet.com', 'mostbet-pk.com', 'pin-up.bet',
     // v2.4.41: trackers observed live on the old providers.
-    'meatusbyway.cfd', 'wonnotscroganisoin.cyou', 'speedracelight.com'
+    'meatusbyway.cfd', 'wonnotscroganisoin.cyou', 'speedracelight.com',
+    // v2.4.42: third-party analytics and ad scripts observed live on the
+    // current provider rotation. These are the only third-party hosts the
+    // player chain pulls; everything else it touches is its own media.
+    'googletagmanager.com', 'google-analytics.com', 'static.cloudflareinsights.com',
+    'cloud.umami.is', 'umami.is', 'soycdn.lol', 'adplox.com',
+    // Lotame ad iframe + tracking pixel, loaded by nontongo and vidsrc.
+    'crwdcntrl.net', 'lotame.com'
 ];
 
 const AD_PATTERNS = [
@@ -82,15 +89,46 @@ const TRUSTED_EXTERNAL = [
     'discord.gg',
 ];
 
+/**
+ * True when a URL belongs to ad, tracker, or betting infrastructure.
+ *
+ * The provider's own ad script is served from the provider's host, so the
+ * host list alone cannot catch it - the path can. The rotating ad hosts
+ * live on throwaway TLDs, so those are matched by TLD.
+ */
 function isAdUrl(urlStr) {
     if (!urlStr || typeof urlStr !== 'string') return false;
     const lower = urlStr.toLowerCase();
+    let host = '';
+    try { host = new URL(urlStr).hostname.toLowerCase(); } catch (_) {}
+
+    // The rotating ad hosts live on throwaway TLDs and change on every load:
+    //   t2f.<random>.cfd, zfz7hwz.<random>.cfd  -> the ad script itself
+    //   meatusbyway.cfd                         -> the popunder beacon
+    //   nifty.<random>.qpon                     -> the click tracker
+    // A domain list can never keep up with them, but the TLD does not move.
+    if (host.endsWith('.cfd') || host.endsWith('.qpon')) return true;
+
     for (const d of AD_DOMAINS) {
         if (lower.includes(d)) return true;
     }
     for (const p of AD_PATTERNS) {
         if (lower.includes(p)) return true;
     }
+    // Provider-side ad injectors. These are served from the provider's own
+    // host, so a domain list cannot catch them - the path can.
+    //   /vidstuck.js       -> popunder + rotating tracker hosts (vidstuck.cc)
+    //   /__ads/            -> vidsrc ad script (soycdn.lol)
+    //   /cdn-cgi/rum       -> analytics beacon
+    //   /scripts/vidy.js   -> vidy popunder injector
+    //   /api/script.js     -> vidy popunder injector (users.vidy.st)
+    //   /lt/shared/        -> Lotame ad iframe
+    if (lower.includes('/vidstuck.js')) return true;
+    if (lower.includes('/__ads/')) return true;
+    if (lower.includes('/cdn-cgi/rum')) return true;
+    if (lower.includes('/scripts/vidy.js')) return true;
+    if (lower.includes('/lt/shared/')) return true;
+    if (lower.includes('/api/script.js') && host.indexOf('vidy.st') !== -1) return true;
     if (lower.includes('zoneid=') || lower.includes('bannerid=') || lower.includes('popunder') ||
         lower.includes('campaignid=') || lower.includes('aff_id=') || lower.includes('/pop/')) {
         return true;
@@ -187,10 +225,17 @@ function createWindow() {
         }
     });
 
-    // 3. Subframe Guard: block unauthorized ad navigations inside subframes
+    // 3. Subframe Guard: block ad navigations inside subframes.
+    //
+    // There is deliberately no allowlist of "player hosts" here. Providers
+    // chain their player through hosts they invent per load - measured live
+    // on v2.4.42: vidsrc.to -> vidsrc.sh -> stellarconductornexus.com - and
+    // anime players live on yet other hosts. Denying an unknown host breaks
+    // playback, so the guard is a denylist instead. The ad and tracker hosts
+    // are already dropped at the network layer (onBeforeRequest), which also
+    // covers a subframe navigating to one.
     mainWindow.webContents.on('will-frame-navigate', (event) => {
-        const url = event.url || '';
-        if (isAdUrl(url)) {
+        if (isAdUrl(event.url || '')) {
             event.preventDefault();
         }
     });

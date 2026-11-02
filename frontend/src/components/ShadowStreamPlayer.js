@@ -11,6 +11,49 @@ import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount
 import { AudioPreferencesAPI } from '../utils/storage';
 import { convertSrtGzToVtt } from '../utils/subtitleFetcher';
 
+// Providers that did not hand us a playable frame, with the time they failed.
+//
+// The rotation used to be blind: every provider was retried on every episode
+// change, so a provider that was down cost the user a full timeout on every
+// title. A provider that loads again clears its own mark, and the mark
+// expires so a provider that recovers comes back on its own.
+const DEAD_PROVIDER_TTL_MS = 5 * 60 * 1000;
+const deadProviders = new Map();
+
+function markProviderDead(provider) {
+    if (!provider) return;
+    deadProviders.set(provider, Date.now());
+}
+
+function clearProviderDead(provider) {
+    if (!provider) return;
+    deadProviders.delete(provider);
+}
+
+function isProviderDead(provider) {
+    if (!provider) return false;
+    const markedAt = deadProviders.get(provider);
+    if (!markedAt) return false;
+    if (Date.now() - markedAt > DEAD_PROVIDER_TTL_MS) {
+        deadProviders.delete(provider);
+        return false;
+    }
+    return true;
+}
+
+// Watchdog budget per provider. A provider that chains nested frames needs a
+// longer leash than one that serves a single page: vidsrc.to -> vidsrc.sh ->
+// stellarconductornexus.com measured ~19s cold (v2.4.42), so a flat 16s timer
+// cut off a stream that was about to play.
+const WATCHDOG_DEFAULT_MS = 20000;
+const WATCHDOG_MULTIHOP_MS = 32000;
+
+function watchdogBudgetFor(mirror) {
+    const provider = String(mirror?.provider || '').toLowerCase();
+    if (provider.startsWith('vidsrc')) return WATCHDOG_MULTIHOP_MS;
+    return WATCHDOG_DEFAULT_MS;
+}
+
 // Common ISO 639-1 language code to readable name mapping
 const LANGUAGE_NAMES = {
     en: 'English',
@@ -373,24 +416,37 @@ export default function ShadowStreamPlayer({
     // A cross-origin iframe gives us almost no signal: if a provider is down
     // or has changed its page, the frame either loads a dead page or a broken
     // player, and we cannot read inside it. What we can do is notice that it
-    // loaded and then never became interactive, and offer the next mirror in
-    // one tap rather than leaving the user on a black rectangle.
+    // loaded and then never became interactive, and move to the next mirror
+    // on our own rather than leaving the user on a black rectangle.
     const [embedState, setEmbedState] = useState('loading'); // loading | ready | stalled
     const failoverAttemptsRef = useRef(0);
     const embedTimer = useRef(null);
 
+    // Move to the next mirror that has not already failed. Returns the index,
+    // or -1 when every provider in the list is marked dead - in that case the
+    // user gets the failover bar instead of an endless loop.
     const tryNextMirror = useCallback(() => {
-        if (!mirrorList || mirrorList.length < 2) return;
+        if (!mirrorList || mirrorList.length < 2) return -1;
         setPlayerHandoffFailed(false);
-        const next = (activeMirrorIdx + 1) % mirrorList.length;
-        const targetMirror = mirrorList[next];
-        if (onSelectMirror) onSelectMirror(targetMirror, next);
+        const current = mirrorList[activeMirrorIdx];
+        markProviderDead(current?.provider);
+        for (let step = 1; step <= mirrorList.length; step += 1) {
+            const candidate = (activeMirrorIdx + step) % mirrorList.length;
+            if (!isProviderDead(mirrorList[candidate]?.provider)) {
+                if (onSelectMirror) onSelectMirror(mirrorList[candidate], candidate);
+                return candidate;
+            }
+        }
+        return -1;
     }, [mirrorList, activeMirrorIdx, onSelectMirror]);
 
     const handleEmbedLoaded = useCallback(() => {
         setEmbedState('ready');
+        // It answered. Forget the earlier failure so the provider is offered
+        // again for the next title.
+        clearProviderDead(mirrorList?.[activeMirrorIdx]?.provider);
         if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; }
-    }, []);
+    }, [mirrorList, activeMirrorIdx]);
 
     const handleEmbedFailed = useCallback(() => {
         if (mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < 3) {
@@ -399,40 +455,37 @@ export default function ShadowStreamPlayer({
             setTimeout(() => setDubToast(null), 3000);
             tryNextMirror();
         } else {
-            setEmbedState('ready');
+            setEmbedState('stalled');
         }
     }, [mirrorList, tryNextMirror]);
 
-    // Reset the watchdog whenever the active mirror changes.
-    //
-    // 20s, not 6s. Providers chain nested iframes — VidSrc (IMDb) goes
-    // vidsrc.me -> vidsrc.sh -> cloudorchestranova.com, three hops — so the
-    // OUTER frame's onLoad does not fire until the whole chain settles.
-    // Measured cold on Dexter S5E7: onLoad landed at ~19s. At 6s we painted
-    // "This server isn't responding" over a stream that then played fine, and
-    // at 12s we still beat it by 7s. Since we cannot read inside a
-    // cross-origin frame, the only honest option is a long leash.
+    // Watchdog. The budget is per provider because the provider chains differ:
+    // a single-page provider answers inside 20s, a multi-hop one needs longer.
     useEffect(() => {
         if (!streamUrl || isDirect) return;
         setEmbedState('loading');
         let cancelled = false;
 
-// Stream watchdog handles iframe errors directly without fragile CORS fetch probes
-
         if (embedTimer.current) clearTimeout(embedTimer.current);
+        const budget = watchdogBudgetFor(mirrorList?.[activeMirrorIdx]);
         embedTimer.current = setTimeout(() => {
-            if (!cancelled && mirrorList && mirrorList.length > 1 && failoverAttemptsRef.current < mirrorList.length - 1) {
-                failoverAttemptsRef.current += 1;
-                tryNextMirror();
-            } else {
-                setEmbedState('ready');
+            if (cancelled) return;
+            const switched = tryNextMirror();
+            if (switched === -1) {
+                // Nothing left that has not already failed. Show the bar with
+                // the two honest options instead of spinning forever.
+                setEmbedState('stalled');
+                return;
             }
-        }, 16000);
+            failoverAttemptsRef.current += 1;
+            setDubToast('🔄 That server did not answer — switching to the next one...');
+            setTimeout(() => setDubToast(null), 3000);
+        }, budget);
         return () => {
             cancelled = true;
             if (embedTimer.current) { clearTimeout(embedTimer.current); embedTimer.current = null; }
         };
-    }, [streamUrl, isDirect, mirrorList, tryNextMirror]);
+    }, [streamUrl, isDirect, mirrorList, activeMirrorIdx, tryNextMirror]);
 
     // The watchdog firing does not mean the stream is dead — on a three-hop
     // provider it usually just means we ran out of patience first. Give the
@@ -444,6 +497,18 @@ export default function ShadowStreamPlayer({
             setEmbedState((prev) => (prev === 'loading' ? 'stalled' : prev));
         }, 20000);
     }, []);
+
+    // Open the server picker straight from the failover bar.
+    const openServerPicker = useCallback(() => {
+        setShowMoreMenu(true);
+        setMoreSubmenu('server');
+    }, []);
+
+    // A new title resets the retry budget. The dead-provider marks survive on
+    // purpose, but they expire on their own.
+    useEffect(() => {
+        failoverAttemptsRef.current = 0;
+    }, [mediaId, season, episode]);
 
     // True while the provider has not finished handing us a playable frame.
     // Covers both paths: our own decoder buffering, and the cross-origin
@@ -2482,6 +2547,31 @@ export default function ShadowStreamPlayer({
                                 : 'HD Stream Ready'}
                         </Text>
                     </View>
+                </View>
+            ) : null}
+
+            {/* Failover bar. Shown when the active server ran out of time or
+                every server in the list has already failed, so the user gets
+                the two honest choices instead of a silent black rectangle. */}
+            {embedState === 'stalled' && !isDirect ? (
+                <View style={styles.failoverBar} pointerEvents="box-none">
+                    <Text style={styles.failoverText} numberOfLines={2}>
+                        This server is not responding.
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.failoverBtn}
+                        onPress={keepWaiting}
+                        accessibilityLabel="Keep waiting for this server"
+                    >
+                        <Text style={styles.failoverBtnText}>Keep waiting</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.failoverBtn}
+                        onPress={openServerPicker}
+                        accessibilityLabel="Choose another server"
+                    >
+                        <Text style={styles.failoverBtnText}>Change server</Text>
+                    </TouchableOpacity>
                 </View>
             ) : null}
 

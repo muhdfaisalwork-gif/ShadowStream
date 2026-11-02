@@ -122,21 +122,21 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.41",
+    version: "2.4.42",
 
-    versionCode: 281,
+    versionCode: 282,
 
     minVersion: "1.0.0",
 
     name: "ShadowStream",
 
-    releaseDate: "2026-10-31",
+    releaseDate: "2026-11-02",
 
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.41: Player fix - the v2.4.39 iframe sandbox made every provider refuse to play (Videasy 'Iframe Sandbox Detected', VidStuck 'Sandbox Detected'); sandbox removed, popup defence stays in the AdShield JS layer. Purged hostile player.videasy.to and dead embed.smashystream.com, VidStuck #1 with native dubbed audio, server-side content-presence probe, manual playback-source switcher in the player menu.",
+    releaseNotes: "v2.4.42: AdShield fixed. The desktop app and the APK now drop the provider's own ad script and the rotating ad hosts at the network layer (path + TLD rules), so popunders, ad frames and tracker beacons never load. The subframe guard switched from a player-host allowlist to a denylist, because providers chain their player through hosts they invent per load - denying those broke playback. The web player keeps a working manual server switcher and now auto-switches on its own: per-provider watchdog budget, dead-provider memory so a dead server is skipped instead of retried on every episode, and an inline 'Change server' bar when every server fails. Anime and cartoons keep working through the same provider rotation.",
 
 };
 
@@ -3847,8 +3847,6 @@ export default {
         const path = url.pathname;
 
         const params = url.searchParams;
-
-
 
         try {
 
