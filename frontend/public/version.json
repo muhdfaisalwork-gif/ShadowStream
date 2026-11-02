@@ -1,10 +1,10 @@
 {
-  "version": "2.4.42",
-  "versionCode": 282,
+  "version": "2.4.43",
+  "versionCode": 283,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-11-02",
+  "releaseDate": "2026-11-03",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.42: AdShield fixed. The desktop app and the APK now drop the provider's own ad script and the rotating ad hosts at the network layer (path + TLD rules), so popunders, ad frames and tracker beacons never load. The subframe guard switched from a player-host allowlist to a denylist, because providers chain their player through hosts they invent per load - denying those broke playback. The web player keeps a working manual server switcher and now auto-switches on its own: per-provider watchdog budget, dead-provider memory so a dead server is skipped instead of retried on every episode, and an inline 'Change server' bar when every server fails. Anime and cartoons keep working through the same provider rotation."
+  "releaseNotes": "v2.4.43: Catalog link-integrity release — enrich all browse/search list items with canonical tmdbId and catalogId, validate and correct IDs in /stream/resolve, eliminate search fallback on missing collections, and make prefix lookups opt-in."
 }

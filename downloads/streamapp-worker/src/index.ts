@@ -122,15 +122,15 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.42",
+    version: "2.4.43",
 
-    versionCode: 282,
+    versionCode: 283,
 
     minVersion: "1.0.0",
 
     name: "ShadowStream",
 
-    releaseDate: "2026-11-02",
+    releaseDate: "2026-11-03",
 
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
 
@@ -212,6 +212,68 @@ async function loadSmall(key: string, env: Env): Promise<unknown> {
 
     return parsed;
 
+}
+
+// Fast in-memory lookup maps from title-detail-index.json for instant O(1) tmdbId enrichment
+async function getTmdbIndexMaps(env: Env): Promise<{ idMap: Map<number, number>; slugMap: Map<string, number> }> {
+    if (memCache.has("tmdb_index_maps")) {
+        return memCache.get("tmdb_index_maps") as { idMap: Map<number, number>; slugMap: Map<string, number> };
+    }
+    const idMap = new Map<number, number>();
+    const slugMap = new Map<string, number>();
+    try {
+        const index = await loadSmall("title-detail-index.json", env) as DetailIndexEntry[];
+        if (Array.isArray(index)) {
+            for (const e of index) {
+                if (e && e.tmdbId != null) {
+                    if (e.id != null) idMap.set(Number(e.id), Number(e.tmdbId));
+                    if (e.slug) slugMap.set(String(e.slug).trim().toLowerCase(), Number(e.tmdbId));
+                }
+            }
+        }
+    } catch (_) {}
+    const maps = { idMap, slugMap };
+    memCache.set("tmdb_index_maps", maps);
+    return maps;
+}
+
+// P0-1: Enrich every returned list item with canonical tmdbId and catalogId
+async function enrichListItems(items: any[], env: Env): Promise<any[]> {
+    if (!Array.isArray(items) || items.length === 0) return items || [];
+    try {
+        const { idMap, slugMap } = await getTmdbIndexMaps(env);
+        return items.map((it) => {
+            if (!it || typeof it !== "object") return it;
+            const existingTmdb = it.tmdbId ?? it.tmdb_id ?? null;
+            let tmdbId = existingTmdb != null ? Number(existingTmdb) : null;
+            if (tmdbId == null && it.id != null) {
+                tmdbId = idMap.get(Number(it.id)) ?? null;
+            }
+            if (tmdbId == null && it.slug) {
+                tmdbId = slugMap.get(String(it.slug).trim().toLowerCase()) ?? null;
+            }
+            if (tmdbId == null && it.slug) {
+                const cleanSlug = String(it.slug).trim().toLowerCase();
+                const known = KNOWN_TITLE_MAP[cleanSlug] || KNOWN_TITLE_MAP[cleanSlug.replace(/-\d+$/, '')];
+                if (known && known.tmdbId) tmdbId = Number(known.tmdbId);
+            }
+            if (tmdbId == null && typeof it.slug === "string") {
+                const m = it.slug.match(/-(\d{4,9})$/);
+                if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
+                    tmdbId = Number(m[1]);
+                }
+            }
+            return {
+                ...it,
+                catalogId: it.catalogId ?? it.id,
+                id: it.id,
+                tmdbId: tmdbId != null ? tmdbId : null,
+                tmdb_id: tmdbId != null ? tmdbId : null,
+            };
+        });
+    } catch (_) {
+        return items;
+    }
 }
 
 
@@ -1610,17 +1672,23 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             if (!wantsColFilter) {
 
-                return new Response(colObj.body, {
+                const colData = (await colObj.json()) as { items?: any[]; collection?: unknown };
 
-                    headers: {
+                const enrichedItems = await enrichListItems(colData.items || [], env);
 
-                        "Content-Type": "application/json",
+                return jsonResponse({
 
-                        "Cache-Control": "public, max-age=300",
+                    items: enrichedItems,
 
-                        ...CORS,
+                    total: enrichedItems.length,
 
-                    },
+                    page: 1,
+
+                    pageSize: enrichedItems.length,
+
+                    pageCount: 1,
+
+                    collection: colData.collection || { slug: col },
 
                 });
 
@@ -1634,7 +1702,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             return jsonResponse({
 
-                items: pagedItems,
+                items: await enrichListItems(pagedItems, env),
 
                 total,
 
@@ -1650,7 +1718,22 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
         }
 
-        return await searchTitles(col, env, parseInt(params.get("page_size") || "60", 10));
+        // P1-1: Missing collection must never fall through to text search
+        return jsonResponse({
+
+            items: [],
+
+            total: 0,
+
+            page: 1,
+
+            pageSize: parseInt(params.get("page_size") || "60", 10),
+
+            pageCount: 0,
+
+            collection: { slug: rawCol, name: rawCol.replace(/-/g, " ") },
+
+        });
 
     }
 
@@ -1698,7 +1781,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
                 const { items: pagedItems, total, page, pageSize, pageCount } = paginateList(items, params);
 
-                return jsonResponse({ items: pagedItems, total, page, pageSize, pageCount, collection: mappedCol });
+                return jsonResponse({ items: await enrichListItems(pagedItems, env), total, page, pageSize, pageCount, collection: mappedCol });
 
             }
 
@@ -1722,7 +1805,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             const { items: pagedItems, total, page, pageSize, pageCount } = paginateList(items, params);
 
-            return jsonResponse({ items: pagedItems, total, page, pageSize, pageCount, type: "anime" });
+            return jsonResponse({ items: await enrichListItems(pagedItems, env), total, page, pageSize, pageCount, type: "anime" });
 
         }
 
@@ -1762,7 +1845,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
                 const { items: pagedItems, total, page, pageSize, pageCount } = paginateList(items, params);
 
-                return jsonResponse({ items: pagedItems, total, page, pageSize, pageCount, collection: mappedCol });
+                return jsonResponse({ items: await enrichListItems(pagedItems, env), total, page, pageSize, pageCount, collection: mappedCol });
 
             }
 
@@ -1820,7 +1903,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             return jsonResponse({
 
-                items: pagedItems,
+                items: await enrichListItems(pagedItems, env),
 
                 total,
 
@@ -1870,7 +1953,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
                 const { items: pagedItems, total, page, pageSize, pageCount } = paginateList(rawFiltered, params);
 
-                return jsonResponse({ items: pagedItems, total, page, pageSize, pageCount, name: countryCode });
+                return jsonResponse({ items: await enrichListItems(pagedItems, env), total, page, pageSize, pageCount, name: countryCode });
 
             }
 
@@ -1880,7 +1963,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             return jsonResponse({
 
-                items: pagedItems,
+                items: await enrichListItems(pagedItems, env),
 
                 total,
 
@@ -1936,7 +2019,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             return jsonResponse({
 
-                items: pagedItems,
+                items: await enrichListItems(pagedItems, env),
 
                 total,
 
@@ -1994,7 +2077,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
             return jsonResponse({
 
-                items: pagedItems,
+                items: await enrichListItems(pagedItems, env),
 
                 total,
 
@@ -2262,7 +2345,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
     const { items: pagedItems, total, page, pageSize, pageCount } = paginateList(filtered, params);
 
-    return jsonResponse({ items: pagedItems, total, page, pageSize, pageCount, type: typeFilter });
+    return jsonResponse({ items: await enrichListItems(pagedItems, env), total, page, pageSize, pageCount, type: typeFilter });
 
 }
 
@@ -2380,13 +2463,10 @@ async function getFullTitleData(idOrSlug: string, env: Env): Promise<any | null>
 
         } else {
 
+            // P1-3: Make startsWith prefix fallbacks opt-in to avoid picking wrong titles with shared prefixes
             entry =
 
                 pick(sameName, true) ||
-
-                pick(index.filter((e) => e.slug.startsWith(clean)), true) ||
-
-                pick(index.filter((e) => clean.startsWith(e.slug)), false) ||
 
                 sameName[0];
 
@@ -2891,6 +2971,8 @@ async function getTitle(idOrSlug: string, env: Env, langSuffix = ""): Promise<Re
     }
 
 
+
+    found.catalogId = found.catalogId ?? found.id;
 
     return jsonResponse(found);
 
@@ -3568,7 +3650,7 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
 
                 return jsonResponse({
 
-                    items: popular.slice(0, limit),
+                    items: await enrichListItems(popular.slice(0, limit), env),
 
                     total: popular.length,
 
@@ -3678,7 +3760,9 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
 
 
 
-    const items = finalHits.slice(offset, offset + pageSize).map(({ _t, _s, _score, ...rest }) => rest);
+    const rawItems = finalHits.slice(offset, offset + pageSize).map(({ _t, _s, _score, ...rest }) => rest);
+
+    const items = await enrichListItems(rawItems, env);
 
     return jsonResponse({ items, total: finalHits.length, page, pageSize, facets, q });
 
@@ -5134,8 +5218,12 @@ export default {
 
 
 
-                // 1. Check known titles map
+                // P0-4: Robust canonical TMDB ID validation & correction in /stream/resolve
+                let canonicalTitleObj: any = null;
 
+                const { idMap, slugMap } = await getTmdbIndexMaps(env);
+
+                // A. Check known titles map
                 if (slugParam) {
 
                     const cleanSlug = slugParam.trim().toLowerCase();
@@ -5144,7 +5232,7 @@ export default {
 
                     if (known) {
 
-                        if (!tmdbId && known.tmdbId) tmdbId = String(known.tmdbId);
+                        if (known.tmdbId) tmdbId = String(known.tmdbId);
 
                         if (!imdbId && known.imdbId) imdbId = known.imdbId;
 
@@ -5152,25 +5240,48 @@ export default {
 
                 }
 
-
-
-                // 2. Guard: If tmdbId is missing or looks like a 4-digit release year (1900-2099), resolve from catalog
-
-                if (slugParam && (!tmdbId || /^(19\d\d|20\d\d)$/.test(String(tmdbId)))) {
+                // B. If slug is provided, resolve the real canonical title from the catalog
+                if (slugParam) {
 
                     try {
 
-                        const full = await getFullTitleData(slugParam, env);
+                        canonicalTitleObj = await getFullTitleData(slugParam, env);
 
-                        if (full) {
+                        if (canonicalTitleObj) {
 
-                            if (full.tmdbId || full.tmdb_id) tmdbId = String(full.tmdbId || full.tmdb_id);
+                            const realTmdb = canonicalTitleObj.tmdbId || canonicalTitleObj.tmdb_id;
 
-                            if (full.imdbId || full.imdb_id) imdbId = String(full.imdbId || full.imdb_id);
+                            if (realTmdb) {
+
+                                // If caller passed an ID that differs from canonical TMDB ID (e.g. caller passed internal catalog id),
+                                // ALWAYS correct it to the true canonical TMDB ID.
+                                tmdbId = String(realTmdb);
+
+                            }
+
+                            if (canonicalTitleObj.imdbId || canonicalTitleObj.imdb_id) {
+
+                                if (!imdbId) imdbId = String(canonicalTitleObj.imdbId || canonicalTitleObj.imdb_id);
+
+                            }
 
                         }
 
                     } catch (_) {}
+
+                }
+
+                // C. If caller explicitly passed catalogId / catalog_id, or if tmdbId is missing but slugMap has it
+                const rawCatalogId = params.get("catalogId") || params.get("catalog_id");
+                if (rawCatalogId) {
+
+                    const mappedTmdb = idMap.get(Number(rawCatalogId));
+
+                    if (mappedTmdb) tmdbId = String(mappedTmdb);
+
+                } else if (!tmdbId && slugParam && slugMap.has(slugParam.trim().toLowerCase())) {
+
+                    tmdbId = String(slugMap.get(slugParam.trim().toLowerCase()));
 
                 }
 
@@ -5553,6 +5664,10 @@ export default {
                     status: "success",
 
                     tmdbId,
+
+                    resolvedTmdbId: tmdbId,
+
+                    titleMatch: canonicalTitleObj ? (canonicalTitleObj.title || canonicalTitleObj.name) : null,
 
                     type,
 

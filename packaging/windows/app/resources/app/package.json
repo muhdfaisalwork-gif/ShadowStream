@@ -1,7 +1,7 @@
 {
   "name": "streamapp",
   "productName": "StreamApp",
-  "version": "2.4.42",
+  "version": "2.4.43",
   "description": "StreamApp Desktop — Cinematic Streaming Aggregator across 42 nations",
   "main": "main.js",
   "author": "StreamApp Foundation"

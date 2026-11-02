@@ -172,7 +172,10 @@ export default function BrowseScreen({ route, navigation }) {
 
         try {
             if (categorySlug && !genre && !country && !audio && !yearMin) {
-                const colSlug = categorySlug === 'playable-now' ? 'free-content' : categorySlug;
+                const colSlug = categorySlug === 'playable-now' ? 'free-content'
+                    : categorySlug === 'popular' ? (tab === 'tv' ? 'popular-series' : 'popular-movies')
+                    : categorySlug === 'trending' ? 'trending-today'
+                    : categorySlug;
                 let colUrl = `${getApiBase()}/titles?collection=${encodeURIComponent(colSlug)}&page=${pageNum}&page_size=60&sort=${sort}`;
                 if (tab && tab !== 'all') colUrl += `&type=${encodeURIComponent(tab)}`;
                 const colRes = await fetch(colUrl);

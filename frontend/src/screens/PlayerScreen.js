@@ -145,12 +145,14 @@ export default function PlayerScreen({ route, navigation }) {
 
     const effectiveTmdb = useMemo(() => {
         if (!item) return null;
-        if (item.tmdbId && !/^(19\d\d|20\d\d)$/.test(String(item.tmdbId))) return String(item.tmdbId);
-        if (item.tmdb_id && !/^(19\d\d|20\d\d)$/.test(String(item.tmdb_id))) return String(item.tmdb_id);
-        if (item.id && !/^(19\d\d|20\d\d)$/.test(String(item.id)) && /^\d+$/.test(String(item.id))) return String(item.id);
+        // P0-2: Never use item.id as TMDB ID (item.id is the internal catalogue row ID).
+        // Only reject if the value identically matches the release year (to guard against misattributed year fields)
+        const isYear = (val) => item.year && String(val) === String(item.year);
+        if (item.tmdbId && !isYear(item.tmdbId)) return String(item.tmdbId);
+        if (item.tmdb_id && !isYear(item.tmdb_id)) return String(item.tmdb_id);
         if (typeof item.slug === 'string') {
             const m = item.slug.match(/-(\d{4,9})$/);
-            if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) return m[1];
+            if (m && m[1] && !isYear(m[1])) return m[1];
         }
         return null;
     }, [item]);
@@ -452,14 +454,16 @@ export default function PlayerScreen({ route, navigation }) {
 
             let sourcesToUse = playableSources;
 
-            // Safe TMDB ID resolution fallback from availability list
+            // Safe TMDB ID resolution fallback from availability list (P0-3)
             let currentTmdb = effectiveTmdb;
-            if (!currentTmdb && Array.isArray(avList) && avList.length > 0) {
+            if (Array.isArray(avList) && avList.length > 0) {
                 for (const a of avList) {
                     const u = a.playbackUrl || a.url || a.external_url || '';
-                    const m = u.match(/(?:vidlink\.pro\/(?:movie|tv)\/|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=)(\d+)/);
-                    if (m && m[1] && !/^(19\d\d|20\d\d)$/.test(m[1])) {
-                        currentTmdb = m[1];
+                    const m = u.match(/(?:vidlink\.pro\/(?:movie|tv)\/|\/embed\/(?:tv|movie)\/|\/embed\/tmdb\/(?:tv|movie)\?id=|video_id=|tmdb=|tmdb\/(?:movie|tv)\?id=|playere\.php\?tmdb=)(\d+)/);
+                    if (m && m[1]) {
+                        if (!currentTmdb) {
+                            currentTmdb = m[1];
+                        }
                         break;
                     }
                 }
@@ -475,7 +479,7 @@ export default function PlayerScreen({ route, navigation }) {
                 const preferredLang = AudioPreferencesAPI.getPreferred();
                 const activeLang = effectiveTargetLang || (preferredLang !== 'auto' ? preferredLang : null);
                 const langQuery = activeLang ? `&lang=${encodeURIComponent(activeLang)}` : '';
-                const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${effectiveTmdb || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}${langQuery}`;
+                const wUrl = `${getApiBase()}/stream/resolve?tmdbId=${finalTmdb || ''}&catalogId=${item.catalogId || item.id || ''}&type=${item.type || 'tv'}&season=${activeS || 1}&episode=${activeE || 1}&title=${titleStr}&slug=${slugStr}${langQuery}`;
                 const wRes = await fetch(wUrl);
                 if (wRes.ok) {
                     const wData = await wRes.json();
@@ -538,8 +542,16 @@ export default function PlayerScreen({ route, navigation }) {
             }
 
             if (workerMultiLangStreams.length > 0) {
-                sourcesToUse = [...workerMultiLangStreams, ...sourcesToUse];
-            } else if (sourcesToUse.length === 0 && (effectiveTmdb || effectiveImdb)) {
+                // P0-5: Only prepend worker streams if their TMDB ID matches finalTmdb (or title is anime/general)
+                const verifiedWorkerStreams = finalTmdb
+                    ? workerMultiLangStreams.filter(s => {
+                        const u = s.playbackUrl || s.url || '';
+                        const m = u.match(/(?:embed\/(?:tv|movie)\/|tmdb[=/]|video_id=)(\d+)/);
+                        return !m || m[1] === String(finalTmdb);
+                    })
+                    : workerMultiLangStreams;
+                sourcesToUse = [...verifiedWorkerStreams, ...sourcesToUse];
+            } else if (sourcesToUse.length === 0 && (finalTmdb || effectiveImdb)) {
                 const isMovie = item.type === 'movie';
                 const dyn = [];
                 if (finalTmdb) {
