@@ -1,10 +1,10 @@
 {
-  "version": "2.4.44",
-  "versionCode": 284,
+  "version": "2.4.45",
+  "versionCode": 285,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-11-03",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.44: Curated Islamic & Religious History collection with 15 verified streaming titles, dedicated collection & category endpoints, enriched search indexing, slug-to-TMDB ID resolution resilience in /stream/resolve, and desktop manual playback source switcher in the player top bar."
+  "releaseNotes": "v2.4.45: Direct 1080p high-speed playback integration for curated Islamic & Religious History films and TV series (The Message, Prophet Joseph, Omar, Saint Mary, Bilal, The Kingdom of Solomon, Muhammad The Last Prophet, Men of Anjolos), eliminated infinite provider buffering, resilient edge stream resolution, and complete multi-lingual dub support."
 }

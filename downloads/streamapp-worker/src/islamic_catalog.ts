@@ -18,7 +18,455 @@ export interface CuratedIslamicTitle {
     overview: string;
     seasonCount?: number;
     episodeCount?: number;
+    seasons?: any[];
     aliases: string[];
+}
+
+export function getIslamicStreams(t: any, season: number = 1, episode: number = 1): Array<Record<string, any>> {
+    const slug = (t.slug || '').toLowerCase();
+    const ep = Math.max(1, episode || 1);
+    const s = Math.max(1, season || 1);
+    const ep2 = String(ep).padStart(2, '0');
+    const streams: Array<Record<string, any>> = [];
+
+    if (slug.includes('the-message')) {
+        streams.push({
+            label: '⚡ Archive Direct (1080p BluRay Master)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/themessage1976/The.Message.1976.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4',
+            format: 'video',
+            quality: '1080p',
+            language: 'en',
+            languageName: 'English (Original)'
+        });
+        streams.push({
+            label: '⚡ Archive Direct (720p HD Master)',
+            provider: 'archive_org_720',
+            url: 'https://archive.org/download/TheMessageEnglishVersion/The%20Message%20-%20%28English%20Version%29.mp4',
+            format: 'video',
+            quality: '720p',
+            language: 'en',
+            languageName: 'English (720p)'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt0074896',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/26842',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ 2Embed Multi-Server',
+            provider: '2embed',
+            url: 'https://www.2embed.cc/embed/tmdb/movie?id=26842',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('muhammad-the-messenger-of-god')) {
+        streams.push({
+            label: '⚡ Archive Direct (1080p WEBRip)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/muhammad-the-messenger-of-god-2015-urdu/Muhammad.The.Messenger.of.God.2015.1080p.Urdu.Hindi.WEBRip.HE-AAC.2.0.x264-Shehnshahr.mp4',
+            format: 'video',
+            quality: '1080p',
+            language: 'hi',
+            languageName: 'Hindi/Urdu Dub',
+            isDub: true
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt3921314',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/315859',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ 2Embed Multi-Server',
+            provider: '2embed',
+            url: 'https://www.2embed.cc/embed/tmdb/movie?id=315859',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('muhammad-the-last-prophet')) {
+        streams.push({
+            label: '⚡ Archive Direct (Animated Feature)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/MuhammadTheLastProphet1/MuhammadTheLastProphet1_512kb.mp4',
+            format: 'video',
+            quality: 'HD',
+            language: 'en',
+            languageName: 'English (Original)'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt0330671',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/45904',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('final-legacy') || slug.includes('qamar-bani-hashim')) {
+        streams.push({
+            label: `⚡ Archive Direct (Arabic Original Ep ${ep})`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/qamar_bani_hashim/Qamar%20Bani%20Hashim/qamar_bani_hashim_${ep2}.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'ar',
+            languageName: 'Arabic (Original)'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt8435132&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/57806/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('prophet-joseph')) {
+        streams.push({
+            label: `⚡ Archive Direct (Farsi Ep ${ep})`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/hazrat-yusuf-a-s/Hazrat%20Yusuf%20%28A.S%29%20Farsi%20Ep${ep2}.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'fa',
+            languageName: 'Farsi (Original)'
+        });
+        streams.push({
+            label: `⚡ Archive Direct (Urdu/Hindi Dub Ep ${ep})`,
+            provider: 'archive_org_urdu',
+            url: `https://archive.org/download/hazrat-yusuf-a-s/Hazrat%20Yusuf%20%28A.S%29%20Urdu%20Ep${ep2}.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'hi',
+            languageName: 'Hindi/Urdu Dub',
+            isDub: true
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt3770334&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/70802/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('the-kingdom-of-solomon')) {
+        streams.push({
+            label: '⚡ Archive Direct (HD Master)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/TheKingdomOfSolomon/The%20Kingdom%20of%20Solomon%20%282010%29.mp4',
+            format: 'video',
+            quality: '720p',
+            language: 'fa',
+            languageName: 'Farsi'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt1706450',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/153779',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('abraham-friend-of-god')) {
+        streams.push({
+            label: '⚡ Archive Direct (Hindi/Urdu Dub)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/abraham-the-friend-of-god-hazrat-ibrahim-a.s-movie-in-urdu-hindi-by-hidayah-play/Abraham%20The%20Friend%20of%20GOD%20Hazrat%20Ibrahim%20a.s%20Movie%20in%20Urdu_Hindi%20by%20Hidayah%20Play.mp4',
+            format: 'video',
+            quality: 'HD',
+            language: 'hi',
+            languageName: 'Hindi/Urdu Dub',
+            isDub: true
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt2187050',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/310343',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('saint-mary')) {
+        streams.push({
+            label: `⚡ Archive Direct (Ep ${ep} Eng Subs)`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/saint-mary-series/Saint%20Mary%20Series%20-%20Episode%20${ep2}.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'en',
+            languageName: 'English Subtitles'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt0290747',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/321637',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('the-messiah')) {
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt1148208',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/485991',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ 2Embed Multi-Server',
+            provider: '2embed',
+            url: 'https://www.2embed.cc/embed/tmdb/movie?id=485991',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('testament-the-story-of-moses')) {
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt31057778&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/247441/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ 2Embed Multi-Server',
+            provider: '2embed',
+            url: `https://www.2embed.cc/embed/tmdb/tv?id=247441&s=${s}&e=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('omar-series')) {
+        streams.push({
+            label: `⚡ Archive Direct (Arabic + Eng Subs Ep ${ep})`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/OmarSeriesArabicWithEnglishSubtitles/OmarSeries%20-%20Ep${ep}%20-%20English%20Subtitles.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'en',
+            languageName: 'English Subtitles'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt2474776&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/58887/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('bilal-a-new-breed-of-hero')) {
+        streams.push({
+            label: '⚡ Archive Direct (1080p BluRay)',
+            provider: 'archive_org',
+            url: 'https://archive.org/download/BILAL_2015/Bilal%20A%20New%20Breed%20Of%20Hero%20%282015%29.mp4',
+            format: 'video',
+            quality: '1080p',
+            language: 'en',
+            languageName: 'English (Original)'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: 'https://vidsrc.me/embed/movie?imdb=tt3577666',
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: 'https://vidsrc.to/embed/movie/332718',
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('imam-ali')) {
+        streams.push({
+            label: `⚡ Archive Direct (720p Urdu Dub Ep ${ep})`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/shaheed-e-kufa-imam-ali-a.s-in-urdu-episode-21-720-p-hd/Shaheed%20e%20Kufa%20_%20Imam%20Ali%20a.s%20_%20In%20Urdu%20_%20Episode%20${ep}%28720P_HD%29.mp4`,
+            format: 'video',
+            quality: '720p',
+            language: 'hi',
+            languageName: 'Hindi/Urdu Dub',
+            isDub: true
+        });
+        streams.push({
+            label: '⚡ Archive Direct (Persian Feature)',
+            provider: 'archive_org_film',
+            url: 'https://archive.org/download/ImamAliIbnAbiTalebpeaceBeUponHim-PersianFilm/ImamAli_Film_P_LargeScreen_HQ_xvid.mp4',
+            format: 'video',
+            quality: 'HD',
+            language: 'fa',
+            languageName: 'Farsi'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt7388704&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/44058/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('men-of-anjolos')) {
+        streams.push({
+            label: `⚡ Archive Direct (Urdu Dub Ep ${ep})`,
+            provider: 'archive_org',
+            url: `https://archive.org/download/ashabekahfurdu/Ashab-e-Kahf%20-%20Episode%20${ep}%20in%20URDU%20%5Bwww.alfasahah.com%5D.mp4`,
+            format: 'video',
+            quality: 'HD',
+            language: 'hi',
+            languageName: 'Hindi/Urdu Dub',
+            isDub: true
+        });
+        streams.push({
+            label: '⚡ Archive Direct (Movie with Eng Subs)',
+            provider: 'archive_org_movie',
+            url: 'https://archive.org/download/the-ashab-e-kahf-men-of-the-cave-movie-urdu-with-english-subtitles/The%20Ashab-e-Kahf%20%28Men%20of%20The%20Cave%29%20Movie%20%E2%80%93%20Urdu%20with%20English%20Subtitles.mp4',
+            format: 'video',
+            quality: 'HD',
+            language: 'en',
+            languageName: 'English Subtitles'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt7388656&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/60332/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    } else if (slug.includes('mokhtarnameh')) {
+        const mukhtarUrl = ep === 1
+            ? 'https://archive.org/download/mukhtar-18/mukhtar01.mp4'
+            : ep === 2
+            ? 'https://archive.org/download/mukhtar-18/mukhtar2oke.mp4'
+            : ep === 3
+            ? 'https://archive.org/download/mukhtar-18/mukhtar3.mp4'
+            : `https://archive.org/download/mukhtar-18/mukhtar-${ep2}.mp4`;
+        streams.push({
+            label: `⚡ Archive Direct (HD Original Ep ${ep})`,
+            provider: 'archive_org',
+            url: mukhtarUrl,
+            format: 'video',
+            quality: 'HD',
+            language: 'fa',
+            languageName: 'Farsi (Original)'
+        });
+        streams.push({
+            label: '⚡ VidSrc HD (IMDb Master)',
+            provider: 'vidsrc_imdb',
+            url: `https://vidsrc.me/embed/tv?imdb=tt2071536&season=${s}&episode=${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+        streams.push({
+            label: '⚡ VidSrc Multi-Server',
+            provider: 'vidsrc',
+            url: `https://vidsrc.to/embed/tv/54467/${s}/${ep}`,
+            format: 'embed',
+            quality: '1080p'
+        });
+    }
+
+    return streams;
+}
+
+export function buildIslamicAvailability(t: any, season: number = 1, episode: number = 1): any[] {
+    const streams = getIslamicStreams(t, season, episode);
+    return streams.map(s => ({
+        source: s.provider,
+        sourceName: s.label,
+        sourceIsLegal: true,
+        kind: s.format === 'video' ? 'playback' : 'embed',
+        status: 'available',
+        url: s.url,
+        playbackUrl: s.url,
+        language: s.language,
+        languageName: s.languageName,
+        isDub: s.isDub,
+        isSub: s.isSub
+    }));
 }
 
 export const CURATED_ISLAMIC_TITLES: any[] = [
@@ -151,7 +599,7 @@ export const CURATED_ISLAMIC_TITLES: any[] = [
         slug: "saint-mary-2000",
         title: "Saint Mary",
         year: 2000,
-        type: "movie",
+        type: "tv",
         rating: 7.1,
         tmdbId: 321637,
         tmdb_id: 321637,
@@ -160,6 +608,8 @@ export const CURATED_ISLAMIC_TITLES: any[] = [
         poster: "https://image.tmdb.org/t/p/w500/m6gIBrCqzNHGPwkaEET87UK9fh5.jpg",
         backdrop: "https://image.tmdb.org/t/p/w1280/j5KuDZbVKZalltOuLMJMlFGiI8v.jpg",
         overview: "In the year 16 BCE, the people of Jerusalem are awaiting the birth of the son of Imran. Instead of the much-anticipated \"Messiah\", a girl is born to Imran and Anna. The latter names her ...",
+        seasonCount: 1,
+        episodeCount: 11,
         aliases: ["saint mary", "maryam moghaddas", "maryam", "mary", "isa", "jesus", "zakariyya"],
     },
     {
@@ -292,6 +742,25 @@ export const CURATED_ISLAMIC_TITLES: any[] = [
         aliases: ["mokhtarnameh", "al mukhtar", "mukhtar al thaqafi", "karbala", "the mokhtar narrative"],
     },
 ];
+
+// Populate seasons and availability for all titles
+for (const t of CURATED_ISLAMIC_TITLES) {
+    if (t.type === 'tv' && t.episodeCount) {
+        t.seasons = [
+            {
+                season_number: 1,
+                name: "Season 1",
+                episode_count: t.episodeCount,
+                episodes: Array.from({ length: t.episodeCount }, (_, i) => ({
+                    episode_number: i + 1,
+                    name: `Episode ${i + 1}`,
+                    overview: `${t.title} Episode ${i + 1}`
+                }))
+            }
+        ];
+    }
+    t.availability = buildIslamicAvailability(t, 1, 1);
+}
 
 export const CURATED_ISLAMIC_MAP: Record<string, any> = {};
 export const CURATED_ISLAMIC_MAP_BY_ID: Record<string, any> = {};

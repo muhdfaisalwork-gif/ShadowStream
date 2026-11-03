@@ -2,7 +2,7 @@
   "expo": {
     "name": "ShadowStream",
     "slug": "shadowstream",
-    "version": "2.4.44",
+    "version": "2.4.45",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "shadowstream",
@@ -18,11 +18,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.streamapp.app",
-      "buildNumber": "283"
+      "buildNumber": "285"
     },
     "android": {
       "package": "com.streamapp.app",
-      "versionCode": 284,
+      "versionCode": 285,
       "adaptiveIcon": {
         "backgroundColor": "#0d0d0d",
         "foregroundImage": "./assets/android-icon-foreground.png",

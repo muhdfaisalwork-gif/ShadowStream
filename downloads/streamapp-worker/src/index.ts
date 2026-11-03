@@ -64,7 +64,9 @@ import {
     CURATED_ISLAMIC_TITLES,
     CURATED_ISLAMIC_MAP,
     CURATED_ISLAMIC_MAP_BY_ID,
-    ISLAMIC_KNOWN_TITLES
+    ISLAMIC_KNOWN_TITLES,
+    getIslamicStreams,
+    buildIslamicAvailability
 } from "./islamic_catalog";
 
 export interface Env {
@@ -127,9 +129,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.44",
+    version: "2.4.45",
 
-    versionCode: 284,
+    versionCode: 285,
 
     minVersion: "1.0.0",
 
@@ -2500,7 +2502,7 @@ async function getFullTitleData(idOrSlug: string, env: Env): Promise<any | null>
     if (curatedMatch) {
         return {
             ...curatedMatch,
-            availability: buildFallbackAvailability(curatedMatch),
+            availability: buildIslamicAvailability(curatedMatch, 1, 1),
         };
     }
 
@@ -5331,16 +5333,21 @@ export default {
                 const { idMap, slugMap } = await getTmdbIndexMaps(env);
 
                 // A. Check curated Islamic titles and known titles map
-                if (slugParam) {
-
-                    const cleanSlug = slugParam.trim().toLowerCase();
-
+                let curatedIslamicObj: any = null;
+                const cleanSlug = slugParam ? slugParam.trim().toLowerCase() : '';
+                if (cleanSlug) {
                     const curated = CURATED_ISLAMIC_MAP[cleanSlug] || CURATED_ISLAMIC_MAP[cleanSlug.replace(/-\d+$/, '')];
                     if (curated) {
+                        curatedIslamicObj = curated;
                         if (curated.tmdbId) tmdbId = String(curated.tmdbId);
                         if (!imdbId && curated.imdbId) imdbId = curated.imdbId;
                     }
-
+                }
+                if (!curatedIslamicObj && titleParam) {
+                    const cleanTitle = titleParam.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                    curatedIslamicObj = CURATED_ISLAMIC_MAP[cleanTitle];
+                }
+                if (cleanSlug) {
                     const known = KNOWN_TITLE_MAP[cleanSlug] || KNOWN_TITLE_MAP[cleanSlug.replace(/-\d+$/, '')];
 
                     if (known) {
@@ -5590,8 +5597,11 @@ export default {
 
 
 
-                // 2. TMDB-based providers (Verified 100% working high-uptime streams)
-                if (tmdbId && tmdbId !== "null") {
+                // 2. Curated Islamic Titles direct & verified streams
+                if (curatedIslamicObj) {
+                    const islamicStreams = getIslamicStreams(curatedIslamicObj, parsedS, parsedE);
+                    streams.push(...islamicStreams);
+                } else if (tmdbId && tmdbId !== "null") {
                     // 2. VidStuck - Sub-200ms Ultra Fast Universal HTML5 Streaming (Primary donkey.to backup)
                     streams.push({
                         label: "⚡ VidStuck Ultra Fast (HD)",
@@ -5723,6 +5733,27 @@ export default {
                 // Available languages list for UI badges and switcher
 
                 const availableLanguagesMap = new Map<string, any>();
+
+                if (curatedIslamicObj) {
+                    const islamicLangs = [
+                        { code: 'hi', name: 'Hindi/Urdu Dub', flag: '🇮🇳' },
+                        { code: 'en', name: 'English', flag: '🇬🇧' },
+                        { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+                        { code: 'fa', name: 'Farsi', flag: '🇮🇷' }
+                    ];
+                    islamicLangs.forEach(il => {
+                        if (streams.some(s => s.language === il.code)) {
+                            availableLanguagesMap.set(il.code, {
+                                code: il.code,
+                                name: il.name,
+                                flag: il.flag,
+                                isAvailable: true,
+                                hasDub: streams.some(s => s.language === il.code && s.isDub),
+                                hasSub: streams.some(s => s.language === il.code && s.isSub)
+                            });
+                        }
+                    });
+                }
 
                 GLOBAL_CATALOG_LANGUAGES.forEach(gl => {
 

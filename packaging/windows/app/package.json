@@ -1,6 +1,6 @@
 {
   "name": "shadowstream-windows",
-  "version": "2.4.44",
+  "version": "2.4.45",
   "description": "ShadowStream desktop app for Windows",
   "main": "resources/app/main.js",
   "author": "ShadowStream",
