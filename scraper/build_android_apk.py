@@ -53,7 +53,7 @@ APP_NAME = "ShadowStream"
 MIN_SDK = 24
 TARGET_SDK = 34
 VERSION_CODE = 283
-VERSION_NAME = "2.4.43"
+VERSION_NAME = "2.4.44"
 APP_URL = "https://ssmoviestvs.site"
 
 # Signing material

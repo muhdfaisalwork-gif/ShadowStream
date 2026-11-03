@@ -1,10 +1,10 @@
 {
-  "version": "2.4.43",
-  "versionCode": 283,
+  "version": "2.4.44",
+  "versionCode": 284,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-11-03",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.43: Catalog link-integrity release — enrich all browse/search list items with canonical tmdbId and catalogId, validate and correct IDs in /stream/resolve, eliminate search fallback on missing collections, and make prefix lookups opt-in."
+  "releaseNotes": "v2.4.44: Curated Islamic & Religious History collection with 15 verified streaming titles, dedicated collection & category endpoints, enriched search indexing, slug-to-TMDB ID resolution resilience in /stream/resolve, and desktop manual playback source switcher in the player top bar."
 }

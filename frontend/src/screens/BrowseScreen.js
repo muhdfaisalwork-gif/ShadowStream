@@ -15,6 +15,7 @@ import { useRouteMeta } from '../utils/useRouteMeta';
 import { useResponsive } from '../theme/scaling';
 
 const CATEGORY_LABELS = {
+    'islamic-history': '🕌 Islamic & Religious History',
     'trending-today': '🔥 Trending Today',
     'coming-soon': '🗓️ Coming Soon',
     'top-rated': '⭐ Top Rated',

@@ -2410,6 +2410,40 @@ export default function ShadowStreamPlayer({
                         )}
                     </View>
 
+                    {/* Playback Source / Server Switcher (Desktop & Non-compact) */}
+                    {mirrorList && mirrorList.length > 1 && (
+                        <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>
+                            <TouchableOpacity
+                                style={[styles.pillButton, showServerMenu && styles.pillButtonActive]}
+                                onPress={() => setShowServerMenu(!showServerMenu)}
+                                accessibilityLabel="Switch playback source"
+                            >
+                                <Text style={styles.pillButtonText}>🔁 Source ({activeMirrorIdx + 1}/{mirrorList.length})</Text>
+                            </TouchableOpacity>
+                            {showServerMenu && (
+                                <View style={[styles.popupMenu, { width: 230, right: 0 }]}>
+                                    <Text style={styles.popupMenuHeader}>Playback Source</Text>
+                                    <ScrollView style={{ maxHeight: 300 }}>
+                                        {mirrorList.map((m, idx) => (
+                                            <TouchableOpacity
+                                                key={`${m.provider || 'src'}-${idx}`}
+                                                style={[styles.popupMenuItem, activeMirrorIdx === idx && styles.popupMenuItemActive]}
+                                                onPress={() => {
+                                                    setShowServerMenu(false);
+                                                    if (onSelectMirror) onSelectMirror(m, idx);
+                                                }}
+                                            >
+                                                <Text style={[styles.popupMenuText, activeMirrorIdx === idx && styles.popupMenuTextActive]}>
+                                                    {activeMirrorIdx === idx ? '▶ ' : ''}{m.label || m.sourceName || m.provider || `Source ${idx + 1}`}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
                     {/* External player handoff — VLC and friends */}
                     {isDirect && streamUrl ? (
                         <View style={[{ position: 'relative' }, isCompactTopBar && { display: 'none' }]}>

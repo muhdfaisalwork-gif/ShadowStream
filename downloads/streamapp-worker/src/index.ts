@@ -60,6 +60,13 @@ import { resolveProvider, resolveMany } from './resolver';
 
 
 
+import {
+    CURATED_ISLAMIC_TITLES,
+    CURATED_ISLAMIC_MAP,
+    CURATED_ISLAMIC_MAP_BY_ID,
+    ISLAMIC_KNOWN_TITLES
+} from "./islamic_catalog";
+
 export interface Env {
 
     CATALOG: R2Bucket;
@@ -92,9 +99,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
     'kara-sevda-2015': { tmdbId: 65555, imdbId: 'tt5189670' },
 
-    'prophet-joseph-2008': { tmdbId: 39598, imdbId: 'tt3770334' },
+    'the-last-of-us-2023': { tmdbId: 100088, imdbId: 'tt3581920' },
 
-    'omar-series-2012': { tmdbId: 58887, imdbId: 'tt2474776' },
+    'the-last-of-us': { tmdbId: 100088, imdbId: 'tt3581920' },
 
     'the-bible-miniseries-2013': { tmdbId: 43899, imdbId: 'tt2245988' },
 
@@ -102,11 +109,7 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
     'his-girl-friday-1940': { tmdbId: 3085, imdbId: 'tt0032599' },
 
-    'bilal-a-new-breed-of-hero-2015': { tmdbId: 339967, imdbId: 'tt3577666' },
-
     'paul-apostle-of-christ-2018': { tmdbId: 476968, imdbId: 'tt7388566' },
-
-    'prophet-abraham-friend-of-god-2005': { tmdbId: 148119, imdbId: 'tt2187050' },
 
     'modern-family': { tmdbId: 1434, imdbId: 'tt1442437' },
 
@@ -114,7 +117,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
     'drake-and-josh': { tmdbId: 2638, imdbId: 'tt0363328' },
 
-    'ducktales': { tmdbId: 2270, imdbId: 'tt0092345' }
+    'ducktales': { tmdbId: 2270, imdbId: 'tt0092345' },
+
+    ...ISLAMIC_KNOWN_TITLES,
 
 };
 
@@ -122,9 +127,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.43",
+    version: "2.4.44",
 
-    versionCode: 283,
+    versionCode: 284,
 
     minVersion: "1.0.0",
 
@@ -1648,6 +1653,22 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
     if (rawCol) {
 
+        if (rawCol === "islamic-history" || rawCol === "islamic" || rawCol === "religious-history") {
+
+            return jsonResponse({
+
+                items: CURATED_ISLAMIC_TITLES,
+
+                total: CURATED_ISLAMIC_TITLES.length,
+
+                page: 1,
+
+                total_pages: 1
+
+            });
+
+        }
+
         const col = rawCol
 
             .replace(/^on-apple-tv$/, "apple-tv-plus")
@@ -2472,6 +2493,15 @@ async function getFullTitleData(idOrSlug: string, env: Env): Promise<any | null>
 
         }
 
+    }
+
+    // Check curated Islamic catalog first for instant detail resolution
+    const curatedMatch = CURATED_ISLAMIC_MAP[clean] || CURATED_ISLAMIC_MAP_BY_ID[clean] || (CURATED_ISLAMIC_MAP as any)[idOrSlug];
+    if (curatedMatch) {
+        return {
+            ...curatedMatch,
+            availability: buildFallbackAvailability(curatedMatch),
+        };
     }
 
     if (!entry) {
@@ -3682,7 +3712,44 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
 
     let hits: Array<SearchRow & { _score: number }> = [];
 
+    // Substring match on curated Islamic titles
+    const needleNorm = needle.replace(/[^a-z0-9]+/g, " ").trim();
+    const needleTokens = needleNorm.split(/\s+/).filter(Boolean);
+    const isIslamicQuery = /^(islam|islamic|prophet|prophets|sahaba|messenger|quran|quranic|biblical|companion|companions|caliph)$/i.test(needle) ||
+        needle.includes("islam") || needle.includes("prophet") || needle.includes("sahaba") || needle.includes("companion");
+
+    for (const it of CURATED_ISLAMIC_TITLES) {
+        const tLower = it.title.toLowerCase();
+        const sLower = it.slug.toLowerCase();
+        const aliasMatch = (it.aliases || []).some((a: string) => a.toLowerCase().includes(needle) || needle.includes(a.toLowerCase()));
+        const tokenMatch = needleTokens.length > 0 && needleTokens.some((tok: string) => 
+            tLower.includes(tok) || sLower.includes(tok) || (it.aliases || []).some((a: string) => a.toLowerCase().includes(tok))
+        );
+
+        if (tLower.includes(needle) || sLower.includes(needle) || aliasMatch || isIslamicQuery || tokenMatch) {
+            let score = 250;
+            if (tLower === needle) score += 100;
+            else if (tLower.startsWith(needle)) score += 50;
+            else if (aliasMatch) score += 30;
+            hits.push({
+                id: it.id,
+                slug: it.slug,
+                title: it.title,
+                type: it.type,
+                year: it.year,
+                rating: it.rating,
+                poster: it.poster,
+                _t: tLower,
+                _s: sLower,
+                _score: score + (it.rating || 0),
+            } as any);
+        }
+    }
+
     for (const r of all) {
+
+        // Avoid duplicating items already matched from curated list
+        if (hits.some((h) => h.id === r.id || h.slug === r.slug)) continue;
 
         const inTitle = r._t.includes(needle);
 
@@ -4110,6 +4177,20 @@ export default {
 
                 const rawSlug = colDirectMatch[1].toLowerCase().replace(/\.json$/, "");
 
+                if (rawSlug === "islamic-history" || rawSlug === "islamic" || rawSlug === "religious-history") {
+                    return jsonResponse({
+                        collection: {
+                            id: 99001,
+                            slug: "islamic-history",
+                            name: "Islamic & Religious History",
+                            kind: "curated",
+                            cover_image: "https://image.tmdb.org/t/p/w1280/rqODzehgQ8Hl0tcUd7qIcy8Pc9Z.jpg"
+                        },
+                        items: CURATED_ISLAMIC_TITLES,
+                        total: CURATED_ISLAMIC_TITLES.length
+                    });
+                }
+
                 const aliasMap: Record<string, string> = {
 
                     "on-apple-tv": "apple-tv-plus",
@@ -4335,7 +4416,21 @@ export default {
 
             if (normPath === "/categories" || normPath === "/categories.json") {
 
-                return streamR2("categories.json", env);
+                try {
+                    const rawCats = await loadSmall("categories.json", env) as any[];
+                    const cats = Array.isArray(rawCats) ? [...rawCats] : [];
+                    if (!cats.some((c: any) => c.id === "islamic-history")) {
+                        cats.splice(3, 0, {
+                            id: "islamic-history",
+                            title: "🕌 Islamic & Religious History",
+                            viewAllValue: "islamic-history",
+                            items: CURATED_ISLAMIC_TITLES
+                        });
+                    }
+                    return jsonResponse(cats);
+                } catch (_) {
+                    return streamR2("categories.json", env);
+                }
 
             }
 
@@ -5208,13 +5303,25 @@ export default {
 
                 const titleParam = params.get("title") || "";
 
-                const slugParam = params.get("slug") || "";
+                let slugParam = params.get("slug") || "";
 
 
 
                 let tmdbId = (rawTmdbId && rawTmdbId !== "null" && rawTmdbId !== "undefined") ? rawTmdbId : null;
 
                 let imdbId = (rawImdbId && rawImdbId !== "null" && rawImdbId !== "undefined") ? rawImdbId : null;
+
+                // CRITICAL FIX: If rawTmdbId contains non-numeric characters (like "the-last-of-us-2023"),
+                // it is actually a slug passed via ?id=... Resolve it through slug lookup rather than passing into embeds!
+                if (tmdbId && !/^\d+$/.test(tmdbId)) {
+                    if (/^tt\d+$/i.test(tmdbId)) {
+                        if (!imdbId) imdbId = tmdbId;
+                        tmdbId = null;
+                    } else {
+                        if (!slugParam) slugParam = tmdbId;
+                        tmdbId = null;
+                    }
+                }
 
 
 
@@ -5223,10 +5330,16 @@ export default {
 
                 const { idMap, slugMap } = await getTmdbIndexMaps(env);
 
-                // A. Check known titles map
+                // A. Check curated Islamic titles and known titles map
                 if (slugParam) {
 
                     const cleanSlug = slugParam.trim().toLowerCase();
+
+                    const curated = CURATED_ISLAMIC_MAP[cleanSlug] || CURATED_ISLAMIC_MAP[cleanSlug.replace(/-\d+$/, '')];
+                    if (curated) {
+                        if (curated.tmdbId) tmdbId = String(curated.tmdbId);
+                        if (!imdbId && curated.imdbId) imdbId = curated.imdbId;
+                    }
 
                     const known = KNOWN_TITLE_MAP[cleanSlug] || KNOWN_TITLE_MAP[cleanSlug.replace(/-\d+$/, '')];
 

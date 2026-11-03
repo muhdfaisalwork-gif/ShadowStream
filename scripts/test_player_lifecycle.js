@@ -68,12 +68,12 @@ console.log('[PASS] ShadowStreamPlayer.js: unsandboxed iframe, VidStuck dub mapp
 
 // 4. Verify version synchronization (v2.4.42 / code 282 / SW v51)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.43'"), 'version.js must have CURRENT_VERSION = 2.4.42');
-assert(versionJs.includes("CURRENT_CODE = 283"), 'version.js must have CURRENT_CODE = 283');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.44'"), 'version.js must have CURRENT_VERSION = 2.4.42');
+assert(versionJs.includes("CURRENT_CODE = 284"), 'version.js must have CURRENT_CODE = 284');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.43"'), 'worker index.ts must have version 2.4.42');
-assert(workerIndexTs.includes('versionCode: 283'), 'worker index.ts must have versionCode 282');
+assert(workerIndexTs.includes('version: "2.4.44"'), 'worker index.ts must have version 2.4.42');
+assert(workerIndexTs.includes('versionCode: 284'), 'worker index.ts must have versionCode 282');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
 assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must use vidstuck as clean stream provider');
@@ -87,8 +87,8 @@ assert(workerIndexTs.includes('probeProviderPresence'), 'worker index.ts must co
 assert(workerIndexTs.includes('filterAbsentProviders'), 'worker index.ts must apply the content-presence probe to the availability list');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v52'"), 'public/sw.js must be v51');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.43 (code 283, SW v52) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v53'"), 'public/sw.js must be v51');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.44 (code 284, SW v53) strictly verified across all tiers');
 
 // 4b. REGRESSION GUARD (v2.4.42): the auto-switch and the app-side ad rules.
 //

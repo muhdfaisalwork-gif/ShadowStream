@@ -311,7 +311,7 @@ export default function HomeScreen({ navigation }) {
             navigation.navigate('ShortDramas', { filter: 'all' });
         } else if (id === 'latest-animation') {
             navigation.navigate('Genres', { genreSlug: 'animation', sort: 'year' });
-        } else if (id === 'k-drama' || id === 'c-drama' || id === 'pakistani-dramas' || id === 'indian-cinema' || id === 'arabic-cinema') {
+        } else if (id === 'k-drama' || id === 'c-drama' || id === 'pakistani-dramas' || id === 'indian-cinema' || id === 'arabic-cinema' || id === 'islamic-history') {
             const targetSlug = cat.viewAllValue || id;
             navigation.navigate('CollectionDetail', {
                 slug: targetSlug,
