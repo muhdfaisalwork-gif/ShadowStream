@@ -129,9 +129,9 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.45",
+    version: "2.4.46",
 
-    versionCode: 285,
+    versionCode: 286,
 
     minVersion: "1.0.0",
 
@@ -1655,7 +1655,7 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
     if (rawCol) {
 
-        if (rawCol === "islamic-history" || rawCol === "islamic" || rawCol === "religious-history") {
+        if (rawCol === "islamic-history" || rawCol === "islamic" || rawCol === "religious-history" || rawCol === "islamic-religious-history") {
 
             return jsonResponse({
 
@@ -4173,13 +4173,13 @@ export default {
 
 
 
-            const colDirectMatch = normPath.match(/^\/collections?\/([^/]+)$/);
+            const colDirectMatch = normPath.match(/^\/(?:collections?|categories?)\/([^/]+)$/);
 
             if (colDirectMatch) {
 
                 const rawSlug = colDirectMatch[1].toLowerCase().replace(/\.json$/, "");
 
-                if (rawSlug === "islamic-history" || rawSlug === "islamic" || rawSlug === "religious-history") {
+                if (rawSlug === "islamic-history" || rawSlug === "islamic" || rawSlug === "religious-history" || rawSlug === "islamic-religious-history") {
                     return jsonResponse({
                         collection: {
                             id: 99001,

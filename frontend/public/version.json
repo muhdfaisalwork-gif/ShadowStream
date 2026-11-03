@@ -1,10 +1,10 @@
 {
-  "version": "2.4.45",
-  "versionCode": 285,
+  "version": "2.4.46",
+  "versionCode": 286,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
   "releaseDate": "2026-11-03",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.45: Direct 1080p high-speed playback integration for curated Islamic & Religious History films and TV series (The Message, Prophet Joseph, Omar, Saint Mary, Bilal, The Kingdom of Solomon, Muhammad The Last Prophet, Men of Anjolos), eliminated infinite provider buffering, resilient edge stream resolution, and complete multi-lingual dub support."
+  "releaseNotes": "v2.4.46: Eliminated React Error #31 child object rendering crash across MediaCard, HomeScreen, and SurpriseModal. Fully verified direct 1080p playback and multi-lingual audio dubs for all 15 curated Islamic & Religious History epics and mainstream catalog."
 }

@@ -372,7 +372,7 @@ export default function HomeScreen({ navigation }) {
                             <Text style={[styles.heroTitle, { fontSize: responsive.heroTitleSize }]} numberOfLines={2}>{hero.title}</Text>
 
                             <Text style={styles.heroMeta}>
-                                {hero.year} {hero.runtime ? `• ${hero.runtime}m` : ''} {hero.seasons ? `• ${hero.seasons} Seasons` : ''}
+                                {hero.year} {hero.runtime ? ` • ${hero.runtime}m` : ''} {(Array.isArray(hero.seasons) && hero.seasons.length > 0) ? ` • ${hero.seasons.length} Seasons` : (typeof hero.seasons === 'number' && hero.seasons > 0 ? ` • ${hero.seasons} Seasons` : (typeof hero.seasonCount === 'number' && hero.seasonCount > 0 ? ` • ${hero.seasonCount} Seasons` : ''))}
                             </Text>
 
                             <Text style={styles.heroOverview} numberOfLines={3}>

@@ -62,6 +62,15 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
     // Release status badge
     const releaseStatus = item.release_status || item.status || null;
 
+    // Calculate season count safely (prevent React Error #31 when item.seasons is an array of objects)
+    const displaySeasonCount = Array.isArray(item.seasons)
+        ? (item.seasons.length > 0 ? item.seasons.length : null)
+        : (typeof item.seasons === 'number' && item.seasons > 0
+            ? item.seasons
+            : (typeof item.seasonCount === 'number' && item.seasonCount > 0
+                ? item.seasonCount
+                : null));
+
     const ariaLabel = `${item.title || 'Untitled'}${
         item.year ? ', ' + item.year : ''
     }${typeInfo ? ', ' + typeInfo.label : ''}${
@@ -159,8 +168,8 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
                         <Text style={styles.cardMetaDot}>• {item.runtime}m</Text>
                     ) : item.durationMinutes ? (
                         <Text style={styles.cardMetaDot}>• {item.durationMinutes}m</Text>
-                    ) : (item.seasons || item.seasonCount) ? (
-                        <Text style={styles.cardMetaDot}>• {item.seasons || item.seasonCount}S</Text>
+                    ) : displaySeasonCount ? (
+                        <Text style={styles.cardMetaDot}>• {displaySeasonCount}S</Text>
                     ) : null}
                 </View>
             </View>

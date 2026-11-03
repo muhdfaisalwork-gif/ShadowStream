@@ -167,8 +167,8 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
                                 </View>
                                 <Text style={styles.pickTitle} numberOfLines={3}>{pick.title}</Text>
                                 <Text style={styles.pickSub}>
-                                    {pick.year || '—'}{pick.runtime ? `  •  ${pick.runtime}m` : ''}
-                                    {pick.type === 'tv' && pick.seasons ? `  •  ${pick.seasons} seasons` : ''}
+                                    {pick.year || '—'}{pick.runtime ? ` • ${pick.runtime}m` : ''}
+                                    {pick.type === 'tv' && (Array.isArray(pick.seasons) ? pick.seasons.length : (pick.seasons || pick.seasonCount)) ? ` • ${Array.isArray(pick.seasons) ? pick.seasons.length : (pick.seasons || pick.seasonCount)} seasons` : ''}
                                 </Text>
                                 {pick.overview ? (
                                     <Text style={styles.pickOverview} numberOfLines={6}>{pick.overview}</Text>

@@ -207,7 +207,7 @@ export function getIslamicStreams(t: any, season: number = 1, episode: number = 
             format: 'embed',
             quality: '1080p'
         });
-    } else if (slug.includes('abraham-friend-of-god')) {
+    } else if (slug.includes('abraham-friend-of-god') || slug.includes('prophet-abraham') || slug.includes('abraham')) {
         streams.push({
             label: '⚡ Archive Direct (Hindi/Urdu Dub)',
             provider: 'archive_org',
@@ -591,7 +591,7 @@ export const CURATED_ISLAMIC_TITLES: any[] = [
         poster: "https://image.tmdb.org/t/p/w500/n1KTVWwfZxyXV7m7JsUfRtrLJpt.jpg",
         backdrop: null,
         overview: "M. Sadeghi stars as the title character in filmmaker Reza Varzi's epic retelling of the life and times of Abraham, known as the patriarch of Judaism, Christianity and Islam, the world's three most prominent monotheistic religions. Led by God from Mesopotamia to the land of Canaan, Abraham entered into a covenant with the Lord that, once fulfilled, would see him father a great nation of kings.",
-        aliases: ["abraham the friend of god", "prophet abraham", "ibrahim khalilullah", "ibrahim", "abraham", "khalilullah"],
+        aliases: ["abraham the friend of god", "abraham friend of god", "abraham-friend-of-god", "abraham-friend-of-god-2008", "abraham-the-friend-of-god-2008", "prophet abraham", "prophet abraham friend of god", "ibrahim khalilullah", "ibrahim", "abraham", "khalilullah"],
     },
     {
         id: 62515,
