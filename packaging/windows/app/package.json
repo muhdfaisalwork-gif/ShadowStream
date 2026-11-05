@@ -20,7 +20,7 @@
     "productName": "ShadowStream",
     "copyright": "ShadowStream",
     "directories": {
-      "output": "dist-v2411",
+      "output": "dist-v2446",
       "buildResources": "build-res"
     },
     "files": [
