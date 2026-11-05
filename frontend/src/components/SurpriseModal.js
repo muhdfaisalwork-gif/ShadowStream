@@ -165,11 +165,24 @@ export default function SurpriseModal({ visible, onClose, navigation, initialTyp
                                         </View>
                                     ) : null}
                                 </View>
-                                <Text style={styles.pickTitle} numberOfLines={3}>{pick.title}</Text>
-                                <Text style={styles.pickSub}>
-                                    {pick.year || '—'}{pick.runtime ? ` • ${pick.runtime}m` : ''}
-                                    {pick.type === 'tv' && (Array.isArray(pick.seasons) ? pick.seasons.length : (pick.seasons || pick.seasonCount)) ? ` • ${Array.isArray(pick.seasons) ? pick.seasons.length : (pick.seasons || pick.seasonCount)} seasons` : ''}
-                                </Text>
+                                {(() => {
+                                    const displaySeasons = Array.isArray(pick.seasons)
+                                        ? pick.seasons.length
+                                        : (typeof pick.seasons === 'number' && pick.seasons > 0
+                                            ? pick.seasons
+                                            : (typeof pick.seasonCount === 'number' && pick.seasonCount > 0
+                                                ? pick.seasonCount
+                                                : null));
+                                    return (
+                                        <>
+                                            <Text style={styles.pickTitle} numberOfLines={3}>{typeof pick.title === 'string' ? pick.title : (pick.title != null ? String(pick.title) : 'Untitled')}</Text>
+                                            <Text style={styles.pickSub}>
+                                                {typeof pick.year === 'number' || typeof pick.year === 'string' ? String(pick.year) : '—'}{pick.runtime ? ` • ${pick.runtime}m` : ''}
+                                                {pick.type === 'tv' && displaySeasons ? ` • ${displaySeasons} seasons` : ''}
+                                            </Text>
+                                        </>
+                                    );
+                                })()}
                                 {pick.overview ? (
                                     <Text style={styles.pickOverview} numberOfLines={6}>{pick.overview}</Text>
                                 ) : null}

@@ -129,21 +129,21 @@ export const KNOWN_TITLE_MAP: Record<string, { tmdbId?: number | string; imdbId?
 
 const CURRENT_APP_RELEASE = {
 
-    version: "2.4.46",
+    version: "2.4.47",
 
-    versionCode: 286,
+    versionCode: 287,
 
     minVersion: "1.0.0",
 
     name: "ShadowStream",
 
-    releaseDate: "2026-11-03",
+    releaseDate: "2026-11-06",
 
     apkUrl: "https://ssmoviestvs.site/downloads/ShadowStream.apk",
 
     desktopUrl: "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
 
-    releaseNotes: "v2.4.46: Eliminated React Error #31 child object rendering crash across MediaCard, HomeScreen, and SurpriseModal. Fully verified direct 1080p playback and multi-lingual audio dubs for all 15 curated Islamic & Religious History epics and mainstream catalog.",
+    releaseNotes: "v2.4.47: Complete streaming platform catalogs (Netflix, Max, Disney+, Apple TV+, Prime, Crunchyroll, Hulu), live TMDB multi-search fallback for famous titles, permanent ban of vidy.st, resolved React Error #31 child object rendering crash.",
 
 };
 
@@ -678,6 +678,16 @@ async function loadProviderRegistry(env: Env) {
 // Multi-Language Regional & Anime Dubbing Resolver (AnimeSalt & Multi-Audio)
 
 // =========================================================================
+
+function slugifyTitle(text: string): string {
+    return (text || "")
+        .toString()
+        .toLowerCase()
+        .replace(/[:\s]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+}
 
 function slugifyAnime(text: string): string {
 
@@ -1649,6 +1659,31 @@ const REGION_MAP: Record<string, string[]> = {
 
 // well past any CPU/memory budget on a single request.
 
+
+const STREAMING_PLATFORM_NETWORKS: Record<string, { networkId: number; providerId?: number; name: string }> = {
+    "netflix": { networkId: 213, providerId: 8, name: "Netflix" },
+    "on-netflix": { networkId: 213, providerId: 8, name: "Netflix" },
+    "max": { networkId: 3186, providerId: 1899, name: "Max" },
+    "on-max": { networkId: 3186, providerId: 1899, name: "Max" },
+    "hbo": { networkId: 3186, providerId: 1899, name: "HBO" },
+    "disney-plus": { networkId: 2739, providerId: 337, name: "Disney+" },
+    "on-disney-plus": { networkId: 2739, providerId: 337, name: "Disney+" },
+    "apple-tv-plus": { networkId: 2552, providerId: 350, name: "Apple TV+" },
+    "apple-tv": { networkId: 2552, providerId: 350, name: "Apple TV+" },
+    "on-apple-tv": { networkId: 2552, providerId: 350, name: "Apple TV+" },
+    "prime-video": { networkId: 1024, providerId: 9, name: "Amazon Prime Video" },
+    "on-prime-video": { networkId: 1024, providerId: 9, name: "Amazon Prime Video" },
+    "amazon-prime": { networkId: 1024, providerId: 9, name: "Amazon Prime Video" },
+    "hulu": { networkId: 453, providerId: 15, name: "Hulu" },
+    "on-hulu": { networkId: 453, providerId: 15, name: "Hulu" },
+    "crunchyroll": { networkId: 1112, providerId: 283, name: "Crunchyroll" },
+    "on-crunchyroll": { networkId: 1112, providerId: 283, name: "Crunchyroll" },
+    "paramount-plus": { networkId: 4330, providerId: 531, name: "Paramount+" },
+    "on-paramount-plus": { networkId: 4330, providerId: 531, name: "Paramount+" },
+    "peacock": { networkId: 3353, providerId: 386, name: "Peacock" },
+    "on-peacock": { networkId: 3353, providerId: 386, name: "Peacock" }
+};
+
 async function browseTitles(params: URLSearchParams, env: Env): Promise<Response> {
 
     const rawCol = params.get("collection") || params.get("provider") || params.get("category");
@@ -1681,7 +1716,96 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
                        (col !== rawCol ? await env.CATALOG.get(R2_PREFIX + `collections/${rawCol}.json`) : null);
 
-        if (colObj) {
+                const platInfo = STREAMING_PLATFORM_NETWORKS[rawCol] || STREAMING_PLATFORM_NETWORKS[col];
+        if (platInfo) {
+            const pageNum = Math.max(1, parseInt(params.get("page") || "1", 10));
+            const reqType = params.get("type");
+            try {
+                let tmdbItems: any[] = [];
+                if (!reqType || reqType === "tv") {
+                    const tvRes = await fetchTmdbWithRotation("discover/tv", {
+                        with_networks: String(platInfo.networkId),
+                        sort_by: "popularity.desc",
+                        page: String(pageNum)
+                    });
+                    if (tvRes && Array.isArray(tvRes.results)) {
+                        tmdbItems.push(...tvRes.results.map((t: any) => ({
+                            id: String(t.id),
+                            tmdbId: t.id,
+                            title: t.name || t.title,
+                            year: parseInt((t.first_air_date || t.release_date || "").slice(0, 4), 10) || null,
+                            type: "tv",
+                            poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
+                            backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
+                            rating: t.vote_average || 0,
+                            overview: t.overview || "",
+                            slug: slugifyTitle(t.name || t.title) + `-${t.id}`,
+                            has_playback: true
+                        })));
+                    }
+                }
+                if (!reqType || reqType === "movie") {
+                    if (platInfo.providerId) {
+                        const movieRes = await fetchTmdbWithRotation("discover/movie", {
+                            with_watch_providers: String(platInfo.providerId),
+                            watch_region: "US",
+                            sort_by: "popularity.desc",
+                            page: String(pageNum)
+                        });
+                        if (movieRes && Array.isArray(movieRes.results)) {
+                            tmdbItems.push(...movieRes.results.map((t: any) => ({
+                                id: String(t.id),
+                                tmdbId: t.id,
+                                title: t.title || t.name,
+                                year: parseInt((t.release_date || t.first_air_date || "").slice(0, 4), 10) || null,
+                                type: "movie",
+                                poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
+                                backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
+                                rating: t.vote_average || 0,
+                                overview: t.overview || "",
+                                slug: slugifyTitle(t.title || t.name) + `-${t.id}`,
+                                has_playback: true
+                            })));
+                        }
+                    }
+                }
+
+                let combinedItems = tmdbItems;
+                let colMeta: any = { slug: col, name: platInfo.name, description: `Watch popular and trending ${platInfo.name} movies and TV series on ShadowStream.` };
+                if (colObj) {
+                    try {
+                        const colData = (await colObj.json()) as { items?: any[]; collection?: any };
+                        if (colData.collection) colMeta = colData.collection;
+                        if (Array.isArray(colData.items) && pageNum === 1) {
+                            const staticEnriched = await enrichListItems(colData.items, env);
+                            const seenIds = new Set<string>();
+                            const merged: any[] = [];
+                            for (const it of [...staticEnriched, ...tmdbItems]) {
+                                const k = String(it.tmdbId || it.id);
+                                if (!seenIds.has(k)) {
+                                    seenIds.add(k);
+                                    merged.push(it);
+                                }
+                            }
+                            combinedItems = merged;
+                        }
+                    } catch (_) {}
+                }
+
+                if (combinedItems.length > 0) {
+                    return jsonResponse({
+                        items: combinedItems,
+                        total: Math.max(combinedItems.length, 1000),
+                        page: pageNum,
+                        pageSize: combinedItems.length,
+                        pageCount: 50,
+                        collection: colMeta
+                    });
+                }
+            } catch (_) {}
+        }
+        
+if (colObj) {
 
             const wantsColFilter =
 
@@ -2515,37 +2639,58 @@ async function getFullTitleData(idOrSlug: string, env: Env): Promise<any | null>
         const shardObj = await env.CATALOG.get(R2_PREFIX + `search-shards/${shardKey}.json`);
 
         if (shardObj) {
-
             const sRows = (await shardObj.json().catch(() => [])) as any[];
-
             const matched = sRows.find((r: any) => String(r.id) === idOrSlug || r.slug === clean || r._s === clean);
-
             if (matched) {
-
                 return {
-
                     id: matched.id,
-
                     slug: matched.slug,
-
                     title: matched.title,
-
                     type: matched.type || "movie",
-
                     year: matched.year,
-
                     rating: matched.rating,
-
                     poster: matched.poster,
-
                     overview: `Watch ${matched.title} on ShadowStream.`,
-
                     availability: buildFallbackAvailability(matched),
-
                 };
-
             }
+        }
 
+        // Live TMDB fallback for any numeric ID or slug ending with TMDB ID (e.g. the-queens-gambit-87739)
+        const tmdbIdMatch = clean.match(/-?(\d{4,9})$/) || clean.match(/^(\d+)$/);
+        if (tmdbIdMatch) {
+            const tmdbId = tmdbIdMatch[1];
+            try {
+                let liveData = await fetchTmdbWithRotation(`tv/${tmdbId}`, { append_to_response: "external_ids" });
+                let isTv = true;
+                if (!liveData || liveData.status_code === 34 || !liveData.name) {
+                    liveData = await fetchTmdbWithRotation(`movie/${tmdbId}`, { append_to_response: "external_ids" });
+                    isTv = false;
+                }
+                if (liveData && (liveData.title || liveData.name)) {
+                    const titleName = liveData.name || liveData.title;
+                    const year = parseInt((liveData.first_air_date || liveData.release_date || "").slice(0, 4), 10) || null;
+                    const imdbId = liveData.external_ids?.imdb_id || liveData.imdb_id || null;
+                    const fullItem: any = {
+                        id: String(tmdbId),
+                        tmdbId: Number(tmdbId),
+                        imdbId: imdbId,
+                        title: titleName,
+                        slug: slugifyTitle(titleName) + `-${tmdbId}`,
+                        type: isTv ? "tv" : "movie",
+                        year: year,
+                        rating: liveData.vote_average || 0,
+                        poster: liveData.poster_path ? `https://image.tmdb.org/t/p/w500${liveData.poster_path}` : null,
+                        backdrop: liveData.backdrop_path ? `https://image.tmdb.org/t/p/w1280${liveData.backdrop_path}` : null,
+                        overview: liveData.overview || `Watch ${titleName} on ShadowStream.`,
+                        runtime: liveData.runtime || (Array.isArray(liveData.episode_run_time) ? liveData.episode_run_time[0] : null) || null,
+                        seasonCount: isTv ? (Array.isArray(liveData.seasons) ? liveData.seasons.filter((s: any) => s.season_number > 0).length : 1) : null,
+                        has_playback: true
+                    };
+                    fullItem.availability = buildFallbackAvailability(fullItem, 1, 1);
+                    return fullItem;
+                }
+            } catch (_) {}
         }
 
         return null;
@@ -2781,16 +2926,7 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${tmdbId}/${s}/${e}?loading=2&color=FFA500` : `https://vidstuck.cc/embed/movie/${tmdbId}?loading=2&color=FFA500`,
         });
 
-        // 2. Vidy - Donkey.to Secondary Multi-Audio Dubbing Engine & Subtitles
-        list.push({
-            source: "vidy",
-            sourceName: "Vidy (Multi-Audio HD)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://www.vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
-            playbackUrl: isTv ? `https://www.vidy.st/tv/${tmdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${tmdbId}?color=FFA500`,
-        });
+// vidy removed (banned)
 
         // 3. NontonGo HD (Explicit ALLOWALL / frame-ancestors * Multi-Server)
         list.push({
@@ -2910,15 +3046,7 @@ function buildFallbackAvailability(title: any, seasonNum?: string | number, epis
             playbackUrl: isTv ? `https://vidstuck.cc/embed/tv/${imdbId}/${s}/${e}?loading=2` : `https://vidstuck.cc/embed/movie/${imdbId}?loading=2`,
         });
 
-        list.push({
-            source: "vidy_imdb",
-            sourceName: "Vidy (IMDb Multi-Audio)",
-            sourceIsLegal: false,
-            kind: "embed",
-            status: "available",
-            url: isTv ? `https://www.vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
-            playbackUrl: isTv ? `https://www.vidy.st/tv/${imdbId}/${s}/${e}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
-        });
+// vidy_imdb removed (banned)
 
         list.push({
             source: "vidsrc_imdb",
@@ -3383,8 +3511,8 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
     //                       does not host, and fires popunder + hostile
     //                       redirect trackers that embed our own domain.
     //   smashystream      - embed.smashystream.com no longer resolves (NXDOMAIN).
-    const BLOCKED_SOURCES = ['autoembed', 'vidsrc_buzz', 'embedsu', 'multiembed', 'videasy', 'smashystream'];
-    const BLOCKED_HOSTS = ['autoembed', 'vidsrc.buzz', 'multiembed', 'streamingnow', 'videasy.to', 'smashystream.com'];
+    const BLOCKED_SOURCES = ['autoembed', 'vidsrc_buzz', 'embedsu', 'multiembed', 'videasy', 'smashystream', 'vidy', 'vidy_imdb'];
+    const BLOCKED_HOSTS = ['autoembed', 'vidsrc.buzz', 'multiembed', 'streamingnow', 'videasy.to', 'smashystream.com', 'vidy.st', 'www.vidy.st'];
 
     for (const item of combined) {
         const src = String(item.source || (item as any).provider || '').toLowerCase();
@@ -3716,7 +3844,7 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
 
     // Substring match on curated Islamic titles
     const needleNorm = needle.replace(/[^a-z0-9]+/g, " ").trim();
-    const needleTokens = needleNorm.split(/\s+/).filter(Boolean);
+    const needleTokens = needleNorm.split(/\s+/).filter((tok: string) => tok.length >= 3);
     const isIslamicQuery = /^(islam|islamic|prophet|prophets|sahaba|messenger|quran|quranic|biblical|companion|companions|caliph)$/i.test(needle) ||
         needle.includes("islam") || needle.includes("prophet") || needle.includes("sahaba") || needle.includes("companion");
 
@@ -3724,11 +3852,11 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
         const tLower = it.title.toLowerCase();
         const sLower = it.slug.toLowerCase();
         const aliasMatch = (it.aliases || []).some((a: string) => a.toLowerCase().includes(needle) || needle.includes(a.toLowerCase()));
-        const tokenMatch = needleTokens.length > 0 && needleTokens.some((tok: string) => 
+        const exactTokenMatch = needleTokens.length > 0 && needleTokens.every((tok: string) => 
             tLower.includes(tok) || sLower.includes(tok) || (it.aliases || []).some((a: string) => a.toLowerCase().includes(tok))
         );
 
-        if (tLower.includes(needle) || sLower.includes(needle) || aliasMatch || isIslamicQuery || tokenMatch) {
+        if (tLower.includes(needle) || sLower.includes(needle) || aliasMatch || isIslamicQuery || exactTokenMatch) {
             let score = 250;
             if (tLower === needle) score += 100;
             else if (tLower.startsWith(needle)) score += 50;
@@ -3749,20 +3877,61 @@ async function searchTitles(q: string, env: Env, limit = 30, params?: URLSearchP
     }
 
     for (const r of all) {
-
         // Avoid duplicating items already matched from curated list
         if (hits.some((h) => h.id === r.id || h.slug === r.slug)) continue;
 
         const inTitle = r._t.includes(needle);
-
         const inSlug = r._s.includes(needle);
-
         if (!inTitle && !inSlug) continue;
 
         const score = (inTitle ? 2 : 0) + (inSlug ? 1 : 0) + (r.rating ?? 0) / 5;
-
         hits.push({ ...r, _score: score });
+    }
 
+    // TMDB LIVE MULTI-SEARCH FALLBACK (Ensures complete streaming platform catalogs & famous titles)
+    if (needle.length >= 2) {
+        try {
+            const tmdbRes = await fetchTmdbWithRotation("search/multi", {
+                query: needle,
+                include_adult: "false"
+            });
+            if (tmdbRes && Array.isArray(tmdbRes.results)) {
+                for (const t of tmdbRes.results) {
+                    if (t.media_type !== "movie" && t.media_type !== "tv") continue;
+                    const tmdbIdNum = t.id;
+                    if (hits.some((h) => Number((h as any).tmdbId || h.id) === tmdbIdNum || h._t === (t.title || t.name || "").toLowerCase())) {
+                        continue;
+                    }
+                    const titleStr = t.title || t.name;
+                    if (!titleStr) continue;
+                    const isTv = t.media_type === "tv";
+                    const yearNum = parseInt((t.release_date || t.first_air_date || "").slice(0, 4), 10) || null;
+                    const slugStr = slugifyTitle(titleStr) + `-${tmdbIdNum}`;
+                    const popScore = (t.popularity ? Math.min(25, t.popularity / 10) : 0);
+                    const voteScore = (t.vote_average || 0);
+                    const isExact = titleStr.toLowerCase() === needle;
+                    const isPrefix = titleStr.toLowerCase().startsWith(needle);
+                    const baseScore = isExact ? 120 : (isPrefix ? 70 : 40);
+
+                    hits.push({
+                        id: String(tmdbIdNum),
+                        tmdbId: tmdbIdNum,
+                        title: titleStr,
+                        slug: slugStr,
+                        type: isTv ? "tv" : "movie",
+                        year: yearNum,
+                        rating: voteScore,
+                        poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
+                        backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
+                        overview: t.overview || "",
+                        _t: titleStr.toLowerCase(),
+                        _s: slugStr,
+                        _score: baseScore + popScore + voteScore,
+                        has_playback: true
+                    } as any);
+                }
+            }
+        } catch (_) {}
     }
 
     hits.sort((a, b) => b._score - a._score);
@@ -4519,7 +4688,7 @@ export default {
 
 
 
-            const downloadMatch = normPath.match(/^\/downloads?\/([^/]+)$/);
+            const downloadMatch = normPath.match(/^(?:\/downloads?\/|\/)([^/]+\.(?:apk|exe|zip|blockmap|yml|json))$/i) || normPath.match(/^\/downloads?\/([^/]+)$/);
 
             if (downloadMatch) {
 
@@ -5709,15 +5878,7 @@ export default {
 
                     // vidsrc.buzz was dropped here: it is a hostile host and the catalog
                     // still carries rows for it.
-                    streams.push({
-                        label: "⚡ Vidy (IMDb Multi-Audio)",
-                        provider: "vidy_imdb",
-                        url: isTv ? `https://www.vidy.st/tv/${imdbId}/${season}/${episode}?color=FFA500` : `https://www.vidy.st/movie/${imdbId}?color=FFA500`,
-                        format: "embed",
-                        quality: "1080p",
-                        language: "multi",
-                        languageName: "Multi-Language"
-                    });
+// vidy_imdb resolve stream removed (banned)
 
                     streams.push({
                         label: "⚡ VidSrc (IMDb Server)",

@@ -1,10 +1,10 @@
 {
-  "version": "2.4.46",
-  "versionCode": 286,
+  "version": "2.4.47",
+  "versionCode": 287,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-11-03",
+  "releaseDate": "2026-11-06",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.46: Eliminated React Error #31 child object rendering crash across MediaCard, HomeScreen, and SurpriseModal. Fully verified direct 1080p playback and multi-lingual audio dubs for all 15 curated Islamic & Religious History epics and mainstream catalog."
+  "releaseNotes": "v2.4.47: Complete streaming platform catalogs (Netflix, Max, Disney+, Apple TV+, Prime, Crunchyroll, Hulu), live TMDB multi-search fallback for famous titles, permanent ban of vidy.st, resolved React Error #31 child object rendering crash."
 }

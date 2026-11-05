@@ -71,6 +71,14 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
                 ? item.seasonCount
                 : null));
 
+    // Safely extract season/episode numbers (prevent React Error #31)
+    const sNum = typeof item.season === 'object' && item.season !== null
+        ? (item.season.season_number != null ? item.season.season_number : 1)
+        : (typeof item.season === 'number' || typeof item.season === 'string' ? item.season : 1);
+    const eNum = typeof item.episode === 'object' && item.episode !== null
+        ? (item.episode.episode_number != null ? item.episode.episode_number : (item.episode.number != null ? item.episode.number : 1))
+        : (typeof item.episode === 'number' || typeof item.episode === 'string' ? item.episode : 1);
+
     const ariaLabel = `${item.title || 'Untitled'}${
         item.year ? ', ' + item.year : ''
     }${typeInfo ? ', ' + typeInfo.label : ''}${
@@ -159,7 +167,7 @@ export default function MediaCard({ item, onPress, navigation, isLarge, showProg
                 </Text>
                 {item.isLiveToday && item.episodeTitle ? (
                     <Text style={styles.liveEpisodeSub} numberOfLines={1}>
-                        {item.network ? `${item.network} • ` : ''}S{item.season}E{item.episode}
+                        {typeof item.network === 'string' && item.network ? `${item.network} • ` : ''}S{sNum}E{eNum}
                     </Text>
                 ) : null}
                 <View style={styles.cardMetaRow}>

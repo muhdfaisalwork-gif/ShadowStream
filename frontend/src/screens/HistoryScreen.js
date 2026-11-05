@@ -117,7 +117,7 @@ export default function HistoryScreen({ navigation }) {
 
                                         <Text style={styles.metaText}>
                                             {item.type === 'tv' || item.type === 'anime' ? 'Series' : 'Movie'}
-                                            {item.season ? ` • S${item.season}:E${item.episode}` : ''}
+                                            {item.season ? ` • S${typeof item.season === 'object' && item.season !== null ? (item.season.season_number || 1) : item.season}:E${typeof item.episode === 'object' && item.episode !== null ? (item.episode.episode_number || 1) : item.episode}` : ''}
                                             {item.year ? ` • ${item.year}` : ''}
                                             {item.ts ? ` • ${formatTimestamp(item.ts)}` : ''}
                                         </Text>

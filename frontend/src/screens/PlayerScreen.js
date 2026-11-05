@@ -574,15 +574,22 @@ export default function PlayerScreen({ route, navigation }) {
                 if (effectiveImdb) {
                     if (isMovie) {
                         dyn.push({ source: 'vidstuck_imdb', sourceName: 'VidStuck (IMDb Server)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/movie/${effectiveImdb}?loading=2` });
-                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://www.vidy.st/movie/${effectiveImdb}?color=FFA500` });
+                        // vidy_imdb removed
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/movie?imdb=${effectiveImdb}` });
                     } else {
                         dyn.push({ source: 'vidstuck_imdb', sourceName: 'VidStuck (IMDb Server)', kind: 'embed', playbackUrl: `https://vidstuck.cc/embed/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?loading=2` });
-                        dyn.push({ source: 'vidy_imdb', sourceName: 'Vidy (IMDb Multi-Audio)', kind: 'embed', playbackUrl: `https://www.vidy.st/tv/${effectiveImdb}/${activeS || 1}/${activeE || 1}?color=FFA500` });
+                        // vidy_imdb removed
                         dyn.push({ source: 'vidsrc_imdb', sourceName: 'VidSrc (IMDb)', kind: 'embed', playbackUrl: `https://vidsrc.me/embed/tv?imdb=${effectiveImdb}&season=${activeS || 1}&episode=${activeE || 1}` });
                     }
                 }
                 sourcesToUse = dyn;
+            }
+            if (Array.isArray(sourcesToUse)) {
+                sourcesToUse = sourcesToUse.filter(s => {
+                    const src = String(s.source || '').toLowerCase();
+                    const url = String(s.playbackUrl || s.url || '').toLowerCase();
+                    return !src.includes('vidy') && !url.includes('vidy.st');
+                });
             }
 
             if (sourcesToUse.length > 0) {
@@ -593,13 +600,11 @@ export default function PlayerScreen({ route, navigation }) {
                     'nontongo',
                     'vidsrc',
                     '2embed',
-                    'vidy',
-                    'vidsrc',
+                                        'vidsrc',
                     '2embed',
                     'nontongo',
                     'vidstuck_imdb',
-                    'vidy_imdb',
-                    'vidsrc_imdb',
+                                        'vidsrc_imdb',
                     'vidlink_dub',
                     'vidlink_sub',
                     'vidlink',

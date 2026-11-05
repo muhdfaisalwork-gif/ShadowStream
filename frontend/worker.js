@@ -360,7 +360,9 @@ export default {
         url.pathname.startsWith('/api/') ||
         url.pathname === '/version.json' ||
         url.pathname === '/app-version' ||
-        url.pathname === '/latest.yml'
+        url.pathname === '/latest.yml' ||
+        url.pathname === '/ShadowStream.apk' ||
+        url.pathname === '/ShadowStream-Setup-x64.exe'
       ) {
         const targetUrl = new URL(url.pathname + url.search, 'https://streamapp-catalog.muhd-faisal-work.workers.dev');
         const proxyRequest = new Request(targetUrl.toString(), request);

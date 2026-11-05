@@ -1944,7 +1944,7 @@ export default function ShadowStreamPlayer({
                 <View style={styles.titleInfo}>
                     <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                     {season ? (
-                        <Text style={styles.episodeBadge}>S{season}:E{episode}</Text>
+                        <Text style={styles.episodeBadge}>S{typeof season === "object" && season !== null ? (season.season_number || 1) : (Number(season) || 1)}:E{typeof episode === "object" && episode !== null ? (episode.episode_number || 1) : (Number(episode) || 1)}</Text>
                     ) : null}
                     {!isCompactTopBar && (
                         <TouchableOpacity
