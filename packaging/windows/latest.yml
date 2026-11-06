@@ -1,8 +1,8 @@
-version: 2.4.46
+version: 2.4.47
 files:
   - url: ShadowStream-Setup-x64.exe
-    sha512: cNxRcV6P/a1CjexUvYpgFi4DtotNahOgIY2YF3d3lBjnqZaq92ElAk4qWPdbj6fh5zuujvkYHupsSb3LHRygBA==
-    size: 81796881
+    sha512: m0Jcp3sPVfU5k8v4jNCUZh3V0RwE3cAdMgBInaBYXcNbgASPTwjP8Dq1BYX8Relzd69gmnmF1B75SMFfJ8CMMw==
+    size: 81797397
 path: ShadowStream-Setup-x64.exe
-sha512: cNxRcV6P/a1CjexUvYpgFi4DtotNahOgIY2YF3d3lBjnqZaq92ElAk4qWPdbj6fh5zuujvkYHupsSb3LHRygBA==
-releaseDate: '2026-11-05T05:01:05.202Z'
+sha512: m0Jcp3sPVfU5k8v4jNCUZh3V0RwE3cAdMgBInaBYXcNbgASPTwjP8Dq1BYX8Relzd69gmnmF1B75SMFfJ8CMMw==
+releaseDate: '2026-11-06T00:58:07.989Z'

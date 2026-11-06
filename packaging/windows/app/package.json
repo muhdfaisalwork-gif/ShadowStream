@@ -1,6 +1,6 @@
 {
   "name": "shadowstream-windows",
-  "version": "2.4.46",
+  "version": "2.4.47",
   "description": "ShadowStream desktop app for Windows",
   "main": "resources/app/main.js",
   "author": "ShadowStream",
@@ -20,7 +20,7 @@
     "productName": "ShadowStream",
     "copyright": "ShadowStream",
     "directories": {
-      "output": "dist-v2446",
+      "output": "dist-v2447",
       "buildResources": "build-res"
     },
     "files": [

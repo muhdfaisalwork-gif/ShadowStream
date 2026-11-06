@@ -965,9 +965,10 @@ export default function TitleDetailScreen({ route, navigation }) {
                                         const isSel = activeSeasonNum === s.season_number;
                                         const isSeasonUpcoming = (s.air_date && new Date(s.air_date) > now) ||
                                             (Array.isArray(s.episodes) && s.episodes.length > 0 && s.episodes.every(ep => ep.air_date && new Date(ep.air_date) > now));
-                                        const seasonLabel = s.season_number === 0 
-                                            ? (s.name || 'Specials') 
-                                            : (s.name && !/^Season\s+\d+$/i.test(s.name) ? `${s.name} (S${s.season_number})` : (s.name || `Season ${s.season_number}`));
+                                        const sName = typeof s.name === 'string' ? s.name : (s.name && typeof s.name === 'object' ? (s.name.en || s.name.name || '') : '');
+                                        const seasonLabel = s.season_number === 0
+                                            ? (sName || 'Specials')
+                                            : (sName && !/^Season\s+\d+$/i.test(sName) ? `${sName} (S${s.season_number})` : (sName || `Season ${s.season_number}`));
                                         return (
                                             <TouchableOpacity
                                                 key={s.id || s.season_number}

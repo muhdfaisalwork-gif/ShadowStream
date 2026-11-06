@@ -104,17 +104,28 @@ export default function PlayerScreen({ route, navigation }) {
 
     const effectiveTargetLang = routeTargetLang || (webQuery.get ? (webQuery.get('targetLanguage') || webQuery.get('lang')) : null);
 
-    const initialSeason = routeSeason != null ? routeSeason : (webQuery.get ? webQuery.get('season') : null);
-    const initialEpisode = routeEpisode != null ? routeEpisode : (webQuery.get ? webQuery.get('episode') : null);
+    const rawInitialSeason = routeSeason != null ? routeSeason : (webQuery.get ? webQuery.get('season') : null);
+    const rawInitialEpisode = routeEpisode != null ? routeEpisode : (webQuery.get ? webQuery.get('episode') : null);
 
-    const parsedSeason = parseInt(initialSeason, 10);
-    const parsedEpisode = parseInt(initialEpisode, 10);
+    const parsedSeason = typeof rawInitialSeason === 'object' && rawInitialSeason !== null
+        ? (rawInitialSeason.season_number || 1)
+        : parseInt(rawInitialSeason, 10);
+    const parsedEpisode = typeof rawInitialEpisode === 'object' && rawInitialEpisode !== null
+        ? (rawInitialEpisode.episode_number || 1)
+        : parseInt(rawInitialEpisode, 10);
+
+    const fallbackSeason = typeof item?.season === 'object' && item?.season !== null
+        ? (item.season.season_number || 1)
+        : (Number.isFinite(parseInt(item?.season, 10)) ? parseInt(item.season, 10) : 1);
+    const fallbackEpisode = typeof item?.episode === 'object' && item?.episode !== null
+        ? (item.episode.episode_number || 1)
+        : (Number.isFinite(parseInt(item?.episode, 10)) ? parseInt(item.episode, 10) : 1);
 
     const [currentSeason, setCurrentSeason] = useState(
-        Number.isFinite(parsedSeason) ? parsedSeason : (isTv ? (item?.season != null ? item.season : 1) : null)
+        Number.isFinite(parsedSeason) ? parsedSeason : (isTv ? fallbackSeason : null)
     );
     const [currentEpisode, setCurrentEpisode] = useState(
-        Number.isFinite(parsedEpisode) ? parsedEpisode : (isTv ? (item?.episode != null ? item.episode : 1) : null)
+        Number.isFinite(parsedEpisode) ? parsedEpisode : (isTv ? fallbackEpisode : null)
     );
 
     const [seasons, setSeasons] = useState(item?.seasons || []);

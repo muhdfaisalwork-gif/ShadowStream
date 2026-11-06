@@ -46,15 +46,12 @@ const AD_DOMAINS = [
     'kochava.com', 'melbet.com', 'mostbet.com', 'parimatch.com',
     'dafabet.com', 'stake.com', 'betwinner.com', 'megapari.com',
     'linebet.com', 'mostbet-pk.com', 'pin-up.bet',
-    // v2.4.41: trackers observed live on the old providers.
+    // Trackers and malicious hosts observed live on providers
     'meatusbyway.cfd', 'wonnotscroganisoin.cyou', 'speedracelight.com',
-    // v2.4.42: third-party analytics and ad scripts observed live on the
-    // current provider rotation. These are the only third-party hosts the
-    // player chain pulls; everything else it touches is its own media.
-    'googletagmanager.com', 'google-analytics.com', 'static.cloudflareinsights.com',
-    'cloud.umami.is', 'umami.is', 'soycdn.lol', 'adplox.com',
-    // Lotame ad iframe + tracking pixel, loaded by nontongo and vidsrc.
-    'crwdcntrl.net', 'lotame.com'
+    'intelligenceadx.com', 'rtmark.net', 'luugy.com', 'googletagmanager.com',
+    'google-analytics.com', 'static.cloudflareinsights.com', 'cloud.umami.is',
+    'umami.is', 'soycdn.lol', 'adplox.com', 'crwdcntrl.net', 'lotame.com',
+    'histats.com', 'counter.yadro.ru', 'top100.rambler.ru'
 ];
 
 const AD_PATTERNS = [
@@ -63,38 +60,95 @@ const AD_PATTERNS = [
     'juicyads', 'onclick', 'highperformancegate', 'profitablegate',
     'effectivegate', 'al5sm', 'whomeverwhistle', 'deloton', 'galaksion',
     'richpush', 'evadav', 'rollerads', 'tsyndicate', 'realsrv', 'bet365',
-    '1xbet', 'melbet', 'mostbet', 'parimatch', 'dafabet', 'stake'
+    '1xbet', 'melbet', 'mostbet', 'parimatch', 'dafabet', 'stake',
+    'betwinner', 'megapari', 'linebet', 'pin-up.bet'
 ];
 
-const EMBED_HOST_HINTS = [
-    'vidsrc',
-    '2embed',
-    'vidlink',
-    'multiembed',
-    'superembed',
-    'moviebox',
-    'archive.org',
-    'smashystream',
+// Throwaway rotating ad TLDs
+const THROWAWAY_TLDS = [
+    '.cfd', '.qpon', '.lol', '.top', '.click', '.buzz', '.cam',
+    '.monster', '.sbs', '.cyou', '.icu', '.trade', '.bid', '.life'
+];
+
+// Allowlist of verified streaming hosts, CDNs, and media services
+const ALLOWED_STREAM_HOSTS = [
+    'ssmoviestvs.site',
+    'vidstuck.cc',
+    'nontongo.win',
+    'vidsrc.to',
+    'vidsrc.me',
+    'vidsrc.rip',
+    'vidsrc.sh',
+    'vidsrc.pm',
+    'vidsrc.net',
+    'vidsrc.xyz',
+    'vidsrc.in',
+    '2embed.cc',
+    '2embed.skin',
+    '2embed.org',
+    '2embed.to',
+    'vidlink.pro',
+    'vidlink.org',
+    'multiembed.mov',
+    'superembed.stream',
+    'smashystream.xyz',
     'embed.su',
     'moviesapi.club',
     'autoembed.co',
-    'animesalt'
+    'autoembed.cc',
+    'animesalt.cc',
+    'archive.org',
+    'stellarconductornexus.com',
+    'cloudflarestream.com',
+    'cloudflare.com',
+    'r2.cloudflarestorage.com',
+    'workers.dev',
+    'pages.dev',
+    'themoviedb.org',
+    'tmdb.org',
+    'imdb.com',
+    'media-amazon.com',
+    'googleapis.com',
+    'googleusercontent.com',
+    'youtube.com',
+    'youtube-nocookie.com',
+    'ytimg.com',
+    'localhost',
+    '127.0.0.1'
 ];
 
-const TRUSTED_EXTERNAL = [
+// Strict allowlist for opening external links in the default OS browser
+const TRUSTED_EXTERNAL_HOSTS = [
     'github.com',
     'themoviedb.org',
     'tmdb.org',
     'imdb.com',
     'discord.gg',
+    'discord.com',
+    'youtube.com',
+    'youtu.be',
 ];
+
+// Allowed external application protocols (e.g. native media players)
+const ALLOWED_SCHEMES = ['vlc:', 'potplayer:', 'mpv:'];
+
+/**
+ * Validates whether a URL strictly belongs to a trusted external service.
+ * Uses strict URL parsing to prevent parameter-based host spoofing (e.g. ?ref=imdb.com).
+ */
+function isTrustedExternalUrl(urlStr) {
+    if (!urlStr || typeof urlStr !== 'string') return false;
+    try {
+        const parsed = new URL(urlStr);
+        const host = parsed.hostname.toLowerCase();
+        return TRUSTED_EXTERNAL_HOSTS.some((trusted) => host === trusted || host.endsWith('.' + trusted));
+    } catch (_) {
+        return false;
+    }
+}
 
 /**
  * True when a URL belongs to ad, tracker, or betting infrastructure.
- *
- * The provider's own ad script is served from the provider's host, so the
- * host list alone cannot catch it - the path can. The rotating ad hosts
- * live on throwaway TLDs, so those are matched by TLD.
  */
 function isAdUrl(urlStr) {
     if (!urlStr || typeof urlStr !== 'string') return false;
@@ -102,37 +156,42 @@ function isAdUrl(urlStr) {
     let host = '';
     try { host = new URL(urlStr).hostname.toLowerCase(); } catch (_) {}
 
-    // The rotating ad hosts live on throwaway TLDs and change on every load:
-    //   t2f.<random>.cfd, zfz7hwz.<random>.cfd  -> the ad script itself
-    //   meatusbyway.cfd                         -> the popunder beacon
-    //   nifty.<random>.qpon                     -> the click tracker
-    // A domain list can never keep up with them, but the TLD does not move.
-    if (host.endsWith('.cfd') || host.endsWith('.qpon')) return true;
-
-    for (const d of AD_DOMAINS) {
-        if (lower.includes(d)) return true;
+    // Check rotating throwaway ad TLDs
+    if (THROWAWAY_TLDS.some((tld) => host.endsWith(tld))) {
+        // Special exemption for 2embed.skin which is our valid embed provider
+        if (host === '2embed.skin' || host.endsWith('.2embed.skin')) {
+            // Not an ad
+        } else {
+            return true;
+        }
     }
+
+    // Check ad domains
+    for (const d of AD_DOMAINS) {
+        if (host === d || host.endsWith('.' + d) || lower.includes(d)) return true;
+    }
+
+    // Check ad patterns
     for (const p of AD_PATTERNS) {
         if (lower.includes(p)) return true;
     }
-    // Provider-side ad injectors. These are served from the provider's own
-    // host, so a domain list cannot catch them - the path can.
-    //   /vidstuck.js       -> popunder + rotating tracker hosts (vidstuck.cc)
-    //   /__ads/            -> vidsrc ad script (soycdn.lol)
-    //   /cdn-cgi/rum       -> analytics beacon
-    //   /scripts/vidy.js   -> vidy popunder injector
-    //   /api/script.js     -> vidy popunder injector (users.vidy.st)
-    //   /lt/shared/        -> Lotame ad iframe
+
+    // Provider-side ad injectors & trackers by path
     if (lower.includes('/vidstuck.js')) return true;
     if (lower.includes('/__ads/')) return true;
     if (lower.includes('/cdn-cgi/rum')) return true;
     if (lower.includes('/scripts/vidy.js')) return true;
     if (lower.includes('/lt/shared/')) return true;
     if (lower.includes('/api/script.js') && host.indexOf('vidy.st') !== -1) return true;
+    if (lower.includes('/prebid') || lower.includes('/tag/js/gpt.js')) return true;
+
+    // Ad tracking query parameters
     if (lower.includes('zoneid=') || lower.includes('bannerid=') || lower.includes('popunder') ||
-        lower.includes('campaignid=') || lower.includes('aff_id=') || lower.includes('/pop/')) {
+        lower.includes('campaignid=') || lower.includes('aff_id=') || lower.includes('/pop/') ||
+        lower.includes('clickid=') || lower.includes('pixel=') || lower.includes('tracking_id=')) {
         return true;
     }
+
     return false;
 }
 
@@ -165,48 +224,67 @@ function createWindow() {
 
     // 1. Strict Window Open Handler: Deny all popup/popunder creation from iframes
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        if (!url) return { action: 'deny' };
+        if (!url || url === 'about:blank' || url === '') return { action: 'deny' };
 
         // Drop known ad/tracker/betting URLs immediately
         if (isAdUrl(url)) {
+            console.log('[AdShield] Blocked ad popup:', url);
             return { action: 'deny' };
         }
 
-        // EMBED PLAYERS NEVER NEED NEW WINDOWS.
-        // Third-party embed players call window.open solely for popunders/affiliate redirects.
-        // Denying it leaves the player iframe running cleanly inside the main window!
-        const isEmbed = EMBED_HOST_HINTS.some((h) => url.toLowerCase().includes(h));
-        if (isEmbed) {
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (_) {
             return { action: 'deny' };
         }
 
-        // Trusted external links (IMDb, TMDB, GitHub, Discord) -> open in user's default browser
-        const isTrusted = TRUSTED_EXTERNAL.some((domain) => url.toLowerCase().includes(domain));
-        if (isTrusted) {
-            shell.openExternal(url);
-            return { action: 'deny' };
-        }
+        const host = parsed.hostname.toLowerCase();
 
-        // Same-origin routes -> navigate within mainWindow
-        const isOurs =
-            url.includes('ssmoviestvs.site') ||
-            url.startsWith('/') ||
-            url.startsWith('#');
-        if (isOurs) {
+        // Same-origin in-app routes -> navigate within mainWindow
+        if (host === 'ssmoviestvs.site' || host.endsWith('.ssmoviestvs.site') || host === 'localhost' || host === '127.0.0.1') {
+            if (url.endsWith('.exe') || url.endsWith('.zip') || url.endsWith('.apk') || url.includes('/downloads/')) {
+                shell.openExternal(url);
+                return { action: 'deny' };
+            }
             mainWindow.loadURL(url);
             return { action: 'deny' };
         }
 
-        // Silently deny all other popup windows
+        // Official release binary downloads from our GitHub or Workers CDN
+        if ((host === 'github.com' || host.endsWith('.github.com') || host.endsWith('.workers.dev')) &&
+            (url.endsWith('.exe') || url.endsWith('.zip') || url.endsWith('.apk') || url.includes('/releases/download/'))) {
+            shell.openExternal(url);
+            return { action: 'deny' };
+        }
+
+        // Trusted external metadata links (IMDb, TMDB, YouTube trailers, Discord, GitHub)
+        if (isTrustedExternalUrl(url)) {
+            shell.openExternal(url);
+            return { action: 'deny' };
+        }
+
+        // Safe external player schemes (VLC, PotPlayer, MPV)
+        if (ALLOWED_SCHEMES.some((s) => url.startsWith(s))) {
+            shell.openExternal(url);
+            return { action: 'deny' };
+        }
+
+        // ALL OTHER 3RD-PARTY POPUPS & POPUNDERS: DENY UNCONDITIONALLY
+        console.warn('[AdShield] Denied 3rd-party popup attempt:', url);
         return { action: 'deny' };
     });
 
     // 2. Navigation Guard: prevent hostile ad redirects from hijacking the main window
     mainWindow.webContents.on('will-navigate', (event, url) => {
+        if (!url) return;
+
         if (isAdUrl(url)) {
             event.preventDefault();
+            console.warn('[AdShield] Blocked top-level ad navigation:', url);
             return;
         }
+
         let parsed;
         try {
             parsed = new URL(url);
@@ -214,29 +292,53 @@ function createWindow() {
             event.preventDefault();
             return;
         }
+
         const host = (parsed.hostname || '').toLowerCase();
         const isOurs = host === 'ssmoviestvs.site' || host.endsWith('.ssmoviestvs.site') || host === 'localhost' || host === '127.0.0.1';
-        if (!isOurs) {
-            event.preventDefault();
-            const isTrusted = TRUSTED_EXTERNAL.some((domain) => host.includes(domain));
-            if (isTrusted) {
+
+        if (isOurs) {
+            // Allow in-app download links to launch external download
+            if (url.endsWith('.exe') || url.endsWith('.zip') || url.endsWith('.apk') || url.includes('/downloads/')) {
+                event.preventDefault();
                 shell.openExternal(url);
             }
+            return;
+        }
+
+        // Prevent top-level hijacking by any third-party domain
+        event.preventDefault();
+        console.warn('[AdShield] Prevented top-level navigation outside app:', url);
+
+        // Only open in external browser if it is an explicitly trusted destination
+        if (isTrustedExternalUrl(url)) {
+            shell.openExternal(url);
         }
     });
 
-    // 3. Subframe Guard: block ad navigations inside subframes.
-    //
-    // There is deliberately no allowlist of "player hosts" here. Providers
-    // chain their player through hosts they invent per load - measured live
-    // on v2.4.42: vidsrc.to -> vidsrc.sh -> stellarconductornexus.com - and
-    // anime players live on yet other hosts. Denying an unknown host breaks
-    // playback, so the guard is a denylist instead. The ad and tracker hosts
-    // are already dropped at the network layer (onBeforeRequest), which also
-    // covers a subframe navigating to one.
+    // 3. Subframe Guard: block unauthorized navigations inside subframes
     mainWindow.webContents.on('will-frame-navigate', (event) => {
-        if (isAdUrl(event.url || '')) {
+        const url = event.url || '';
+        if (!url || url === 'about:blank') return;
+
+        if (isAdUrl(url)) {
             event.preventDefault();
+            console.warn('[AdShield] Blocked ad frame navigation:', url);
+            return;
+        }
+
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (_) {
+            event.preventDefault();
+            return;
+        }
+
+        const host = (parsed.hostname || '').toLowerCase();
+        const isAllowedHost = ALLOWED_STREAM_HOSTS.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+        if (!isAllowedHost) {
+            event.preventDefault();
+            console.warn('[AdShield] Blocked unauthorized 3rd-party subframe navigation:', url);
         }
     });
 
@@ -282,10 +384,25 @@ if (!gotTheLock) {
         // Network-Level AdShield: cancel all requests to known ad networks before they transfer
         if (session.defaultSession && session.defaultSession.webRequest) {
             session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-                const url = (details.url || '').toLowerCase();
+                const url = details.url || '';
                 if (isAdUrl(url)) {
                     return callback({ cancel: true });
                 }
+
+                // Subframe filter: prevent unauthorized ad frames from even initiating
+                if (details.resourceType === 'subFrame') {
+                    let parsed;
+                    try { parsed = new URL(url); } catch (_) {}
+                    if (parsed) {
+                        const host = (parsed.hostname || '').toLowerCase();
+                        const isAllowedHost = ALLOWED_STREAM_HOSTS.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+                        if (!isAllowedHost) {
+                            console.warn('[AdShield] Blocked subFrame request to:', host);
+                            return callback({ cancel: true });
+                        }
+                    }
+                }
+
                 callback({ cancel: false });
             });
         }
