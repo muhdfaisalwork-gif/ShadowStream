@@ -71,21 +71,28 @@ export default function UpdateBanner() {
                     (typeof navigator !== 'undefined' && /electron/i.test(navigator.userAgent || ''))
                 );
                 if (isElectronDesktop) {
-                    const desktopCode = window.ShadowStreamDesktop?.versionCode || CURRENT_CODE;
-                    const desktopVersion = window.ShadowStreamDesktop?.version || CURRENT_VERSION;
-                    const hasNewerDesktop = (remote.versionCode && desktopCode < remote.versionCode) ||
-                                            isNewerVersion(remote.version, desktopVersion);
+                    const localDesktopVer = window.ShadowStreamDesktop?.version;
+                    const localDesktopCode = window.ShadowStreamDesktop?.versionCode;
+                    const hasNewerDesktop = !localDesktopVer ||
+                        (remote.versionCode && localDesktopCode && localDesktopCode < remote.versionCode) ||
+                        isNewerVersion(remote.version, localDesktopVer);
 
                     if (hasNewerDesktop) {
                         setUpdateInfo({
                             type: 'desktop',
                             version: remote.version || CURRENT_VERSION,
-                            title: `ShadowStream Desktop v${remote.version} Available`,
-                            subtitle: remote.releaseNotes || 'Download the newest installer for desktop performance improvements.',
+                            title: `ShadowStream Desktop v${remote.version || CURRENT_VERSION} Available`,
+                            subtitle: localDesktopVer
+                                ? `You are running desktop build v${localDesktopVer}. Update now for the hardened AdShield and complete streaming platform catalogs.`
+                                : 'You are running an older desktop build (v2.4.42/legacy). Update now to enable the hardened AdShield and full streaming catalogs.',
                             action: () => {
                                 const dlUrl = remote.desktopUrl || 'https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe';
                                 setDownloading(true);
-                                window.location.href = dlUrl;
+                                if (typeof window.ShadowStreamDesktop?.triggerUpdate === 'function') {
+                                    window.ShadowStreamDesktop.triggerUpdate();
+                                } else {
+                                    window.location.href = dlUrl;
+                                }
                             },
                         });
                     }

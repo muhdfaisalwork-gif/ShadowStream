@@ -4742,19 +4742,25 @@ export default {
 
                 if (!env.RELEASES) return errorResponse("Releases storage not bound", 500);
 
-                let obj = await env.RELEASES.get(requestedName);
+                const rangeHeader = req.headers.get("Range");
+                let r2Opts: any = undefined;
+                if (rangeHeader) {
+                    r2Opts = { range: req.headers };
+                }
+
+                let obj: any = await env.RELEASES.get(requestedName, r2Opts);
 
                 if (!obj && requestedName.startsWith("ShadowStream")) {
 
                     const fallbackName = requestedName.replace("ShadowStream", "StreamApp");
 
-                    obj = await env.RELEASES.get(fallbackName);
+                    obj = await env.RELEASES.get(fallbackName, r2Opts);
 
                 } else if (!obj && requestedName.startsWith("StreamApp")) {
 
                     const fallbackName = requestedName.replace("StreamApp", "ShadowStream");
 
-                    obj = await env.RELEASES.get(fallbackName);
+                    obj = await env.RELEASES.get(fallbackName, r2Opts);
 
                 }
 
@@ -4775,6 +4781,8 @@ export default {
                             "Cache-Control": "no-cache, must-revalidate",
 
                             "X-Content-Type-Options": "nosniff",
+
+                            "Accept-Ranges": "bytes",
 
                             ...CORS,
 
@@ -4834,6 +4842,8 @@ export default {
 
                     "X-Content-Type-Options": "nosniff",
 
+                    "Accept-Ranges": "bytes",
+
                     ...CORS,
 
                 };
@@ -4848,13 +4858,26 @@ export default {
 
                 }
 
+                if (obj.httpEtag) dlHeaders["ETag"] = obj.httpEtag;
 
+                if (req.method === "HEAD") {
+                    if (obj.size) dlHeaders["Content-Length"] = String(obj.size);
+                    return new Response(null, { status: 200, headers: dlHeaders });
+                }
+
+                // Support HTTP 206 Partial Content for electron-updater differential chunking
+                if (rangeHeader && obj.range) {
+                    const rOffset = obj.range.offset ?? 0;
+                    const rLength = obj.range.length ?? obj.size;
+                    const rEnd = rOffset + rLength - 1;
+                    dlHeaders["Content-Range"] = `bytes ${rOffset}-${rEnd}/${obj.size}`;
+                    dlHeaders["Content-Length"] = String(rLength);
+                    return new Response(obj.body, { status: 206, headers: dlHeaders });
+                }
 
                 if (obj.size) dlHeaders["Content-Length"] = String(obj.size);
 
-                if (obj.httpEtag) dlHeaders["ETag"] = obj.httpEtag;
-
-                return new Response(obj.body, { headers: dlHeaders });
+                return new Response(obj.body, { status: 200, headers: dlHeaders });
 
             }
 

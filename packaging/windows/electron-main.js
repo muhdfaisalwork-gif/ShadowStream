@@ -360,6 +360,17 @@ function createWindow() {
                     configurable: false
                 });
             } catch(e) {}
+            try {
+                window.ShadowStreamDesktop = {
+                    version: '${app.getVersion()}',
+                    versionCode: 287,
+                    platform: 'win32',
+                    isElectron: true,
+                    triggerUpdate: function() {
+                        window.location.href = 'https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe';
+                    }
+                };
+            } catch(e) {}
         `;
         mainWindow.webContents.executeJavaScript(clientAdShield).catch(() => {});
     });
@@ -409,17 +420,66 @@ if (!gotTheLock) {
 
         createWindow();
 
+        if (process.platform === 'win32') {
+            try {
+                app.setAppUserModelId('com.streamapp.app');
+            } catch (_) {}
+        }
+
         if (autoUpdater) {
-            // Check for updates shortly after launch (5s), then every 2 hours
+            autoUpdater.autoDownload = true;
+            autoUpdater.autoInstallOnAppQuit = true;
+
+            autoUpdater.on('checking-for-update', () => {
+                console.log('[updater] Checking for updates on https://ssmoviestvs.site/downloads/ ...');
+            });
+
+            autoUpdater.on('update-available', (info) => {
+                console.log('[updater] New version available:', info && info.version);
+            });
+
+            autoUpdater.on('update-not-available', (info) => {
+                console.log('[updater] Desktop app is up to date (current: ' + (info && info.version) + ')');
+            });
+
+            autoUpdater.on('error', (err) => {
+                console.warn('[updater] Update error:', err && (err.stack || err.message));
+            });
+
+            autoUpdater.on('download-progress', (progressObj) => {
+                console.log(`[updater] Downloading: ${progressObj.percent.toFixed(1)}% (${(progressObj.bytesPerSecond / 1024).toFixed(0)} KB/s)`);
+            });
+
+            autoUpdater.on('update-downloaded', (info) => {
+                console.log('[updater] Update downloaded; prompting restart for v' + (info && info.version));
+                const { dialog } = require('electron');
+                if (dialog && mainWindow) {
+                    dialog.showMessageBox(mainWindow, {
+                        type: 'info',
+                        buttons: ['Restart & Install Now', 'Later'],
+                        defaultId: 0,
+                        cancelId: 1,
+                        title: 'ShadowStream Update Ready',
+                        message: `ShadowStream v${info.version || '2.4.47'} has been downloaded and is ready to install.`,
+                        detail: 'Restart the application now to apply the update and activate the hardened AdShield protection.'
+                    }).then(({ response }) => {
+                        if (response === 0) {
+                            autoUpdater.quitAndInstall(false, true);
+                        }
+                    }).catch(() => {});
+                }
+            });
+
+            // Check for updates shortly after launch (3s), then every hour
             setTimeout(() => {
                 autoUpdater.checkForUpdatesAndNotify()
                     .catch((e) => console.log('[updater] check failed:', e && e.message));
-            }, 5000);
+            }, 3000);
 
             setInterval(() => {
                 autoUpdater.checkForUpdatesAndNotify()
                     .catch((e) => console.log('[updater] periodic check failed:', e && e.message));
-            }, 2 * 60 * 60 * 1000);
+            }, 60 * 60 * 1000);
         }
     });
 }
