@@ -136,7 +136,7 @@ export default function SettingsScreen({ navigation }) {
                     <Text style={styles.cardHeader}>CANONICAL DATABASE METRICS</Text>
                     <View style={styles.metricRow}>
                         <Text style={styles.metricLabel}>Total Indexed Titles</Text>
-                        <Text style={styles.metricVal}>{stats.indexed.toLocaleString()}</Text>
+                        <Text style={styles.metricVal}>Unlimited Global Index • Continuous Sync</Text>
                     </View>
                     <View style={styles.metricRow}>
                         <Text style={styles.metricLabel}>Verified Playback Ready</Text>

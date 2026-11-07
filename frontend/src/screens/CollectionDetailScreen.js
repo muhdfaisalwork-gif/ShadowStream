@@ -110,7 +110,9 @@ export default function CollectionDetailScreen({ route, navigation }) {
     const [loading, setLoading] = useState(() => !(Array.isArray(rawInitialItems) && rawInitialItems.length > 0));
     const [activeType, setActiveType] = useState('all');
     const [selectedSort, setSelectedSort] = useState('default');
-    const [visibleCount, setVisibleCount] = useState(48);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -123,7 +125,9 @@ export default function CollectionDetailScreen({ route, navigation }) {
         const preset = PLATFORM_META[slugToFetch] || {};
         setActiveType('all');
         setSelectedSort('default');
-        setVisibleCount(48);
+        setPage(1);
+        setHasMore(true);
+        setLoadingMore(false);
 
         if (rawCollection && typeof rawCollection === 'object') {
             setCollection({
@@ -150,7 +154,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
             setLoading(true);
         }
 
-        fetch(`${getApiBase()}/titles?collection=${encodeURIComponent(slugToFetch)}&page_size=250`)
+        fetch(`${getApiBase()}/titles?collection=${encodeURIComponent(slugToFetch)}&page=1&page_size=40`)
             .then(r => r.json())
             .then(d => {
                 if (cancelled) return;
@@ -166,13 +170,16 @@ export default function CollectionDetailScreen({ route, navigation }) {
                 const items = (d && d.items) || (Array.isArray(d) ? d : []);
                 if (items.length > 0) {
                     setAllTitles(items);
+                    setHasMore(items.length >= 10);
                     setLoading(false);
                 } else if (seeded.length === 0) {
                     fetch(`${getApiBase()}/search?q=${encodeURIComponent(slugToFetch.replace(/-/g, ' '))}&limit=60`)
                         .then(r2 => r2.json())
                         .then(d2 => {
                             if (!cancelled) {
-                                setAllTitles(d2?.items || []);
+                                const sItems = d2?.items || [];
+                                setAllTitles(sItems);
+                                setHasMore(false);
                                 setLoading(false);
                             }
                         })
@@ -180,6 +187,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
                             if (!cancelled) setLoading(false);
                         });
                 } else {
+                    setHasMore(false);
                     setLoading(false);
                 }
             })
@@ -189,6 +197,45 @@ export default function CollectionDetailScreen({ route, navigation }) {
 
         return () => { cancelled = true; };
     }, [activeSlug, rawSlug]);
+
+    const handleLoadMore = async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        const slugToFetch = activeSlug || rawSlug;
+        try {
+            const res = await fetch(`${getApiBase()}/titles?collection=${encodeURIComponent(slugToFetch)}&page=${nextPage}&page_size=40`);
+            if (res.ok) {
+                const d = await res.json();
+                const newItems = (d && d.items) || (Array.isArray(d) ? d : []);
+                if (newItems.length > 0) {
+                    setAllTitles(prev => {
+                        const seen = new Set(prev.map(x => String(x.tmdbId || x.id)));
+                        const merged = [...prev];
+                        for (const it of newItems) {
+                            const k = String(it.tmdbId || it.id);
+                            if (!seen.has(k)) {
+                                seen.add(k);
+                                merged.push(it);
+                            }
+                        }
+                        return merged;
+                    });
+                    setPage(nextPage);
+                    setHasMore(d?.has_more !== false && newItems.length >= 10);
+                } else {
+                    setHasMore(false);
+                }
+            } else {
+                setHasMore(false);
+            }
+        } catch (err) {
+            console.error('[CollectionDetail] load more error:', err);
+            setHasMore(false);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     const filteredTitles = useMemo(() => {
         let list = allTitles.slice();
@@ -208,7 +255,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
         return list;
     }, [allTitles, activeType, selectedSort]);
 
-    const displayedTitles = useMemo(() => filteredTitles.slice(0, visibleCount), [filteredTitles, visibleCount]);
+    const displayedTitles = filteredTitles;
     const movieCount = useMemo(() => allTitles.filter(t => t.type === 'movie').length, [allTitles]);
     const tvCount = useMemo(() => allTitles.filter(t => t.type === 'tv' || t.type === 'anime' || t.type === 'short_drama' || t.isAnime).length, [allTitles]);
 
@@ -244,7 +291,7 @@ export default function CollectionDetailScreen({ route, navigation }) {
                         <Text style={styles.heroTitle}>{collection.name}</Text>
                         <Text style={styles.heroDesc}>{collection.description || 'Curated collection of cinematic titles.'}</Text>
                         <Text style={styles.heroMeta}>
-                            {filteredTitles.length} {filteredTitles.length === 1 ? 'title' : 'titles'} available
+                            Streaming Platform Hub • Continuous Catalog
                         </Text>
                     </View>
                 </View>
@@ -254,9 +301,9 @@ export default function CollectionDetailScreen({ route, navigation }) {
                     <View style={styles.controlsBar}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
                             {[
-                                { id: 'all', label: `📂 All (${allTitles.length})` },
-                                ...(movieCount > 0 ? [{ id: 'movie', label: `🎬 Movies (${movieCount})` }] : []),
-                                ...(tvCount > 0 ? [{ id: 'tv', label: `📺 Series (${tvCount})` }] : []),
+                                { id: 'all', label: '📂 All' },
+                                ...(movieCount > 0 ? [{ id: 'movie', label: '🎬 Movies' }] : []),
+                                ...(tvCount > 0 ? [{ id: 'tv', label: '📺 Series' }] : []),
                             ].map(tab => {
                                 const isSel = activeType === tab.id;
                                 return (
@@ -318,15 +365,20 @@ export default function CollectionDetailScreen({ route, navigation }) {
                     </View>
                 )}
 
-                {displayedTitles.length < filteredTitles.length && (
+                {hasMore && !loading && (
                     <View style={styles.loadMoreRow}>
                         <TouchableOpacity
                             style={styles.loadMoreBtn}
-                            onPress={() => setVisibleCount(prev => prev + 48)}
+                            onPress={handleLoadMore}
+                            disabled={loadingMore}
                         >
-                            <Text style={styles.loadMoreBtnText}>
-                                Load More ({displayedTitles.length} of {filteredTitles.length})
-                            </Text>
+                            {loadingMore ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.loadMoreBtnText}>
+                                    Load More Titles
+                                </Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 )}

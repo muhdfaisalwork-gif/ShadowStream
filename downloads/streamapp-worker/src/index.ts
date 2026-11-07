@@ -1722,51 +1722,75 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
             const reqType = params.get("type");
             try {
                 let tmdbItems: any[] = [];
+                // Multi-page fetch: fetch 2 sub-pages of TMDB results for every requested page
+                const tmdbPage1 = String(pageNum * 2 - 1);
+                const tmdbPage2 = String(pageNum * 2);
+
                 if (!reqType || reqType === "tv") {
-                    const tvRes = await fetchTmdbWithRotation("discover/tv", {
-                        with_networks: String(platInfo.networkId),
-                        sort_by: "popularity.desc",
-                        page: String(pageNum)
-                    });
-                    if (tvRes && Array.isArray(tvRes.results)) {
-                        tmdbItems.push(...tvRes.results.map((t: any) => ({
+                    const [tvRes1, tvRes2] = await Promise.all([
+                        fetchTmdbWithRotation("discover/tv", {
+                            with_networks: String(platInfo.networkId),
+                            sort_by: "popularity.desc",
+                            page: tmdbPage1
+                        }),
+                        fetchTmdbWithRotation("discover/tv", {
+                            with_networks: String(platInfo.networkId),
+                            sort_by: "popularity.desc",
+                            page: tmdbPage2
+                        })
+                    ]);
+                    const tvResults = [
+                        ...(tvRes1 && Array.isArray(tvRes1.results) ? tvRes1.results : []),
+                        ...(tvRes2 && Array.isArray(tvRes2.results) ? tvRes2.results : [])
+                    ];
+                    tmdbItems.push(...tvResults.map((t: any) => ({
+                        id: String(t.id),
+                        tmdbId: t.id,
+                        title: t.name || t.title,
+                        year: parseInt((t.first_air_date || t.release_date || "").slice(0, 4), 10) || null,
+                        type: "tv",
+                        poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
+                        backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
+                        rating: t.vote_average || 0,
+                        overview: t.overview || "",
+                        slug: slugifyTitle(t.name || t.title) + `-${t.id}`,
+                        has_playback: true
+                    })));
+                }
+
+                if (!reqType || reqType === "movie") {
+                    if (platInfo.providerId) {
+                        const [movieRes1, movieRes2] = await Promise.all([
+                            fetchTmdbWithRotation("discover/movie", {
+                                with_watch_providers: String(platInfo.providerId),
+                                watch_region: "US",
+                                sort_by: "popularity.desc",
+                                page: tmdbPage1
+                            }),
+                            fetchTmdbWithRotation("discover/movie", {
+                                with_watch_providers: String(platInfo.providerId),
+                                watch_region: "US",
+                                sort_by: "popularity.desc",
+                                page: tmdbPage2
+                            })
+                        ]);
+                        const movieResults = [
+                            ...(movieRes1 && Array.isArray(movieRes1.results) ? movieRes1.results : []),
+                            ...(movieRes2 && Array.isArray(movieRes2.results) ? movieRes2.results : [])
+                        ];
+                        tmdbItems.push(...movieResults.map((t: any) => ({
                             id: String(t.id),
                             tmdbId: t.id,
-                            title: t.name || t.title,
-                            year: parseInt((t.first_air_date || t.release_date || "").slice(0, 4), 10) || null,
-                            type: "tv",
+                            title: t.title || t.name,
+                            year: parseInt((t.release_date || t.first_air_date || "").slice(0, 4), 10) || null,
+                            type: "movie",
                             poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
                             backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
                             rating: t.vote_average || 0,
                             overview: t.overview || "",
-                            slug: slugifyTitle(t.name || t.title) + `-${t.id}`,
+                            slug: slugifyTitle(t.title || t.name) + `-${t.id}`,
                             has_playback: true
                         })));
-                    }
-                }
-                if (!reqType || reqType === "movie") {
-                    if (platInfo.providerId) {
-                        const movieRes = await fetchTmdbWithRotation("discover/movie", {
-                            with_watch_providers: String(platInfo.providerId),
-                            watch_region: "US",
-                            sort_by: "popularity.desc",
-                            page: String(pageNum)
-                        });
-                        if (movieRes && Array.isArray(movieRes.results)) {
-                            tmdbItems.push(...movieRes.results.map((t: any) => ({
-                                id: String(t.id),
-                                tmdbId: t.id,
-                                title: t.title || t.name,
-                                year: parseInt((t.release_date || t.first_air_date || "").slice(0, 4), 10) || null,
-                                type: "movie",
-                                poster: t.poster_path ? `https://image.tmdb.org/t/p/w500${t.poster_path}` : null,
-                                backdrop: t.backdrop_path ? `https://image.tmdb.org/t/p/w1280${t.backdrop_path}` : null,
-                                rating: t.vote_average || 0,
-                                overview: t.overview || "",
-                                slug: slugifyTitle(t.title || t.name) + `-${t.id}`,
-                                has_playback: true
-                            })));
-                        }
                     }
                 }
 
@@ -1795,10 +1819,11 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
                 if (combinedItems.length > 0) {
                     return jsonResponse({
                         items: combinedItems,
-                        total: Math.max(combinedItems.length, 1000),
+                        total: 10000,
                         page: pageNum,
                         pageSize: combinedItems.length,
-                        pageCount: 50,
+                        pageCount: 500,
+                        has_more: true,
                         collection: colMeta
                     });
                 }

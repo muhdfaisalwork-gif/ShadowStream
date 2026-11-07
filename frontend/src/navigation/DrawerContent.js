@@ -67,7 +67,7 @@ export default function DrawerContent({ navigation }) {
                 </View>
                 <View style={styles.statusPill}>
                     <Text style={styles.statusDot}>●</Text>
-                    <Text style={styles.statusText}>{stats.indexed.toLocaleString()} Titles</Text>
+                    <Text style={styles.statusText}>Live Global Catalog</Text>
                 </View>
             </View>
 
@@ -95,12 +95,12 @@ export default function DrawerContent({ navigation }) {
                 <TouchableOpacity style={styles.navRow} onPress={() => onNav('Movies', { filter: 'popular' })}>
                     <Text style={styles.navIcon}>🎬</Text>
                     <Text style={styles.navLabel}>Movies Hub</Text>
-                    <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>{stats.movie ? Math.round(stats.movie / 100) / 10 + 'K' : '…'}</Text></View>
+                    <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>ALL</Text></View>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navRow} onPress={() => onNav('TV', { filter: 'popular' })}>
                     <Text style={styles.navIcon}>📺</Text>
                     <Text style={styles.navLabel}>TV Series</Text>
-                    <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>{stats.tv ? Math.round(stats.tv / 100) / 10 + 'K' : '…'}</Text></View>
+                    <View style={styles.rowBadge}><Text style={styles.rowBadgeText}>SERIES</Text></View>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navRow} onPress={() => onNav('TV', { filter: 'episodes' })}>
                     <Text style={styles.navIcon}>🗂️</Text>
@@ -116,7 +116,7 @@ export default function DrawerContent({ navigation }) {
                     <Text style={styles.navIcon}>⚡</Text>
                     <Text style={styles.navLabel}>Anime Ecosystem</Text>
                     <View style={[styles.rowBadge, { backgroundColor: COLORS.badgeAnime }]}>
-                        <Text style={styles.rowBadgeText}>{stats.anime ? stats.anime.toLocaleString() : 'DUB/SUB'}</Text>
+                        <Text style={styles.rowBadgeText}>DUB/SUB</Text>
                     </View>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navRow} onPress={() => onNav('ShortDramas')}>
@@ -186,7 +186,7 @@ export default function DrawerContent({ navigation }) {
                         Personal multi-mirror aggregator. Player picks from any of the registered sources automatically — aggregator mirrors first, fallback to whatever streams. No legal/illegal gating; you choose what to watch.
                     </Text>
                     <View style={styles.auditRow}>
-                        <Text style={styles.auditItem}>📡 {stats.indexed.toLocaleString()} Indexed</Text>
+                        <Text style={styles.auditItem}>📡 Universal Streaming Index • Multi-Platform</Text>
                         <Text style={styles.auditItem}>🪞 Multi-Mirror Player</Text>
                     </View>
                 </View>

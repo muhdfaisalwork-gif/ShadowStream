@@ -33,6 +33,7 @@ export default function TVScreen({ route, navigation }) {
     const [series, setSeries] = useState([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
 
@@ -139,6 +140,11 @@ export default function TVScreen({ route, navigation }) {
                 const data = await res.json();
                 const newItems = data.items || [];
                 setTotal(data.total || newItems.length || 0);
+                if (newItems.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                }
                 if (append) {
                     setSeries(prev => [...prev, ...newItems]);
                 } else {
@@ -159,7 +165,7 @@ export default function TVScreen({ route, navigation }) {
     }, [activeTab, selectedSort, selectedYearMin, selectedAudioLang, fetchSeries]);
 
     const handleLoadMore = () => {
-        if (loadingMore || series.length >= total) return;
+        if (loadingMore || !hasMore) return;
         const nextPage = page + 1;
         setPage(nextPage);
         fetchSeries(activeTab, selectedSort, selectedYearMin, selectedAudioLang, nextPage, true);
@@ -180,7 +186,7 @@ export default function TVScreen({ route, navigation }) {
                 <View style={styles.hubHero}>
                     <Text style={styles.hubTitle}>📺 Television & Web Series</Text>
                     <Text style={styles.hubSub}>
-                        {total > 0 ? `${total.toLocaleString()} episodic series with verified seasonal breakdowns` : 'Stream ongoing and completed series across Korean, Chinese, Pakistani, and Western television'}
+                        Stream full episodic series across Netflix, Max, Disney+, Apple TV+, Prime, and global television
                     </Text>
                 </View>
 
@@ -276,7 +282,7 @@ export default function TVScreen({ route, navigation }) {
                 )}
 
                 {/* Load More Button */}
-                {series.length < total && !loading && (
+                {hasMore && !loading && series.length > 0 && (
                     <View style={styles.loadMoreRow}>
                         <TouchableOpacity
                             style={styles.loadMoreBtn}
@@ -287,7 +293,7 @@ export default function TVScreen({ route, navigation }) {
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.loadMoreBtnText}>
-                                    Load More ({series.length} of {total.toLocaleString()})
+                                    Load More TV Series
                                 </Text>
                             )}
                         </TouchableOpacity>

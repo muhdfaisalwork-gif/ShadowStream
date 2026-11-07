@@ -192,8 +192,23 @@ export default function BrowseScreen({ route, navigation }) {
                         } else if (sort === 'year') {
                             colItems = colItems.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
                         }
-                        setTotal(colItems.length);
-                        setItems(colItems);
+                        setTotal(colData.total || 10000);
+                        if (append) {
+                            setItems(prev => {
+                                const seen = new Set(prev.map(x => String(x.id || x.tmdbId)));
+                                const merged = [...prev];
+                                for (const it of colItems) {
+                                    const k = String(it.id || it.tmdbId);
+                                    if (!seen.has(k)) {
+                                        seen.add(k);
+                                        merged.push(it);
+                                    }
+                                }
+                                return merged;
+                            });
+                        } else {
+                            setItems(colItems);
+                        }
                         setLoading(false);
                         setLoadingMore(false);
                         return;
@@ -263,7 +278,7 @@ export default function BrowseScreen({ route, navigation }) {
                         <View style={{ flex: 1, paddingRight: 10 }}>
                             <Text style={styles.hubTitle}>{categoryTitle || '🌍 Global Catalog'}</Text>
                             <Text style={styles.hubSub}>
-                                {total.toLocaleString()} titles available{activeCategory ? ' in this section' : '.'}
+                                Continuous Catalog Discovery • {activeCategory ? 'In this section' : 'Universal Catalog'}
                             </Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -410,7 +425,7 @@ export default function BrowseScreen({ route, navigation }) {
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.loadMoreBtnText}>
-                                    Load More ({items.length} of {total.toLocaleString()})
+                                    Load More Titles
                                 </Text>
                             )}
                         </TouchableOpacity>

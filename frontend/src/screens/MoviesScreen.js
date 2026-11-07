@@ -34,6 +34,7 @@ export default function MoviesScreen({ route, navigation }) {
     const [movies, setMovies] = useState([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
 
@@ -134,6 +135,11 @@ export default function MoviesScreen({ route, navigation }) {
                 const data = await res.json();
                 const newItems = data.items || [];
                 setTotal(data.total || 0);
+                if (newItems.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                }
                 if (append) {
                     setMovies(prev => [...prev, ...newItems]);
                 } else {
@@ -154,7 +160,7 @@ export default function MoviesScreen({ route, navigation }) {
     }, [activeTab, selectedCountry, selectedSort, selectedYearMin, selectedAudioLang, fetchMovies]);
 
     const handleLoadMore = () => {
-        if (loadingMore || movies.length >= total) return;
+        if (loadingMore || !hasMore) return;
         const nextPage = page + 1;
         setPage(nextPage);
         fetchMovies(activeTab, selectedCountry, selectedSort, selectedYearMin, selectedAudioLang, nextPage, true);
@@ -169,7 +175,7 @@ export default function MoviesScreen({ route, navigation }) {
                 <View style={styles.hubHero}>
                     <Text style={styles.hubTitle}>🎬 Movies Hub</Text>
                     <Text style={styles.hubSub}>
-                        {total > 0 ? `${total.toLocaleString()} feature films indexed with full metadata & verified streams` : 'Explore cinema across all genres, years, and nations'}
+                        Explore complete global cinema across Hollywood, international studios, and major streaming platforms
                     </Text>
                 </View>
 
@@ -288,7 +294,7 @@ export default function MoviesScreen({ route, navigation }) {
                 )}
 
                 {/* Load More Button */}
-                {movies.length < total && !loading && (
+                {hasMore && !loading && movies.length > 0 && (
                     <View style={styles.loadMoreRow}>
                         <TouchableOpacity
                             style={styles.loadMoreBtn}
@@ -299,7 +305,7 @@ export default function MoviesScreen({ route, navigation }) {
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.loadMoreBtnText}>
-                                    Load More ({movies.length} of {total.toLocaleString()})
+                                    Load More Movies
                                 </Text>
                             )}
                         </TouchableOpacity>
