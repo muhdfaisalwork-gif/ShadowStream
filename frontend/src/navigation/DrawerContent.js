@@ -136,6 +136,16 @@ export default function DrawerContent({ navigation }) {
 
                 {/* EXPLORE TAXONOMY */}
                 <Text style={styles.sectionHeader}>EXPLORE</Text>
+                <TouchableOpacity style={styles.navRow} onPress={() => onNav('Collections', { tab: 'imdb' })}>
+                    <Text style={styles.navIcon}>🏆</Text>
+                    <Text style={styles.navLabel}>IMDb Top 100</Text>
+                    <View style={[styles.rowBadge, { backgroundColor: '#EAB308' }]}><Text style={[styles.rowBadgeText, { color: '#000000' }]}>TOP</Text></View>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navRow} onPress={() => onNav('Collections', { tab: 'directors' })}>
+                    <Text style={styles.navIcon}>🎬</Text>
+                    <Text style={styles.navLabel}>Visionary Directors</Text>
+                    <View style={[styles.rowBadge, { backgroundColor: COLORS.accent }]}><Text style={styles.rowBadgeText}>AUTEUR</Text></View>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.navRow} onPress={() => onNav('Genres')}>
                     <Text style={styles.navIcon}>🏷️</Text>
                     <Text style={styles.navLabel}>Genres</Text>

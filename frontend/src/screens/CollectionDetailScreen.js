@@ -14,6 +14,139 @@ import { useRouteMeta } from '../utils/useRouteMeta';
 import { useResponsive } from '../theme/scaling';
 
 const PLATFORM_META = {
+    'imdb-top-100-movies': {
+        name: 'IMDb Top 100 Movies',
+        badge: 'IMDb TOP 100',
+        description: 'The 100 highest-rated films in cinematic history according to millions of IMDb movie lovers worldwide.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg',
+        networkId: 0
+    },
+    'imdb-top-100-tv': {
+        name: 'IMDb Top 100 TV Series',
+        badge: 'IMDb TOP 100',
+        description: 'The 100 most celebrated and highest-rated television series and miniseries of all time.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/9faGSFi5jam6pDWGNd0p8JImmFl.jpg',
+        networkId: 0
+    },
+    'imdb-top-rated': {
+        name: 'IMDb Top 200 Hall of Fame',
+        badge: 'IMDb HALL OF FAME',
+        description: 'The definitive canon of highest-rated cinematic masterpieces and legendary television dramas.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg',
+        networkId: 0
+    },
+    'director-david-fincher': {
+        name: 'David Fincher',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Master of psychological thrillers, meticulous visual symmetry, and dark existential investigations.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/hZkgoQYus5vegHoetLkCJzb17zJ.jpg',
+        networkId: 0
+    },
+    'director-christopher-nolan': {
+        name: 'Christopher Nolan',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Architect of monumental IMAX cinema, non-linear temporality, and profound philosophical puzzles.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/rAiYTsqJiOEZg0nJApjYq9WpA2f.jpg',
+        networkId: 0
+    },
+    'director-zack-snyder': {
+        name: 'Zack Snyder',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Pioneering visual stylist known for mythic superhero epics, kinetic action, and striking painterly compositions.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
+        networkId: 0
+    },
+    'director-quentin-tarantino': {
+        name: 'Quentin Tarantino',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Iconic auteur celebrated for razor-sharp dialogue, non-linear narrative, and stylized homage cinema.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
+        networkId: 0
+    },
+    'director-martin-scorsese': {
+        name: 'Martin Scorsese',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Legendary chronicler of American crime, morality, ambition, and the human condition.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/mSDsSDwaP3E7dEfUPWy4J0djt4O.jpg',
+        networkId: 0
+    },
+    'director-steven-spielberg': {
+        name: 'Steven Spielberg',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'The definitive master of modern cinema, blending wonder, human empathy, and groundbreaking spectacle.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/lXhgCODAbBXL5buk9yEmTBPBaFc.jpg',
+        networkId: 0
+    },
+    'director-denis-villeneuve': {
+        name: 'Denis Villeneuve',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Visionary sci-fi and drama director known for breathtaking scale, atmospheric tension, and philosophical depth.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/x2RS3uT099v46yDq2oc8w6n9quw.jpg',
+        networkId: 0
+    },
+    'director-ridley-scott': {
+        name: 'Ridley Scott',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Master of immersive sci-fi and historical epics, creating rich, tactile cinematic worlds.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg',
+        networkId: 0
+    },
+    'director-james-cameron': {
+        name: 'James Cameron',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Pioneering cinematic visionary who redefined science fiction, action filmmaking, and immersive technology.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
+        networkId: 0
+    },
+    'director-stanley-kubrick': {
+        name: 'Stanley Kubrick',
+        badge: 'VISIONARY DIRECTOR',
+        description: "One of cinema's greatest masterminds, revered for technical perfection, symmetry, and existential inquiries.",
+        cover_image: 'https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg',
+        networkId: 0
+    },
+    'director-hayao-miyazaki': {
+        name: 'Hayao Miyazaki',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Legendary Studio Ghibli animator and storyteller, weaving enchanting fantasies with deep environmental themes.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/Ab8mkHmkYADjU7wQiOkia99G9pF.jpg',
+        networkId: 0
+    },
+    'director-guillermo-del-toro': {
+        name: 'Guillermo del Toro',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Poet of dark fantasy and monster cinema, combining Gothic horror with fairy tale beauty.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/w79Lw7Q2x2tK8r7z1p4p5x6y7z8.jpg',
+        networkId: 0
+    },
+    'director-wes-anderson': {
+        name: 'Wes Anderson',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Unique cinematic stylist famous for pastel palettes, symmetrical framing, and quirky melancholic ensembles.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg',
+        networkId: 0
+    },
+    'director-bong-joon-ho': {
+        name: 'Bong Joon-ho',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'Academy Award-winning Korean auteur known for blending dark satire, genre subversion, and social commentary.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/Hi8H4n4Z7g8m3k1L6i8X7.jpg',
+        networkId: 0
+    },
+    'director-alfred-hitchcock': {
+        name: 'Alfred Hitchcock',
+        badge: 'VISIONARY DIRECTOR',
+        description: 'The definitive Master of Suspense, pioneering cinematic voyeurism, psychological tension, and twist endings.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg',
+        networkId: 0
+    },
+    'director-coen-brothers': {
+        name: 'Joel & Ethan Coen',
+        badge: 'VISIONARY DIRECTORS',
+        description: 'Uncompromising storytellers blending dark comedy, neo-noir realism, and philosophical irony.',
+        cover_image: 'https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg',
+        networkId: 0
+    },
     'netflix': {
         name: '🔴 On Netflix',
         badge: 'STREAMING NETWORK',

@@ -30,6 +30,8 @@ export default function CollectionsScreen({ route, navigation }) {
 
     const tabs = [
         { id: 'all', label: '📦 All Collections' },
+        { id: 'imdb', label: '🏆 IMDb Top 100' },
+        { id: 'directors', label: '🎬 Visionary Directors' },
         { id: 'studios', label: '🏢 Studios & Networks' },
         { id: 'spiritual', label: '✨ Spiritual & Prophets' },
         { id: 'franchises', label: '🎬 Major Franchises' },
@@ -60,6 +62,12 @@ export default function CollectionsScreen({ route, navigation }) {
         if (activeTab === 'all') return true;
         const kind = (c.kind || c.type || '').toLowerCase();
         const slug = (c.slug || '').toLowerCase();
+        if (activeTab === 'imdb') {
+            return slug.includes('imdb') || slug.includes('top-100') || slug.includes('top-rated');
+        }
+        if (activeTab === 'directors') {
+            return kind === 'director' || slug.startsWith('director-') || slug.includes('nolan') || slug.includes('fincher') || slug.includes('snyder') || slug.includes('tarantino') || slug.includes('scorsese') || slug.includes('spielberg');
+        }
         if (activeTab === 'studios') {
             return kind === 'studio' || slug.includes('netflix') || slug.includes('disney') || slug.includes('max') || slug.includes('prime-video') || slug.includes('hulu') || slug.includes('apple-tv') || slug.includes('crunchyroll') || slug.includes('paramount') || slug.includes('peacock') || slug.includes('universal') || slug.includes('sony') || slug.includes('pixar') || slug.includes('warner') || slug.includes('marvel') || slug.includes('dc');
         }

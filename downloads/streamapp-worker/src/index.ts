@@ -1684,6 +1684,41 @@ const STREAMING_PLATFORM_NETWORKS: Record<string, { networkId: number; providerI
     "on-peacock": { networkId: 3353, providerId: 386, name: "Peacock" }
 };
 
+export const VISIONARY_DIRECTORS: Record<string, { id: number; name: string; description: string; avatar: string; backdrop: string }> = {
+    "director-david-fincher": { id: 7467, name: "David Fincher", description: "Master of psychological thrillers, meticulous visual symmetry, and dark existential investigations.", avatar: "https://image.tmdb.org/t/p/w500/tpEczFclQZeKA7zgJcuT04Rnzbv.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/hZkgoQYus5vegHoetLkCJzb17zJ.jpg" },
+    "david-fincher": { id: 7467, name: "David Fincher", description: "Master of psychological thrillers, meticulous visual symmetry, and dark existential investigations.", avatar: "https://image.tmdb.org/t/p/w500/tpEczFclQZeKA7zgJcuT04Rnzbv.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/hZkgoQYus5vegHoetLkCJzb17zJ.jpg" },
+    "director-christopher-nolan": { id: 525, name: "Christopher Nolan", description: "Architect of monumental IMAX cinema, non-linear temporality, and profound philosophical puzzles.", avatar: "https://image.tmdb.org/t/p/w500/xuAIuYSmsUzKlUMBFGVZaWsY3Z5.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/rAiYTsqJiOEZg0nJApjYq9WpA2f.jpg" },
+    "christopher-nolan": { id: 525, name: "Christopher Nolan", description: "Architect of monumental IMAX cinema, non-linear temporality, and profound philosophical puzzles.", avatar: "https://image.tmdb.org/t/p/w500/xuAIuYSmsUzKlUMBFGVZaWsY3Z5.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/rAiYTsqJiOEZg0nJApjYq9WpA2f.jpg" },
+    "director-zack-snyder": { id: 15217, name: "Zack Snyder", description: "Pioneering visual stylist known for mythic superhero epics, kinetic action, and striking painterly compositions.", avatar: "https://image.tmdb.org/t/p/w500/pAtd5eU12g6sMvd76x1sH2x7Z3k.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg" },
+    "zack-snyder": { id: 15217, name: "Zack Snyder", description: "Pioneering visual stylist known for mythic superhero epics, kinetic action, and striking painterly compositions.", avatar: "https://image.tmdb.org/t/p/w500/pAtd5eU12g6sMvd76x1sH2x7Z3k.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg" },
+    "director-quentin-tarantino": { id: 138, name: "Quentin Tarantino", description: "Iconic auteur celebrated for razor-sharp dialogue, non-linear narrative, and stylized homage cinema.", avatar: "https://image.tmdb.org/t/p/w500/1gjcvAEbZhZe55sqgEQ41y7z474.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg" },
+    "quentin-tarantino": { id: 138, name: "Quentin Tarantino", description: "Iconic auteur celebrated for razor-sharp dialogue, non-linear narrative, and stylized homage cinema.", avatar: "https://image.tmdb.org/t/p/w500/1gjcvAEbZhZe55sqgEQ41y7z474.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg" },
+    "director-martin-scorsese": { id: 1032, name: "Martin Scorsese", description: "Legendary chronicler of American crime, morality, ambition, and the human condition.", avatar: "https://image.tmdb.org/t/p/w500/9U9Y5GQuWX3Ebg39JdkRM59V6Mb.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/mSDsSDwaP3E7dEfUPWy4J0djt4O.jpg" },
+    "martin-scorsese": { id: 1032, name: "Martin Scorsese", description: "Legendary chronicler of American crime, morality, ambition, and the human condition.", avatar: "https://image.tmdb.org/t/p/w500/9U9Y5GQuWX3Ebg39JdkRM59V6Mb.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/mSDsSDwaP3E7dEfUPWy4J0djt4O.jpg" },
+    "director-steven-spielberg": { id: 488, name: "Steven Spielberg", description: "The definitive master of modern cinema, blending wonder, human empathy, and groundbreaking spectacle.", avatar: "https://image.tmdb.org/t/p/w500/tZxcg19YQ3e8fJ0pOs7SfOhVU06.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/lXhgCODAbBXL5buk9yEmTBPBaFc.jpg" },
+    "steven-spielberg": { id: 488, name: "Steven Spielberg", description: "The definitive master of modern cinema, blending wonder, human empathy, and groundbreaking spectacle.", avatar: "https://image.tmdb.org/t/p/w500/tZxcg19YQ3e8fJ0pOs7SfOhVU06.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/lXhgCODAbBXL5buk9yEmTBPBaFc.jpg" },
+    "director-denis-villeneuve": { id: 137427, name: "Denis Villeneuve", description: "Visionary sci-fi and drama director known for breathtaking scale, atmospheric tension, and philosophical depth.", avatar: "https://image.tmdb.org/t/p/w500/zdqwN83b0F2pXg3eP3x9XjL4m6T.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/x2RS3uT099v46yDq2oc8w6n9quw.jpg" },
+    "denis-villeneuve": { id: 137427, name: "Denis Villeneuve", description: "Visionary sci-fi and drama director known for breathtaking scale, atmospheric tension, and philosophical depth.", avatar: "https://image.tmdb.org/t/p/w500/zdqwN83b0F2pXg3eP3x9XjL4m6T.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/x2RS3uT099v46yDq2oc8w6n9quw.jpg" },
+    "director-ridley-scott": { id: 578, name: "Ridley Scott", description: "Master of immersive sci-fi and historical epics, creating rich, tactile cinematic worlds.", avatar: "https://image.tmdb.org/t/p/w500/kSOmD4i4jY81kO7m0p8zK1i8L7p.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg" },
+    "ridley-scott": { id: 578, name: "Ridley Scott", description: "Master of immersive sci-fi and historical epics, creating rich, tactile cinematic worlds.", avatar: "https://image.tmdb.org/t/p/w500/kSOmD4i4jY81kO7m0p8zK1i8L7p.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg" },
+    "director-james-cameron": { id: 2710, name: "James Cameron", description: "Pioneering cinematic visionary who redefined science fiction, action filmmaking, and immersive technology.", avatar: "https://image.tmdb.org/t/p/w500/9NApHT1b2UmIR5uqve5xTqlBke.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg" },
+    "james-cameron": { id: 2710, name: "James Cameron", description: "Pioneering cinematic visionary who redefined science fiction, action filmmaking, and immersive technology.", avatar: "https://image.tmdb.org/t/p/w500/9NApHT1b2UmIR5uqve5xTqlBke.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg" },
+    "director-stanley-kubrick": { id: 240, name: "Stanley Kubrick", description: "One of cinema's greatest masterminds, revered for technical perfection, symmetry, and existential inquiries.", avatar: "https://image.tmdb.org/t/p/w500/w7kP8B7c2d1s0t4t7m3k1L6i8X7.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" },
+    "stanley-kubrick": { id: 240, name: "Stanley Kubrick", description: "One of cinema's greatest masterminds, revered for technical perfection, symmetry, and existential inquiries.", avatar: "https://image.tmdb.org/t/p/w500/w7kP8B7c2d1s0t4t7m3k1L6i8X7.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" },
+    "director-hayao-miyazaki": { id: 608, name: "Hayao Miyazaki", description: "Legendary Studio Ghibli animator and storyteller, weaving enchanting fantasies with deep environmental themes.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/Ab8mkHmkYADjU7wQiOkia99G9pF.jpg" },
+    "hayao-miyazaki": { id: 608, name: "Hayao Miyazaki", description: "Legendary Studio Ghibli animator and storyteller, weaving enchanting fantasies with deep environmental themes.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/Ab8mkHmkYADjU7wQiOkia99G9pF.jpg" },
+    "director-guillermo-del-toro": { id: 10828, name: "Guillermo del Toro", description: "Poet of dark fantasy and monster cinema, combining Gothic horror with fairy tale beauty.", avatar: "https://image.tmdb.org/t/p/w500/1X670P0r8L6u9Y6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/w79Lw7Q2x2tK8r7z1p4p5x6y7z8.jpg" },
+    "guillermo-del-toro": { id: 10828, name: "Guillermo del Toro", description: "Poet of dark fantasy and monster cinema, combining Gothic horror with fairy tale beauty.", avatar: "https://image.tmdb.org/t/p/w500/1X670P0r8L6u9Y6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/w79Lw7Q2x2tK8r7z1p4p5x6y7z8.jpg" },
+    "director-wes-anderson": { id: 5655, name: "Wes Anderson", description: "Unique cinematic stylist famous for pastel palettes, symmetrical framing, and quirky melancholic ensembles.", avatar: "https://image.tmdb.org/t/p/w500/7n4x7Z6k5k4k2k0m3k1L6i8X7.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg" },
+    "wes-anderson": { id: 5655, name: "Wes Anderson", description: "Unique cinematic stylist famous for pastel palettes, symmetrical framing, and quirky melancholic ensembles.", avatar: "https://image.tmdb.org/t/p/w500/7n4x7Z6k5k4k2k0m3k1L6i8X7.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/bOGkgRGdhrBYZdCekJ32s1sy5uF.jpg" },
+    "director-bong-joon-ho": { id: 21684, name: "Bong Joon-ho", description: "Academy Award-winning Korean auteur known for blending dark satire, genre subversion, and social commentary.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/Hi8H4n4Z7g8m3k1L6i8X7.jpg" },
+    "bong-joon-ho": { id: 21684, name: "Bong Joon-ho", description: "Academy Award-winning Korean auteur known for blending dark satire, genre subversion, and social commentary.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/Hi8H4n4Z7g8m3k1L6i8X7.jpg" },
+    "director-alfred-hitchcock": { id: 2636, name: "Alfred Hitchcock", description: "The definitive Master of Suspense, pioneering cinematic voyeurism, psychological tension, and twist endings.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" },
+    "alfred-hitchcock": { id: 2636, name: "Alfred Hitchcock", description: "The definitive Master of Suspense, pioneering cinematic voyeurism, psychological tension, and twist endings.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" },
+    "director-coen-brothers": { id: 1223, name: "Joel & Ethan Coen", description: "Uncompromising storytellers blending dark comedy, neo-noir realism, and philosophical irony.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" },
+    "coen-brothers": { id: 1223, name: "Joel & Ethan Coen", description: "Uncompromising storytellers blending dark comedy, neo-noir realism, and philosophical irony.", avatar: "https://image.tmdb.org/t/p/w500/7a9Mv3A3z0d9z9Z6M6z8k5K2k0.jpg", backdrop: "https://image.tmdb.org/t/p/w1280/sAtoMqDVhNDQBc4QJL3wFlkJL0D.jpg" }
+};
+
 async function browseTitles(params: URLSearchParams, env: Env): Promise<Response> {
 
     const rawCol = params.get("collection") || params.get("provider") || params.get("category");
@@ -1706,15 +1741,102 @@ async function browseTitles(params: URLSearchParams, env: Env): Promise<Response
 
         }
 
-        const col = rawCol
-
+                let col = rawCol
             .replace(/^on-apple-tv$/, "apple-tv-plus")
-
             .replace(/^on-(netflix|disney-plus|max|prime-video|hulu|paramount-plus|peacock|crunchyroll)$/, "$1");
 
-        const colObj = (await env.CATALOG.get(R2_PREFIX + `collections/${col}.json`)) ||
+        if (rawCol === "top-100-movies" || rawCol === "imdb-top-movies" || rawCol === "imdb-top-100-movies") {
+            col = "imdb-top-100-movies";
+        } else if (rawCol === "top-100-tv" || rawCol === "imdb-top-tv" || rawCol === "imdb-top-100-tv") {
+            col = "imdb-top-100-tv";
+        } else if (rawCol === "imdb-top" || rawCol === "imdb-top-rated" || rawCol === "top-rated-all-time") {
+            col = "imdb-top-rated";
+        }
 
+        const colObj = (await env.CATALOG.get(R2_PREFIX + `collections/${col}.json`)) ||
                        (col !== rawCol ? await env.CATALOG.get(R2_PREFIX + `collections/${rawCol}.json`) : null);
+
+        // Visionary Directors Router (Curated R2 + Dynamic Live TMDB Fallback)
+        const dirKey = (rawCol || "").toLowerCase();
+        const dirInfo = VISIONARY_DIRECTORS[dirKey] || VISIONARY_DIRECTORS[col] || (params.get("director") ? VISIONARY_DIRECTORS[params.get("director")!.toLowerCase()] : null);
+        if (dirInfo) {
+            const pageNum = Math.max(1, parseInt(params.get("page") || "1", 10));
+            const activeColObj = colObj || (await env.CATALOG.get(R2_PREFIX + `collections/director-${slugifyTitle(dirInfo.name)}.json`)) || (await env.CATALOG.get(R2_PREFIX + `collections/${dirKey}.json`));
+            if (activeColObj) {
+                try {
+                    const colData = (await activeColObj.json()) as { items?: any[]; collection?: any };
+                    if (Array.isArray(colData.items) && colData.items.length > 0) {
+                        const enriched = await enrichListItems(colData.items, env);
+                        const pageSize = Math.min(60, Math.max(20, parseInt(params.get("page_size") || "40", 10)));
+                        const start = (pageNum - 1) * pageSize;
+                        const pageItems = enriched.slice(start, start + pageSize);
+                        return jsonResponse({
+                            items: pageItems,
+                            total: enriched.length,
+                            page: pageNum,
+                            pageSize: pageItems.length,
+                            pageCount: Math.ceil(enriched.length / pageSize),
+                            has_more: start + pageSize < enriched.length,
+                            collection: colData.collection || { slug: dirKey, name: dirInfo.name }
+                        });
+                    }
+                } catch (_) {}
+            }
+
+            // Live TMDB credits fallback
+            try {
+                const credits = await fetchTmdbWithRotation(`person/${dirInfo.id}/combined_credits`);
+                if (credits && Array.isArray(credits.crew)) {
+                    const directed = credits.crew.filter((c: any) => c.department === "Directing" || c.job === "Director");
+                    const seen = new Set<string>();
+                    const items: any[] = [];
+                    for (const c of directed) {
+                        const cid = String(c.id);
+                        if (!cid || seen.has(cid)) continue;
+                        seen.add(cid);
+                        const mediaType = c.media_type || "movie";
+                        const title = c.title || c.name;
+                        if (!title) continue;
+                        const dateStr = c.release_date || c.first_air_date || "";
+                        const year = parseInt(dateStr.slice(0, 4), 10) || null;
+                        items.push({
+                            id: cid,
+                            tmdbId: c.id,
+                            title: title,
+                            year: year,
+                            type: mediaType,
+                            poster: c.poster_path ? `https://image.tmdb.org/t/p/w500${c.poster_path}` : null,
+                            backdrop: c.backdrop_path ? `https://image.tmdb.org/t/p/w1280${c.backdrop_path}` : null,
+                            rating: Math.round((c.vote_average || 0) * 10) / 10,
+                            overview: c.overview || "",
+                            slug: slugifyTitle(title) + `-${cid}`,
+                            popularity: c.popularity || 0,
+                            has_playback: true
+                        });
+                    }
+                    items.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+                    const pageSize = 40;
+                    const start = (pageNum - 1) * pageSize;
+                    const paged = items.slice(start, start + pageSize);
+                    return jsonResponse({
+                        items: paged,
+                        total: items.length,
+                        page: pageNum,
+                        pageSize: paged.length,
+                        pageCount: Math.ceil(items.length / pageSize),
+                        has_more: start + pageSize < items.length,
+                        collection: {
+                            slug: `director-${slugifyTitle(dirInfo.name)}`,
+                            name: `${dirInfo.name} Filmography`,
+                            title: `The Films & Series of ${dirInfo.name}`,
+                            description: dirInfo.description,
+                            cover_image: dirInfo.backdrop,
+                            badge: "VISIONARY DIRECTOR"
+                        }
+                    });
+                }
+            } catch (_) {}
+        }
 
                 const platInfo = STREAMING_PLATFORM_NETWORKS[rawCol] || STREAMING_PLATFORM_NETWORKS[col];
         if (platInfo) {
@@ -4615,12 +4737,36 @@ export default {
                 try {
                     const rawCats = await loadSmall("categories.json", env) as any[];
                     const cats = Array.isArray(rawCats) ? [...rawCats] : [];
+                    if (!cats.some((c: any) => c.id === "imdb-top-100-movies")) {
+                        cats.splice(1, 0, {
+                            id: "imdb-top-100-movies",
+                            title: "🏆 IMDb Top 100 Movies of All Time",
+                            viewAllValue: "imdb-top-100-movies",
+                            collection: "imdb-top-100-movies"
+                        });
+                    }
+                    if (!cats.some((c: any) => c.id === "imdb-top-100-tv")) {
+                        cats.splice(2, 0, {
+                            id: "imdb-top-100-tv",
+                            title: "📺 IMDb Top 100 TV Series of All Time",
+                            viewAllValue: "imdb-top-100-tv",
+                            collection: "imdb-top-100-tv"
+                        });
+                    }
                     if (!cats.some((c: any) => c.id === "islamic-history")) {
                         cats.splice(3, 0, {
                             id: "islamic-history",
                             title: "🕌 Islamic & Religious History",
                             viewAllValue: "islamic-history",
                             items: CURATED_ISLAMIC_TITLES
+                        });
+                    }
+                    if (!cats.some((c: any) => c.id === "visionary-directors")) {
+                        cats.splice(4, 0, {
+                            id: "visionary-directors",
+                            title: "🎬 Visionary Directors Spotlight",
+                            viewAllValue: "director-christopher-nolan",
+                            collection: "director-christopher-nolan"
                         });
                     }
                     return jsonResponse(cats);
