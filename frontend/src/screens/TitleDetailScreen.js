@@ -144,7 +144,14 @@ export default function TitleDetailScreen({ route, navigation }) {
             setRelatedBlogs([]);
             try {
                 // 1. Fetch full title detail (works for both ID and slug)
-                const detailRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}`);
+                let detailRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(titleKey)}`);
+                if (!detailRes.ok && typeof titleKey === 'string' && /-\d+$/.test(titleKey)) {
+                    const strippedKey = titleKey.replace(/-\d+$/, '');
+                    const retryRes = await fetch(`${getApiBase()}/title/${encodeURIComponent(strippedKey)}`);
+                    if (retryRes.ok) {
+                        detailRes = retryRes;
+                    }
+                }
                 if (!detailRes.ok) {
                     if (!cancelled) {
                         setLoadError(detailRes.status === 404 ? 'not_found' : `http_${detailRes.status}`);

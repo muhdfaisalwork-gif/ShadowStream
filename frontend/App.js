@@ -59,6 +59,30 @@ const linking = {
                     item: () => undefined,
                 }
             },
+            Watch: {
+                path: 'watch/:type/:slug',
+                stringify: {
+                    type: (val) => val,
+                    slug: (val) => val,
+                    item: () => undefined,
+                }
+            },
+            Series: 'series',
+            Live: 'live',
+            Dubs: {
+                path: 'dubs/:filter?',
+                stringify: {
+                    filter: () => undefined,
+                    initialItems: () => undefined,
+                }
+            },
+            Regional: {
+                path: 'regional/:slug?',
+                stringify: {
+                    slug: () => undefined,
+                    initialItems: () => undefined,
+                }
+            },
             Player: {
                 path: 'play/:slug',
                 parse: {
@@ -175,6 +199,11 @@ export default function App() {
                     <Drawer.Screen name="Watchlist" component={WatchlistScreen} />
                     <Drawer.Screen name="History" component={HistoryScreen} />
                     <Drawer.Screen name="TitleDetail" component={TitleDetailScreen} />
+                    <Drawer.Screen name="Watch" component={TitleDetailScreen} />
+                    <Drawer.Screen name="Series" component={TVScreen} />
+                    <Drawer.Screen name="Live" component={SportsScreen} />
+                    <Drawer.Screen name="Dubs" component={BrowseScreen} />
+                    <Drawer.Screen name="Regional" component={CountryDetailScreen} />
                     <Drawer.Screen name="Player" component={PlayerScreen} options={{ unmountOnBlur: true }} />
                     <Drawer.Screen name="Settings" component={SettingsScreen} />
                     <Drawer.Screen name="Apps" component={AppsScreen} />

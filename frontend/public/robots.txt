@@ -1,44 +1,25 @@
-# robots.txt for ShadowStream (https://ssmoviestvs.site)
 User-agent: *
 Allow: /
-Allow: /movies
-Allow: /tv
-Allow: /anime
-Allow: /short-dramas
-Allow: /collections
-Allow: /blogs
-Allow: /blog/
-Allow: /title/
-Allow: /genres
-Allow: /countries
-Allow: /languages
-Allow: /apps
 
-# AI & LLM Search Crawlers (Full Crawl Permission)
-User-agent: GPTBot
+User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: anthropic-ai
+User-agent: GPTBot
 Allow: /
 
 User-agent: PerplexityBot
 Allow: /
 
-User-agent: Applebot-Extended
+User-agent: Claude-SearchBot
 Allow: /
 
-User-agent: CCBot
+User-agent: Googlebot
 Allow: /
 
-User-agent: Google-Extended
+User-agent: Bingbot
 Allow: /
 
-# Sitemaps & AI Context
-Sitemap: https://ssmoviestvs.site/sitemap.xml
-Sitemap: https://ssmoviestvs.site/api/v1/sitemap.xml
+Sitemap: https://www.ssmoviestvs.site/sitemap_index.xml

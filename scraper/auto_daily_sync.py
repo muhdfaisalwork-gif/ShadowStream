@@ -193,6 +193,33 @@ def stage4_upload_to_r2(dry_run: bool = False) -> bool:
         return False
 
 
+def stage4_5_seo_and_sitemaps(dry_run: bool = False) -> bool:
+    log("=== Stage 4.5: Generating Segmented Sitemaps and Running SEO Agent ===")
+    if dry_run:
+        log("  [Dry-run] Skipping sitemaps and SEO agent")
+        return True
+    try:
+        sitemap_script = HERE / "generate_segmented_sitemaps.py"
+        res1 = subprocess.run([PYTHON_EXE, str(sitemap_script)], cwd=str(HERE), capture_output=True, text=True, timeout=120)
+        if res1.returncode == 0:
+            log("  Segmented XML sitemaps generated successfully.")
+        else:
+            log(f"  Warning: generate_segmented_sitemaps.py exited with code {res1.returncode}: {res1.stderr[:150]}")
+    except Exception as e:
+        log(f"  Error generating sitemaps: {e}")
+
+    try:
+        seo_script = HERE / "seo_agent.py"
+        res2 = subprocess.run([PYTHON_EXE, str(seo_script)], cwd=str(HERE), capture_output=True, text=True, timeout=300)
+        if res2.returncode == 0:
+            log("  SEO showbiz editorial agent completed successfully.")
+        else:
+            log(f"  Warning: seo_agent.py exited with code {res2.returncode}: {res2.stderr[:150]}")
+    except Exception as e:
+        log(f"  Error running seo_agent.py: {e}")
+    return True
+
+
 def stage5_verify_production() -> bool:
     log("=== Stage 5: Verifying Live Production Endpoints ===")
     endpoints = [
@@ -249,6 +276,7 @@ def run_pipeline(dry_run: bool = False, skip_ingest: bool = False, wire_limit: i
     stage2_wire_embeds(limit=wire_limit, dry_run=dry_run)
     stage3_export_snapshots(dry_run=dry_run)
     stage4_upload_to_r2(dry_run=dry_run)
+    stage4_5_seo_and_sitemaps(dry_run=dry_run)
     stage5_verify_production()
 
     elapsed = time.time() - started

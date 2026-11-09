@@ -8,10 +8,10 @@
  * path; for production SEO at scale, a Next.js front-end would be needed.
  */
 
-const DEFAULT_TITLE = 'ShadowStream - Cinematic Movie & TV Discovery Platform';
-const DEFAULT_DESCRIPTION = 'ShadowStream is a global catalog of lawfully available movies, TV series, anime, and short dramas. Browse by genre, country, language, year, and dub.';
+const DEFAULT_TITLE = 'ShadowStream - Free Movies, TV Shows, Anime & Live Sports';
+const DEFAULT_DESCRIPTION = 'Stream 104,261+ movies, TV series, dual-audio anime, regional dubs, and live sports schedules with multi-mirror playback and zero sign-up on ShadowStream.';
 const SITE_NAME = 'ShadowStream';
-const CANONICAL_BASE = 'https://ssmoviestvs.site';
+const CANONICAL_BASE = 'https://www.ssmoviestvs.site';
 
 function upsertMeta(selector, attr, value) {
     if (typeof document === 'undefined') return;
@@ -141,17 +141,17 @@ export function setRouteMeta(screen, params) {
         }
         case 'Home':
             title = 'ShadowStream - Discover Movies, TV, Anime & Short Dramas';
-            description = 'Browse 13,000+ lawfully catalogued titles across movies, TV series, anime, and short dramas. Free exploration, no account required.';
+            description = 'Browse 104,261+ indexed movies, TV series, anime, and live channels with multi-mirror playback and zero sign-up on ShadowStream.';
             canonical = `${CANONICAL_BASE}/`;
             break;
         case 'Movies':
             title = 'Movies Hub - ShadowStream';
-            description = 'Movies sorted by popularity, year, genre, country, and language. Hollywood, Bollywood, Korean, Japanese, Chinese, French, and more.';
+            description = 'Explore 104,261+ indexed movies across Hollywood, Bollywood, international cinema, and independent releases with multi-mirror HD playback on ShadowStream.';
             canonical = `${CANONICAL_BASE}/movies`;
             break;
         case 'TV':
             title = 'TV Series Hub - ShadowStream';
-            description = 'Television series from Korea, China, Pakistan, Turkey, India, UK, US, and Japan. Complete with season and episode breakdowns.';
+            description = 'Discover and stream global television series, hit crime thrillers, K-dramas, Pakistani dramas, and prime-time TV shows across 104,261+ indexed titles on ShadowStream.';
             canonical = `${CANONICAL_BASE}/tv`;
             break;
         case 'Anime':
@@ -196,7 +196,7 @@ export function setRouteMeta(screen, params) {
             break;
         case 'Search':
             title = 'Search - ShadowStream';
-            description = 'Search across 13,000+ titles by name, genre, country, language, year, rating, and content type.';
+            description = 'Search across 104,261+ indexed movies, TV series, anime, and live channels on ShadowStream.';
             canonical = `${CANONICAL_BASE}/search`;
             break;
         case 'Settings':
