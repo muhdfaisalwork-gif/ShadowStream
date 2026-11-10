@@ -104,6 +104,9 @@ downloads/StreamApp-macos-*
 downloads/StreamApp-windows-*
 !downloads/streamapp-worker/
 downloads/ShadowStream.apk
+downloads/*.ipa
+*.ipa
+packaging/ios/ShadowStream-xtool/build/
 packaging/windows/*.exe
 packaging/windows/*.zip
 packaging/windows/ShadowStream-win-x64/

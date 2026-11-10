@@ -3,8 +3,9 @@
   "versionCode": 287,
   "minVersion": "1.0.0",
   "name": "ShadowStream",
-  "releaseDate": "2026-11-06",
+  "releaseDate": "2026-11-10",
   "apkUrl": "https://ssmoviestvs.site/downloads/ShadowStream.apk",
   "desktopUrl": "https://ssmoviestvs.site/downloads/ShadowStream-Setup-x64.exe",
-  "releaseNotes": "v2.4.47: Complete streaming platform catalogs (Netflix, Max, Disney+, Apple TV+, Prime, Crunchyroll, Hulu), live TMDB multi-search fallback for famous titles, permanent ban of vidy.st, resolved React Error #31 child object rendering crash."
+  "iosUrl": "https://ssmoviestvs.site/downloads/ShadowStream.ipa",
+  "releaseNotes": "v2.4.47: Complete streaming platform catalogs (Netflix, Max, Disney+, Apple TV+, Prime, Crunchyroll, Hulu), live TMDB multi-search fallback for famous titles, Apple iOS package (ShadowStream.ipa) release with PiP and pop-up shielding."
 }

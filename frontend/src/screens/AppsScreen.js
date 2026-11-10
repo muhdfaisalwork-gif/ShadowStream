@@ -56,15 +56,15 @@ const APPS = [
         notes: 'Native Windows desktop launcher with embedded media engine, shortcuts, and direct mirror streaming.',
     },
     {
-        id: 'apple-xtool',
-        platform: 'Apple iOS & macOS (xtool / SwiftPM)',
+        id: 'apple-ios',
+        platform: 'Apple iOS (iPhone & iPad)',
         icon: '🍏',
-        arch: 'iOS 16+ (iPhone/iPad) & macOS 13+ (Universal)',
-        size: 'Native Swift App',
-        fileName: 'ShadowStream-xtool',
-        url: 'https://github.com/xtool-org/xtool',
+        arch: 'iOS 16+ (ARM64)',
+        size: '17.0 MB',
+        fileName: 'ShadowStream.ipa',
+        url: `${RELEASE_BASE}/ShadowStream.ipa`,
         status: 'ready',
-        notes: 'Native Swift/SwiftUI application built with xtool featuring PiP, safe-area gestures, and hardware video playback.',
+        notes: 'Native iOS package (.ipa). Sideload easily via Sideloadly, AltStore, TrollStore, or xtool with PiP, background audio, and zero ads.',
     },
     {
         id: 'linux-x64',
@@ -282,7 +282,7 @@ export default function AppsScreen({ navigation }) {
                                 <Text style={styles.downloadBtnText}>
                                     {app.status === 'broken' ? 'Unavailable' :
                                      app.id === 'web' ? 'Open Web App →' :
-                                     app.id === 'apple-xtool' ? 'View Guide on GitHub →' :
+                                     app.fileName?.endsWith('.ipa') ? 'Download iOS App (.ipa) →' :
                                      `Download ${app.fileName?.endsWith('.apk') ? 'APK' : app.fileName?.endsWith('.exe') ? 'Installer' : 'App'} →`}
                                 </Text>
                             </TouchableOpacity>
