@@ -1,23 +1,16 @@
-# ShadowStream - iOS & macOS App via xtool
+# ShadowStream — iOS & macOS App via xtool
 
-This project builds the native **ShadowStream** Apple application (iOS 16+ and macOS 13+) using [xtool](https://github.com/xtool-org/xtool), an open-source toolchain that enables compiling, bundling, and testing Swift Package Manager (SwiftPM) applications without the bloated Xcode IDE GUI.
+This project builds the native **ShadowStream** Apple application (iOS 16+ and macOS 13+) using [xtool](https://github.com/xtool-org/xtool) (v1.24.0), an open-source cross-platform toolchain that compiles, codesigns, and packages SwiftPM applications without requiring Xcode on macOS.
 
 ---
 
-## Prerequisites
+## Architecture & Features
 
-### On macOS
-Install `xtool` via Homebrew:
-```bash
-brew tap xtool-org/tap
-brew install xtool
-```
-
-### On Linux / WSL (Cross-compilation & CI)
-Download the binary release or AppImage from [xtool Releases](https://github.com/xtool-org/xtool/releases) or build via Rust:
-```bash
-cargo install xtool
-```
+- **Direct Production Endpoint:** Embedded `https://ssmoviestvs.site` streaming core.
+- **Hardware-Accelerated Playback:** Full inline video playback, AirPlay, and Picture-in-Picture (PiP).
+- **AdShield & Pop-up Trap:** Native `WKUIDelegate` captures and silences unwanted blank-target pop-ups.
+- **Dark Theme Polish:** Native `#0b0f19` deep-space background and edge swipe navigation.
+- **Universal Apple Compatibility:** Builds for iPhone, iPad, and macOS (Apple Silicon + Intel).
 
 ---
 
@@ -25,49 +18,79 @@ cargo install xtool
 
 ```
 packaging/ios/ShadowStream-xtool/
-├── Package.swift           # Swift Package specification (iOS 16+, macOS 13+)
-├── xtool.yml               # Bundle identifiers, display names, and capabilities
-├── Resources/              # High-resolution brand icons and banners
-│   ├── AppIcon.png         # 1024x1024 dark brand icon
+├── Package.swift           # Swift Package specification (swift-tools-version: 6.0)
+├── xtool.yml               # xtool v1.24.0 packaging schema
+├── Info.plist              # Native iOS entitlements, orientations, and background audio
+├── Resources/              # High-resolution brand assets
+│   ├── AppIcon.png         # 1024x1024 master icon
 │   ├── AppIcon-transparent.png
 │   └── BrandBanner.png
 ├── Sources/
 │   ├── ShadowStreamApp.swift # SwiftUI @main app entry point
-│   └── ContentView.swift     # WKWebView wrapper configured for https://ssmoviestvs.site
-├── build-xtool-ios.sh      # Automated build & package script
+│   └── ContentView.swift     # WKWebView container with PiP, AirPlay, and pop-up trap
+├── build-xtool-ios.sh      # Automated release .ipa packager
 └── README.md
 ```
 
 ---
 
-## Features
+## Prerequisites & Installation
 
-- **Direct Production Endpoint**: Embedded `https://ssmoviestvs.site` streaming core.
-- **Hardware-Accelerated Playback**: Inline video playback, AirPlay, and Picture-in-Picture (PiP).
-- **Dark Theme Polish**: Native `#0b0f19` deep-space background and safe-area padding.
-- **Edge Navigation**: Full support for iOS swipe back/forward gestures.
-- **Universal Apple Binary**: Supports iPhone, iPad, and Apple Silicon/Intel macOS.
+### Option 1: On Windows (via WSL2)
+1. Run the automated setup script from the root repository:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\setup-xtool-windows.ps1
+   ```
+   Or inside WSL2 Ubuntu:
+   ```bash
+   bash scripts/setup-xtool-wsl.sh
+   ```
+2. Configure your Apple Developer credentials and Darwin SDK (one-time):
+   ```bash
+   xtool setup
+   ```
+   - **Mode 0 (Recommended for Developers):** App Store Connect API Key (Team Key + App Manager).
+   - **Mode 1 (Free Personal):** Standard Apple ID (email + password + 2FA).
+   - When prompted for `Path to Xcode.xip`, provide your downloaded `Xcode_*.xip` path.
+
+### Option 2: On macOS
+```bash
+brew tap xtool-org/tap
+brew install xtool
+xtool setup
+```
 
 ---
 
-## Building
+## Building the iOS Application (`.ipa`)
 
-### Quick Build (iOS)
+Inside the project directory:
+
 ```bash
-xtool build --target ShadowStream --configuration release
+cd packaging/ios/ShadowStream-xtool
+
+# 1. Automated Release Build (Outputs .ipa to ./build/ShadowStream.ipa)
+bash build-xtool-ios.sh
+
+# 2. Signed Build with Apple ID
+bash build-xtool-ios.sh --sign
 ```
 
-### Run in iOS Simulator
+Or using `xtool` directly:
 ```bash
-xtool run --target ShadowStream --simulator "iPhone 15 Pro"
+xtool dev build --configuration release --ipa
 ```
 
-### Package `.ipa` for Distribution
-```bash
-xtool archive --target ShadowStream --output ./build/ShadowStream.ipa
-```
+---
 
-### Build for macOS
-```bash
-xtool build --target ShadowStream-macOS --configuration release
-```
+## Installing & Sideloading
+
+1. **Direct USB Install via xtool:**
+   Connect your iPhone/iPad via USB and run:
+   ```bash
+   xtool install build/ShadowStream.ipa
+   ```
+2. **Sideloadly / AltStore:**
+   Drag `build/ShadowStream.ipa` into Sideloadly or AltStore to install onto your device using your free Apple ID.
+3. **TrollStore:**
+   If running a supported iOS version, install `ShadowStream.ipa` directly with permanent entitlements.

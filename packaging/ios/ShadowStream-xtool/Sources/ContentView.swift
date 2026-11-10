@@ -19,6 +19,7 @@ public struct WebViewContainer: UIViewRepresentable {
         // Dark background styling
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.isOpaque = false
         webView.backgroundColor = UIColor(red: 11/255, green: 15/255, blue: 25/255, alpha: 1.0)
@@ -36,7 +37,7 @@ public struct WebViewContainer: UIViewRepresentable {
         Coordinator(self)
     }
 
-    public class Coordinator: NSObject, WKNavigationDelegate {
+    public class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var parent: WebViewContainer
 
         init(_ parent: WebViewContainer) {
@@ -56,6 +57,19 @@ public struct WebViewContainer: UIViewRepresentable {
         public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             parent.isLoading = false
         }
+
+        // Handle window.open and target="_blank" without breaking out of the app
+        public func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            if navigationAction.targetFrame == nil {
+                webView.load(navigationAction.request)
+            }
+            return nil
+        }
     }
 }
 #elseif os(macOS)
@@ -71,6 +85,7 @@ public struct WebViewContainer: NSViewRepresentable {
         let config = WKWebViewConfiguration()
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
 
         let request = URLRequest(url: url)
@@ -84,7 +99,7 @@ public struct WebViewContainer: NSViewRepresentable {
         Coordinator(self)
     }
 
-    public class Coordinator: NSObject, WKNavigationDelegate {
+    public class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var parent: WebViewContainer
 
         init(_ parent: WebViewContainer) {
@@ -99,6 +114,22 @@ public struct WebViewContainer: NSViewRepresentable {
             parent.isLoading = false
             parent.canGoBack = webView.canGoBack
             parent.canGoForward = webView.canGoForward
+        }
+
+        public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            parent.isLoading = false
+        }
+
+        public func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            if navigationAction.targetFrame == nil {
+                webView.load(navigationAction.request)
+            }
+            return nil
         }
     }
 }

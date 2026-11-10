@@ -1,33 +1,48 @@
-# StreamApp macOS — Build Instructions
+# ShadowStream macOS Application — Build & Distribution Guide
 
-## What this is
-A native macOS .app bundle that wraps the deployed StreamApp web app.
-Built with `pkg` (Node.js → standalone executable) + a thin .app shell.
+ShadowStream offers three flexible build targets for macOS (Apple Silicon `arm64` and Intel `x64`):
 
-## Built artifacts (already on this machine)
+---
 
-| File | Arch | Size |
-|---|---|---|
-| `dist/StreamApp-macos-x64` | Intel | 51 MB |
-| `dist/StreamApp-macos-arm64` | Apple Silicon | 46 MB |
+## Target 1: Full-Featured Desktop Application (Electron DMG & ZIP)
+Includes the native AdShield blocker, direct HLS/MP4 playback resolvers, proxy bypass, and custom frameless dark window.
 
-## Wrap into a .app bundle (on a Mac)
+### Quick Build:
+- **On Windows (PowerShell):**
+  ```powershell
+  .\build-electron-macos.ps1
+  ```
+- **On macOS / Linux:**
+  ```bash
+  ./build-electron-macos.sh
+  ```
+Generated artifacts (`.dmg` and `.zip`) are saved in `packaging/windows/app/dist-v2447/`.
+
+---
+
+## Target 2: Native SwiftUI App (via SwiftPM & xtool)
+High-performance native macOS app written in Swift with WKWebView, Picture-in-Picture, AirPlay, and system dark theme.
+
+Located in `packaging/ios/ShadowStream-xtool/`:
+```bash
+cd ../ios/ShadowStream-xtool
+swift build -c release
+```
+
+---
+
+## Target 3: Ultra-Lightweight Web Launcher (pkg + .app wrapper)
+Stand-alone single binary launcher without Chromium overhead.
 
 ```bash
 cd packaging/macos
-./build-app.sh           # wraps the pkg binaries into StreamApp.app
-./build-dmg.sh           # creates StreamApp-1.0.0.dmg for distribution
+./build-app.sh    # Packages StreamApp.app
+./build-dmg.sh    # Creates StreamApp-1.0.0.dmg
 ```
 
-The `build-app.sh` script places the pkg-built binary inside
-`StreamApp.app/Contents/MacOS/StreamApp` and adds the required
-`Info.plist` + `PkgInfo` so macOS treats it as a proper app bundle.
+---
 
-## Why not Electron / Tauri?
-The launcher is intentionally a tiny pkg-bundled Node binary that opens
-the deployed URL in the user's default browser. No Chromium download,
-no 200 MB Electron runtime. Same UX as a native app from the user's
-perspective.
-
-## Bundle id
-`com.streamapp.app` (set in Info.plist)
+## Identifiers & Compatibility
+- **Bundle ID:** `com.streamapp.app`
+- **Supported macOS:** macOS 12 Monterey, macOS 13 Ventura, macOS 14 Sonoma, macOS 15 Sequoia+
+- **Architectures:** Universal (Apple Silicon `arm64` + Intel `x86_64`)

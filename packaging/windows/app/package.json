@@ -8,7 +8,8 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64"
+    "dist": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac dmg zip"
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -38,6 +39,16 @@
       ],
       "artifactName": "ShadowStream-Setup-x64.${ext}",
       "sign": false
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.entertainment",
+      "artifactName": "ShadowStream-macOS-${arch}.${ext}",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "nsis": {
       "oneClick": false,
