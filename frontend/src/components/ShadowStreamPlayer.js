@@ -206,7 +206,12 @@ export default function ShadowStreamPlayer({
             const k = Math.max(sx, sy, 1);
             return { transform: `scale(${k})` };
         }
-        return { transform: `scale(${sx}, ${sy})` };
+        if (viewMode === 'full') {
+            const k = Math.max(sx, sy, 1.08);
+            return { transform: `scale(${k})` };
+        }
+        // stretch: expand whichever axis is shorter so it fills 100% width & height without shrinking
+        return { transform: `scale(${Math.max(1, sx)}, ${Math.max(1, sy)})` };
     }, [isDirect, viewMode, frameSize]);
 
     // Responsive 16:9 Viewport Fitting (Never distort into an oval!)
@@ -244,12 +249,12 @@ export default function ShadowStreamPlayer({
         };
     }, [viewMode, frameSize]);
 
-    const videoObjectFit = viewMode === 'fill' ? 'cover' : viewMode === 'stretch' ? 'fill' : 'contain';
+    const videoObjectFit = (viewMode === 'fill' || viewMode === 'full') ? 'cover' : viewMode === 'stretch' ? 'fill' : 'contain';
 
     const nextViewMode = useCallback(() => {
-        setViewMode((m) => (m === 'fit' ? 'fill' : m === 'fill' ? 'stretch' : 'fit'));
+        setViewMode((m) => (m === 'fit' ? 'fill' : m === 'fill' ? 'full' : m === 'full' ? 'stretch' : 'fit'));
     }, []);
-    const VIEW_LABEL = { fit: 'Fit', fill: 'Crop', stretch: 'Stretch' };
+    const VIEW_LABEL = { fit: 'Fit', fill: 'Fill / Crop', full: 'Full', stretch: 'Stretch' };
 
     // Video & Playback State
     const videoRef = useRef(null);
@@ -1716,7 +1721,7 @@ export default function ShadowStreamPlayer({
                                     border: 'none',
                                     backgroundColor: '#000000',
                                     transform: embedTransform ? embedTransform.transform : 'none',
-                                    transformOrigin: viewMode === 'fit' ? 'center center' : 'center bottom',
+                                    transformOrigin: 'center center',
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
