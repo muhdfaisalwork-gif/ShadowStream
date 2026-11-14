@@ -98,7 +98,7 @@ def upsert(conn, cursor, table, row):
             "VALUES (?,?,?,?,?,?,?,?)", row)
 
 
-def fetch_title(tmdb_id: int) -> tuple[list, list]:
+def fetch_title(tmdb_id: int, ongoing_only: bool = False) -> tuple[list, list]:
     """Network only. Returns (season_rows, episode_rows).
 
     Deliberately does no database work: sqlite3 is not thread-safe across
@@ -110,7 +110,11 @@ def fetch_title(tmdb_id: int) -> tuple[list, list]:
         return [], []
     s_rows: list = []
     e_rows: list = []
-    for sm in detail.get("seasons") or []:
+    raw_seasons = detail.get("seasons") or []
+    if ongoing_only and len(raw_seasons) > 2:
+        # For ongoing shows, only re-fetch the 2 most recent seasons to pick up newly aired episodes fast
+        raw_seasons = sorted(raw_seasons, key=lambda x: x.get("season_number") or 0)[-2:]
+    for sm in raw_seasons:
         num = sm.get("season_number")
         if num is None:
             continue
@@ -150,6 +154,7 @@ def save_state(st: dict) -> None:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--ongoing-only", action="store_true", help="Refresh latest seasons/episodes for ongoing/airing shows")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -161,19 +166,29 @@ def main():
     conn.execute("PRAGMA journal_mode = WAL")
     cur = conn.cursor()
 
-    rows = cur.execute("""
-        SELECT t.id, t.tmdb_id FROM titles t
-        WHERE t.type IN ('tv','anime','short_drama')
-          AND t.tmdb_id IS NOT NULL AND t.tmdb_id > 0
-          AND NOT EXISTS (SELECT 1 FROM seasons s WHERE s.title_id = t.id)
-    """).fetchall()
-
     state = load_state()
     done = set(state.get("done", []))
-    pending = [r for r in rows if str(r[0]) not in done]
 
-    print(f"episodic titles with a tmdb_id and NO seasons: {len(rows):,}")
-    print(f"already attempted: {len(done):,}   pending: {len(pending):,}")
+    if args.ongoing_only:
+        pending = cur.execute("""
+            SELECT t.id, t.tmdb_id FROM titles t
+            WHERE t.type IN ('tv','anime','short_drama')
+              AND LOWER(COALESCE(t.status, '')) IN ('ongoing', 'returning series', 'airing')
+              AND t.tmdb_id IS NOT NULL AND t.tmdb_id > 0
+            ORDER BY t.popularity DESC
+        """).fetchall()
+        print(f"ongoing episodic titles to refresh latest episodes: {len(pending):,}")
+    else:
+        rows = cur.execute("""
+            SELECT t.id, t.tmdb_id FROM titles t
+            WHERE t.type IN ('tv','anime','short_drama')
+              AND t.tmdb_id IS NOT NULL AND t.tmdb_id > 0
+              AND NOT EXISTS (SELECT 1 FROM seasons s WHERE s.title_id = t.id)
+        """).fetchall()
+        pending = [r for r in rows if str(r[0]) not in done]
+        print(f"episodic titles with a tmdb_id and NO seasons: {len(rows):,}")
+        print(f"already attempted: {len(done):,}   pending: {len(pending):,}")
+
     if args.dry_run:
         for r in pending[:8]:
             print(f"  would fetch tmdbId={r[1]} for title {r[0]}")
@@ -191,7 +206,7 @@ def main():
     def work(row):
         tid, tmdb_id = row
         try:
-            s_rows, e_rows = fetch_title(tmdb_id)
+            s_rows, e_rows = fetch_title(tmdb_id, ongoing_only=args.ongoing_only)
             return (tid, s_rows, e_rows, False)
         except Exception:
             return (tid, [], [], True)
@@ -229,9 +244,10 @@ def main():
 
                 if processed % 20 == 0:
                     conn.commit()
-                    state.update({"done": sorted(done), "matched": matched, "no_data": no_data,
-                                  "seasons": s_tot, "episodes": e_tot, "errors": errors})
-                    save_state(state)
+                    if not args.ongoing_only:
+                        state.update({"done": sorted(done), "matched": matched, "no_data": no_data,
+                                      "seasons": s_tot, "episodes": e_tot, "errors": errors})
+                        save_state(state)
                     rate = processed / max(time.time() - started, 1)
                     with LOG_PATH.open("a", encoding="utf-8") as lf:
                         lf.write(f"[{time.strftime('%H:%M:%S')}] {processed}/{len(pending)} "
@@ -243,9 +259,10 @@ def main():
             window = nxt
 
     conn.commit()
-    state.update({"done": sorted(done), "matched": matched, "no_data": no_data,
-                  "seasons": s_tot, "episodes": e_tot, "errors": errors})
-    save_state(state)
+    if not args.ongoing_only:
+        state.update({"done": sorted(done), "matched": matched, "no_data": no_data,
+                      "seasons": s_tot, "episodes": e_tot, "errors": errors})
+        save_state(state)
     print(f"\nthis run: matched {matched}, no data {no_data}, errors {errors}")
     print(f"seasons now: {conn.execute('SELECT COUNT(*) FROM seasons').fetchone()[0]:,}")
     print(f"episodes now: {conn.execute('SELECT COUNT(*) FROM episodes').fetchone()[0]:,}")

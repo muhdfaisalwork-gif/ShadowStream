@@ -403,7 +403,30 @@ export function installAdShield() {
         beforeUnloadAttached = true;
     }
 
-    // 5. Normal iframe focus transitions permitted so user clicks initiate playback smoothly without focus-stealing interruptions.
+    // 5. Window Blur & Visibility Focus Guardian:
+    // Clicking an iframe normally moves focus inside the same tab (document.hidden === false).
+    // If an unsandboxed embed triggers a popup/new tab, document.hidden flips to true right after iframe focus.
+    // Detect that transition, record the popup escape, and attempt to reclaim focus.
+    if (typeof window !== 'undefined' && typeof document !== 'undefined' && !blurTrapAttached) {
+        let lastIframeFocusTs = 0;
+        const trackIframeFocus = () => {
+            if (!noAdsActive) return;
+            if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+                lastIframeFocusTs = Date.now();
+            }
+        };
+        const visibilityPopupGuard = () => {
+            if (!noAdsActive) return;
+            if (document.hidden && (Date.now() - lastIframeFocusTs < 1500)) {
+                const src = (document.activeElement && document.activeElement.src) ? document.activeElement.src : 'embed-popup';
+                recordBlocked(src, '3rd-party popup tab');
+                try { window.focus(); } catch (_) {}
+            }
+        };
+        window.addEventListener('blur', trackIframeFocus);
+        document.addEventListener('visibilitychange', visibilityPopupGuard);
+        blurTrapAttached = true;
+    }
 
     // 6. Guard programmatic window.location assignment against hostile ad redirects
     if (typeof window !== 'undefined' && window.location) {

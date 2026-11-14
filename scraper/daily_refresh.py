@@ -48,19 +48,21 @@ CONCURRENCY = 12
 # (path, kind, limit) — the fast-moving ends of the catalogue.
 FEEDS = [
     # 1. Theatrical & Broadcast Fast Feeds
-    ("movie/now_playing", "movie", 60),
-    ("movie/upcoming", "movie", 60),
-    ("tv/on_the_air", "tv", 60),
-    ("tv/airing_today", "tv", 60),
-    ("trending/movie/week", "movie", 40),
-    ("trending/tv/week", "tv", 40),
+    ("movie/now_playing", "movie", 100),
+    ("movie/upcoming", "movie", 100),
+    ("tv/on_the_air", "tv", 100),
+    ("tv/airing_today", "tv", 100),
+    ("trending/movie/day", "movie", 60),
+    ("trending/tv/day", "tv", 60),
+    ("trending/movie/week", "movie", 60),
+    ("trending/tv/week", "tv", 60),
     # 2. Anime & Animations (Genre 16)
-    ("discover/tv?with_genres=16&sort_by=popularity.desc", "tv", 60),
-    ("discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc", "tv", 60),
-    ("discover/movie?with_genres=16&sort_by=popularity.desc", "movie", 40),
-    # 3. Streaming Platforms (Netflix: 8, Disney+: 337, Prime: 9, Apple TV+: 350, Max: 1899, Crunchyroll: 283)
-    ("discover/tv?with_watch_providers=8|337|9|350|1899|283&watch_region=US&sort_by=popularity.desc", "tv", 60),
-    ("discover/movie?with_watch_providers=8|337|9|350|1899&watch_region=US&sort_by=popularity.desc", "movie", 40),
+    ("discover/tv?with_genres=16&sort_by=popularity.desc", "tv", 80),
+    ("discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc", "tv", 80),
+    ("discover/movie?with_genres=16&sort_by=popularity.desc", "movie", 60),
+    # 3. Streaming Platforms (Netflix: 8, Disney+: 337, Prime: 9, Apple TV+: 350, Max: 1899, Crunchyroll: 283, Hulu: 15, Paramount+: 531, Peacock: 386)
+    ("discover/tv?with_watch_providers=8|337|9|350|1899|283|15|531|386&watch_region=US&sort_by=popularity.desc", "tv", 100),
+    ("discover/movie?with_watch_providers=8|337|9|350|1899|15|531|386&watch_region=US&sort_by=popularity.desc", "movie", 100),
 ]
 
 
@@ -107,7 +109,7 @@ async def collect_feed(client, sem, path, kind, limit):
                 k, v = part.split("=", 1)
                 extra_params[k] = v
 
-    for page in (1, 2):
+    for page in range(1, 6):
         if len(out) >= limit:
             break
         async with sem:

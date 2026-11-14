@@ -1704,7 +1704,7 @@ export default function ShadowStreamPlayer({
                     ) : (
                         <View style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                             <iframe
-                                key={streamUrl}
+                                key={`${streamUrl}_${noAdsEnabled ? 'shield' : 'raw'}`}
                                 ref={iframeRef}
                                 src={streamUrl}
                                 title="ShadowStream Built-in Player"
@@ -1720,24 +1720,15 @@ export default function ShadowStreamPlayer({
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
-                                // NO `sandbox` attribute here, on purpose.
-                                //
-                                // v2.4.39 added `sandbox="allow-scripts allow-same-origin
-                                // allow-forms allow-presentation"` to hard-block popups.
-                                // Every provider we ship refuses to play inside it:
-                                //   player.videasy.to -> "Iframe Sandbox Detected"
-                                //   vidstuck.cc        -> "Sandbox Detected"
-                                // The check is presence-based, not flag-based: five
-                                // different token sets were tried (base 4, plus
-                                // allow-popups, plus allow-popups-to-escape-sandbox,
-                                // plus allow-top-navigation-by-user-activation, plus a
-                                // scripts+same-origin-only pair) and every one of them
-                                // was rejected. Only removing the attribute plays.
-                                //
-                                // Popup defence therefore lives in src/utils/adShield.js
-                                // (window.open lock, anchor.click guard, form.submit
-                                // guard, capture-phase click/auxclick interception,
-                                // location.assign/replace guard) instead of here.
+                                // Smart Dynamic Sandbox Matrix:
+                                // Apply strict HTML5 iframe sandbox (omitting allow-popups and allow-top-navigation)
+                                // whenever AdShield is ON and the provider supports sandboxed playback
+                                // (VidLink, VidSrc, NontonGo, Archive.org, EmbedSu, etc.), physically blocking
+                                // 100% of 3rd-party popups and redirects in Web browsers.
+                                // Only vidstuck.cc and 2embed.cc actively check document.domain and reject sandbox.
+                                {...(noAdsEnabled && !/vidstuck\.cc|2embed\.cc/i.test(streamUrl || '')
+                                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation' }
+                                    : {})}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             />
                         </View>

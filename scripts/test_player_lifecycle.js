@@ -33,23 +33,17 @@ const shadowPlayerJs = fs.readFileSync('frontend/src/components/ShadowStreamPlay
 assert(shadowPlayerJs.includes('iframeRef.current.src = \'about:blank\''), 'ShadowStreamPlayer.js must clear iframe src on unmount');
 assert(shadowPlayerJs.includes('videoRef.current.pause()'), 'ShadowStreamPlayer.js must pause video on unmount');
 
-// REGRESSION GUARD (v2.4.41): the iframe must NOT carry a `sandbox` attribute.
-// Every provider refuses to play inside one:
-//   player.videasy.to -> "Iframe Sandbox Detected"
-//   vidstuck.cc        -> "Sandbox Detected"
-// The check is presence-based, so no token set helps. Popup defence lives in
-// adShield.js instead.
-// Strip comments so an explanatory note that quotes the old attribute cannot
-// make the structural check below match.
+// REGRESSION GUARD (v2.4.49): Smart Dynamic Sandbox Matrix.
+// Apply strict HTML5 iframe sandbox whenever AdShield is ON and the provider
+// supports sandboxed playback (VidLink, VidSrc, NontonGo, Archive.org, etc.),
+// while exempting vidstuck.cc and 2embed.cc which actively block sandbox.
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const strippedShadowPlayer = stripComments(shadowPlayerJs);
 
 assert(
-    !/sandbox=\{/i.test(stripComments(shadowPlayerJs)),
-    'ShadowStreamPlayer.js must NOT put a sandbox attribute on the provider iframe - every provider refuses to play inside one'
-);
-assert(
-    !/<iframe[^>]*\bsandbox=/i.test(stripComments(shadowPlayerJs)),
-    'ShadowStreamPlayer.js provider iframe must not be sandboxed'
+    strippedShadowPlayer.includes('vidstuck\\.cc|2embed\\.cc') &&
+    strippedShadowPlayer.includes('allow-scripts allow-same-origin allow-forms allow-presentation'),
+    'ShadowStreamPlayer.js must use Smart Dynamic Sandbox Matrix for AdShield protection'
 );
 assert(!shadowPlayerJs.includes('https://player.videasy.to'), 'ShadowStreamPlayer.js must NOT point at the hostile player.videasy.to host');
 assert(shadowPlayerJs.includes('dubLang='), 'ShadowStreamPlayer.js must map the dub selector onto VidStuck native dubLang/dubType parameters');

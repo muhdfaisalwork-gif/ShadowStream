@@ -3445,7 +3445,56 @@ async function fetchRawTitleSeasons(found: any, env: Env): Promise<any[]> {
 
                     : [];
 
-                if (seasons.length > 0) return seasons;
+                if (seasons.length > 0) {
+                    const isOngoing = found.status === "ongoing" || found.status === "returning series" || ((found.year || 0) >= 2025 && found.status !== "ended");
+                    if (isOngoing && found.tmdbId) {
+                        try {
+                            const tvData = await fetchTmdbWithRotation(`tv/${found.tmdbId}`);
+                            if (tvData && Array.isArray(tvData.seasons)) {
+                                const regularLive = tvData.seasons.filter((s: any) => s.season_number > 0);
+                                const latestLive = regularLive[regularLive.length - 1];
+                                if (latestLive) {
+                                    const sn = latestLive.season_number;
+                                    const existingSeasonIdx = seasons.findIndex((s: any) => Number(s.season_number) === Number(sn));
+                                    const existingEpsCount = existingSeasonIdx >= 0 && Array.isArray((seasons[existingSeasonIdx] as any).episodes)
+                                        ? (seasons[existingSeasonIdx] as any).episodes.length
+                                        : 0;
+                                    if (existingSeasonIdx < 0 || (latestLive.episode_count || 0) > existingEpsCount) {
+                                        const sData = await fetchTmdbWithRotation(`tv/${found.tmdbId}/season/${sn}`);
+                                        if (sData && Array.isArray(sData.episodes) && sData.episodes.length > existingEpsCount) {
+                                            const mergedSeason = {
+                                                id: latestLive.id || (Number(found.tmdbId) * 1000 + sn),
+                                                season_number: sn,
+                                                name: latestLive.name || `Season ${sn}`,
+                                                overview: latestLive.overview || "",
+                                                poster: latestLive.poster_path ? `https://image.tmdb.org/t/p/w500${latestLive.poster_path}` : null,
+                                                air_date: latestLive.air_date,
+                                                episode_count: sData.episodes.length,
+                                                episodes: sData.episodes.map((e: any) => ({
+                                                    id: e.id,
+                                                    episode_number: e.episode_number,
+                                                    name: e.name || `Episode ${e.episode_number}`,
+                                                    overview: e.overview || "",
+                                                    thumbnail: e.still_path ? `https://image.tmdb.org/t/p/w500${e.still_path}` : null,
+                                                    air_date: e.air_date,
+                                                    runtime: e.runtime,
+                                                })),
+                                            };
+                                            if (existingSeasonIdx >= 0) {
+                                                seasons[existingSeasonIdx] = mergedSeason;
+                                            } else {
+                                                seasons.push(mergedSeason);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } catch {
+                            // keep static shard seasons if live check fails
+                        }
+                    }
+                    return seasons;
+                }
 
             }
 
@@ -3645,7 +3694,7 @@ async function getTitleAvailability(idOrSlug: string, env: Env, params?: URLSear
     const combined = [...fallbacks, ...existingPlayback];
     const seen = new Set<string>();
     const deduplicated: AvailabilityEntry[] = [];
-    const PROVIDER_RANK = ['archive_org', 'direct', 'vidstuck', 'nontongo', 'vidsrc', '2embed', 'vidlink_sub', 'vidlink_dub', 'vidlink'];
+    const PROVIDER_RANK = ['archive_org', 'direct', 'vidlink_sub', 'vidlink_dub', 'vidlink', 'nontongo', 'vidsrc', 'vidstuck', '2embed'];
 
     // Hosts and sources that must never be served, whatever the catalog says.
     //

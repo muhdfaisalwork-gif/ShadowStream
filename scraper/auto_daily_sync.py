@@ -74,6 +74,28 @@ def stage1_ingest_feeds(dry_run: bool = False) -> bool:
         return False
 
 
+def stage1_5_sync_ongoing_episodes(limit: int = 300, dry_run: bool = False) -> bool:
+    log("=== Stage 1.5: Syncing Newly Aired Episodes for Ongoing TV Series ===")
+    if dry_run:
+        log("  [Dry-run] Skipping ongoing episode ingest")
+        return True
+
+    cmd = [PYTHON_EXE, str(HERE / "ingest_tmdb_episodes.py"), "--ongoing-only", "--limit", str(limit)]
+    try:
+        res = subprocess.run(cmd, cwd=str(HERE), capture_output=True, text=True, timeout=900)
+        if res.returncode == 0:
+            log("  Ongoing episode sync finished successfully.")
+            for line in res.stdout.strip().splitlines()[-4:]:
+                log(f"    {line}")
+            return True
+        else:
+            log(f"  Warning: ingest_tmdb_episodes.py exited with code {res.returncode}: {res.stderr[:200]}")
+            return False
+    except Exception as e:
+        log(f"  Error running ingest_tmdb_episodes.py: {e}")
+        return False
+
+
 def stage2_wire_embeds(limit: int = 500, dry_run: bool = False) -> int:
     log("=== Stage 2: Auto-Wiring Streaming Embeds for Streamable Playback ===")
     conn = sqlite3.connect(str(DB))
@@ -270,6 +292,7 @@ def run_pipeline(dry_run: bool = False, skip_ingest: bool = False, wire_limit: i
 
     if not skip_ingest:
         stage1_ingest_feeds(dry_run=dry_run)
+        stage1_5_sync_ongoing_episodes(limit=300, dry_run=dry_run)
     else:
         log("Stage 1 skipped (--skip-ingest flag passed)")
 
