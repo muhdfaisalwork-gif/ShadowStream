@@ -806,6 +806,7 @@ def run_seo_agent(
         topics_to_process.append(SHOWBIZ_EDITORIAL_TOPICS[0])
 
     print(f"Topics scheduled for generation this cycle: {len(topics_to_process)}")
+    changed_slugs = {t["slug"] for t in topics_to_process}
 
     # Combine all known topic configs for cross-backlinking
     all_known_topics = list(SHOWBIZ_EDITORIAL_TOPICS) + discovered_topics
@@ -936,6 +937,7 @@ def run_seo_agent(
         single_path = os.path.join(blogs_export_dir, f"{b_slug}.json")
         # If the individual file doesn't exist on disk, create it from database
         if not os.path.exists(single_path):
+            changed_slugs.add(b_slug)
             full_entry = {
                 "slug": b_slug,
                 "title": b_title,
@@ -985,11 +987,12 @@ def run_seo_agent(
 
     print(f"Total master blogs indexed: {len(all_blogs_summary)} articles.")
 
-    # 8. Sync all generated articles to Cloudflare R2
+    # 8. Sync generated/changed articles to Cloudflare R2 (delta-only unless force_all=True)
     print("\n--- Syncing Showbiz Editorial Articles to Cloudflare R2 CDN ---")
     upload_to_r2(master_blogs_file, "blogs.json")
-    for b in all_blogs_summary:
-        slug = b["slug"]
+    slugs_to_upload = [b["slug"] for b in all_blogs_summary] if force_all else sorted(changed_slugs)
+    print(f"Syncing {len(slugs_to_upload)} article JSON(s) out of {len(all_blogs_summary)} indexed...")
+    for slug in slugs_to_upload:
         single_path = os.path.join(blogs_export_dir, f"{slug}.json")
         if os.path.exists(single_path):
             upload_to_r2(single_path, f"blogs/{slug}.json")

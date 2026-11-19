@@ -25,6 +25,7 @@ public struct WebViewContainer: UIViewRepresentable {
         webView.backgroundColor = UIColor(red: 11/255, green: 15/255, blue: 25/255, alpha: 1.0)
         webView.scrollView.backgroundColor = webView.backgroundColor
         webView.scrollView.bounces = true
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
 
         let request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 30)
         webView.load(request)
@@ -58,14 +59,16 @@ public struct WebViewContainer: UIViewRepresentable {
             parent.isLoading = false
         }
 
-        // Handle window.open and target="_blank" without breaking out of the app
+        // Block 3rd-party popup windows while allowing first-party target="_blank" links
         public func webView(
             _ webView: WKWebView,
             createWebViewWith configuration: WKWebViewConfiguration,
             for navigationAction: WKNavigationAction,
             windowFeatures: WKWindowFeatures
         ) -> WKWebView? {
-            if navigationAction.targetFrame == nil {
+            if navigationAction.targetFrame == nil,
+               let host = navigationAction.request.url?.host?.lowercased(),
+               (host == "ssmoviestvs.site" || host.hasSuffix(".ssmoviestvs.site") || host == "localhost" || host == "127.0.0.1") {
                 webView.load(navigationAction.request)
             }
             return nil
@@ -126,7 +129,9 @@ public struct WebViewContainer: NSViewRepresentable {
             for navigationAction: WKNavigationAction,
             windowFeatures: WKWindowFeatures
         ) -> WKWebView? {
-            if navigationAction.targetFrame == nil {
+            if navigationAction.targetFrame == nil,
+               let host = navigationAction.request.url?.host?.lowercased(),
+               (host == "ssmoviestvs.site" || host.hasSuffix(".ssmoviestvs.site") || host == "localhost" || host == "127.0.0.1") {
                 webView.load(navigationAction.request)
             }
             return nil

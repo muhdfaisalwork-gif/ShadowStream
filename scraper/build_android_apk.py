@@ -409,6 +409,13 @@ public class MainActivity extends Activity {{
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // Edge-to-edge display cutout support so Fill/Full/Crop/Stretch modes fill behind notch/camera
+        if (Build.VERSION.SDK_INT >= 28) {{
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }}
+
         // Pitch-black window background prevents white flash on boot
         getWindow().getDecorView().setBackgroundColor(0xFF0D0D0D);
 

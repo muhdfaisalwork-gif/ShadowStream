@@ -55,6 +55,8 @@ PRODUCTION_URLS = [
     ("Robots TXT", "https://ssmoviestvs.site/robots.txt"),
     ("LLMs Context", "https://ssmoviestvs.site/llms.txt"),
     ("Android APK Release", "https://ssmoviestvs.site/downloads/ShadowStream.apk"),
+    ("iOS IPA Release", "https://ssmoviestvs.site/downloads/ShadowStream.ipa"),
+    ("App Version Manifest", "https://ssmoviestvs.site/version.json"),
     ("Master Brand Icon", "https://ssmoviestvs.site/icons/master_icon_badge.png"),
 ]
 

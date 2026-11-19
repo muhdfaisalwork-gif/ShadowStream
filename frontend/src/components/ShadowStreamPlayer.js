@@ -194,8 +194,12 @@ export default function ShadowStreamPlayer({
     // stretches the picture just the same. ASSUMED_ASPECT is the ratio we assume
     // the provider renders at, since we cannot measure inside the frame.
     const ASSUMED_ASPECT = 16 / 9;
+    const VIEW_MODES = ['fit', 'fill', 'full', 'crop', 'stretch'];
+    const VIEW_LABEL = { fit: 'Fit', fill: 'Fill', full: 'Full', crop: 'Crop', stretch: 'Stretch' };
     const [viewMode, setViewMode] = useState('fit');
     const [frameSize, setFrameSize] = useState({ w: 0, h: 0 });
+    const [viewModeToast, setViewModeToast] = useState(null);
+    const viewToastTimerRef = useRef(null);
 
     const embedTransform = useMemo(() => {
         if (isDirect || viewMode === 'fit' || !frameSize.w || !frameSize.h) return null;
@@ -207,10 +211,17 @@ export default function ShadowStreamPlayer({
             return { transform: `scale(${k})` };
         }
         if (viewMode === 'full') {
-            const k = Math.max(sx, sy, 1.08);
+            const k = Math.max(sx, sy, 1) * 1.08;
             return { transform: `scale(${k})` };
         }
-        // stretch: expand whichever axis is shorter so it fills 100% width & height without shrinking
+        if (viewMode === 'crop') {
+            const k = Math.max(sx, sy, 1) * 1.28;
+            return { transform: `scale(${k})` };
+        }
+        // stretch: fill 100% width & height with zero cropping; expand vertically on exact 16:9 panels to stretch out cinema bars
+        if (Math.abs(sx - 1) < 0.03 && Math.abs(sy - 1) < 0.03) {
+            return { transform: 'scale(1, 1.25)' };
+        }
         return { transform: `scale(${Math.max(1, sx)}, ${Math.max(1, sy)})` };
     }, [isDirect, viewMode, frameSize]);
 
@@ -249,12 +260,32 @@ export default function ShadowStreamPlayer({
         };
     }, [viewMode, frameSize]);
 
-    const videoObjectFit = (viewMode === 'fill' || viewMode === 'full') ? 'cover' : viewMode === 'stretch' ? 'fill' : 'contain';
+    const videoObjectFit =
+        (viewMode === 'fill' || viewMode === 'full' || viewMode === 'crop') ? 'cover'
+            : viewMode === 'stretch' ? 'fill' : 'contain';
+
+    const directVideoTransform =
+        viewMode === 'full' ? 'scale(1.08)'
+            : viewMode === 'crop' ? 'scale(1.28)'
+                : 'none';
+
+    const applyViewMode = useCallback((mode) => {
+        setViewMode(mode);
+        setViewModeToast(`⬚ Screen: ${VIEW_LABEL[mode] || mode}`);
+        if (viewToastTimerRef.current) clearTimeout(viewToastTimerRef.current);
+        viewToastTimerRef.current = setTimeout(() => setViewModeToast(null), 1600);
+    }, []);
 
     const nextViewMode = useCallback(() => {
-        setViewMode((m) => (m === 'fit' ? 'fill' : m === 'fill' ? 'full' : m === 'full' ? 'stretch' : 'fit'));
+        setViewMode((prev) => {
+            const idx = VIEW_MODES.indexOf(prev);
+            const next = VIEW_MODES[(idx + 1) % VIEW_MODES.length];
+            setViewModeToast(`⬚ Screen: ${VIEW_LABEL[next] || next}`);
+            if (viewToastTimerRef.current) clearTimeout(viewToastTimerRef.current);
+            viewToastTimerRef.current = setTimeout(() => setViewModeToast(null), 1600);
+            return next;
+        });
     }, []);
-    const VIEW_LABEL = { fit: 'Fit', fill: 'Fill / Crop', full: 'Full', stretch: 'Stretch' };
 
     // Video & Playback State
     const videoRef = useRef(null);
@@ -346,6 +377,7 @@ export default function ShadowStreamPlayer({
             unsubToggle();
             unsubBlocked();
             if (adToastTimerRef.current) clearTimeout(adToastTimerRef.current);
+            if (viewToastTimerRef.current) clearTimeout(viewToastTimerRef.current);
             // Hard stop media on unmount
             if (videoRef.current) {
                 try {
@@ -380,6 +412,49 @@ export default function ShadowStreamPlayer({
         };
     }, []);
 
+    // Live container measurement for Web/WKWebView/Android/Electron so Fit/Fill/Full/Crop/Stretch
+    // always reflect real viewport dimensions across window resizes, fullscreen transitions, and phone rotations.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
+        let settleTimer = null;
+        const measureContainer = () => {
+            const el = containerRef.current;
+            if (!el || typeof el.getBoundingClientRect !== 'function') return;
+            const rect = el.getBoundingClientRect();
+            const w = Math.round(rect.width);
+            const h = Math.round(rect.height);
+            if (w > 0 && h > 0) {
+                setFrameSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+            }
+        };
+        const scheduleMeasure = () => {
+            measureContainer();
+            if (settleTimer) clearTimeout(settleTimer);
+            settleTimer = setTimeout(measureContainer, 120);
+        };
+        scheduleMeasure();
+
+        let ro = null;
+        if (typeof ResizeObserver !== 'undefined' && containerRef.current && typeof containerRef.current.getBoundingClientRect === 'function') {
+            try {
+                ro = new ResizeObserver(measureContainer);
+                ro.observe(containerRef.current);
+            } catch (_) {}
+        }
+        window.addEventListener('resize', scheduleMeasure);
+        window.addEventListener('orientationchange', scheduleMeasure);
+        document.addEventListener('fullscreenchange', scheduleMeasure);
+        document.addEventListener('webkitfullscreenchange', scheduleMeasure);
+        return () => {
+            if (settleTimer) clearTimeout(settleTimer);
+            if (ro) ro.disconnect();
+            window.removeEventListener('resize', scheduleMeasure);
+            window.removeEventListener('orientationchange', scheduleMeasure);
+            document.removeEventListener('fullscreenchange', scheduleMeasure);
+            document.removeEventListener('webkitfullscreenchange', scheduleMeasure);
+        };
+    }, [isFullscreen]);
+
     const handleToggleNoAds = useCallback(() => {
         const next = toggleNoAds();
         setNoAdsEnabled(next);
@@ -410,7 +485,7 @@ export default function ShadowStreamPlayer({
 
     // Screen orientation & mobile landscape state
     const [showMoreMenu, setShowMoreMenu] = useState(false);
-    const [moreSubmenu, setMoreSubmenu] = useState(null); // null | 'server' | 'subtitles' | 'dub'
+    const [moreSubmenu, setMoreSubmenu] = useState(null); // null | 'server' | 'subtitles' | 'dub' | 'screen'
     const isCompactTopBar = width < 960;
     const isPortrait = height > width;
 
@@ -1682,7 +1757,7 @@ export default function ShadowStreamPlayer({
             <View style={styles.playbackContainer}>
                 <View style={playerViewportStyle}>
                     {isDirect ? (
-                        <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000000' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000000', overflow: 'hidden' }}>
                             <video
                                 ref={videoRef}
                                 playsInline
@@ -1690,6 +1765,9 @@ export default function ShadowStreamPlayer({
                                     width: '100%',
                                     height: '100%',
                                     objectFit: videoObjectFit,
+                                    transform: directVideoTransform,
+                                    transformOrigin: 'center center',
+                                    transition: 'transform 0.2s ease',
                                     backgroundColor: '#000000',
                                     display: 'block',
                                 }}
@@ -1722,6 +1800,7 @@ export default function ShadowStreamPlayer({
                                     backgroundColor: '#000000',
                                     transform: embedTransform ? embedTransform.transform : 'none',
                                     transformOrigin: 'center center',
+                                    transition: 'transform 0.2s ease',
                                 }}
                                 allowFullScreen
                                 referrerPolicy="origin"
@@ -2045,9 +2124,9 @@ export default function ShadowStreamPlayer({
                                             ) : null}
                                             <TouchableOpacity
                                                 style={styles.popupMenuItem}
-                                                onPress={nextViewMode}
+                                                onPress={() => setMoreSubmenu('screen')}
                                             >
-                                                <Text style={styles.popupMenuText}>⬚ Fit / Crop: {VIEW_LABEL[viewMode]}</Text>
+                                                <Text style={styles.popupMenuText}>⬚ Screen Mode: {VIEW_LABEL[viewMode]} ›</Text>
                                             </TouchableOpacity>
                                             {canSelectSubtitles && (
                                                 <TouchableOpacity
@@ -2207,13 +2286,38 @@ export default function ShadowStreamPlayer({
                                                 </TouchableOpacity>
                                             ))}
                                         </>
+                                    ) : moreSubmenu === 'screen' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.popupMenuItem, { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: 4 }]}
+                                                onPress={() => setMoreSubmenu(null)}
+                                            >
+                                                <Text style={[styles.popupMenuText, { color: '#60A5FA', fontWeight: '700' }]}>‹ Back to Options</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.popupMenuHeader}>Screen Fit & Aspect</Text>
+                                            {VIEW_MODES.map((mode) => (
+                                                <TouchableOpacity
+                                                    key={mode}
+                                                    style={[styles.popupMenuItem, viewMode === mode && styles.popupMenuItemActive]}
+                                                    onPress={() => {
+                                                        applyViewMode(mode);
+                                                        setShowMoreMenu(false);
+                                                        setMoreSubmenu(null);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.popupMenuText, viewMode === mode && styles.popupMenuTextActive]}>
+                                                        {viewMode === mode ? '▶ ' : ''}{VIEW_LABEL[mode]}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </>
                                     ) : null}
                                 </View>
                             )}
                         </View>
                     )}
 
-                    {/* Crop / stretch — cycles Fit → Crop → Stretch */}
+                    {/* Screen mode — cycles Fit → Fill → Full → Crop → Stretch */}
                     <TouchableOpacity
                         style={[styles.pillButton, viewMode !== 'fit' && styles.pillButtonActive, isCompactTopBar && { display: 'none' }]}
                         onPress={nextViewMode}
@@ -2518,6 +2622,13 @@ export default function ShadowStreamPlayer({
                     <View style={styles.fullscreenNoteWrap} pointerEvents="none">
                         <Text style={[styles.fullscreenNote, { backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: noAdsEnabled ? '#10B981' : '#EF4444', borderWidth: 1, shadowColor: noAdsEnabled ? '#10B981' : '#EF4444', shadowOpacity: 0.4, shadowRadius: 6 }]}>
                             {adBlockedToast}
+                        </Text>
+                    </View>
+                ) : null}
+                {viewModeToast ? (
+                    <View style={styles.fullscreenNoteWrap} pointerEvents="none">
+                        <Text style={[styles.fullscreenNote, { backgroundColor: 'rgba(20, 20, 28, 0.95)', borderColor: 'rgba(255, 255, 255, 0.35)', borderWidth: 1 }]}>
+                            {viewModeToast}
                         </Text>
                     </View>
                 ) : null}
@@ -2914,7 +3025,7 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
         zIndex: 9999,
     },
     controlsOverlay: {
