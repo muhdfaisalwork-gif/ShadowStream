@@ -132,6 +132,7 @@ import BlogsScreen from './src/screens/BlogsScreen';
 import BlogDetailScreen from './src/screens/BlogDetailScreen';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import UpdateBanner from './src/components/UpdateBanner';
+import Gemma4Assistant from './src/components/Gemma4Assistant';
 
 // Custom drawer navigation content
 import DrawerContent from './src/navigation/DrawerContent';
@@ -211,6 +212,7 @@ export default function App() {
                     <Drawer.Screen name="Blogs" component={BlogsScreen} />
                     <Drawer.Screen name="BlogDetail" component={BlogDetailScreen} />
                 </Drawer.Navigator>
+                <Gemma4Assistant />
             </NavigationContainer>
         </ErrorBoundary>
     );

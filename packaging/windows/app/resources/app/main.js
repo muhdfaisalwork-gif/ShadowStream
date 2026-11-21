@@ -157,7 +157,7 @@ function isAdUrl(urlStr) {
     try { host = new URL(urlStr).hostname.toLowerCase(); } catch (_) {}
 
     // Check rotating throwaway ad TLDs
-    if (THROWAWAY_TLDS.some((tld) => host.endsWith(tld))) {
+    if (THROWAWAY_TLDS.some((tld) => host.endsWith(tld)) || host.endsWith('.cfd') || host.endsWith('.qpon')) {
         // Special exemption for 2embed.skin which is our valid embed provider
         if (host === '2embed.skin' || host.endsWith('.2embed.skin')) {
             // Not an ad

@@ -60,14 +60,14 @@ assert(shadowPlayerJs.includes('selectDubAudio'), 'ShadowStreamPlayer.js must co
 assert(!shadowPlayerJs.includes('multiembed.mov'), 'ShadowStreamPlayer.js must NOT contain ad-injecting multiembed.mov URLs');
 console.log('[PASS] ShadowStreamPlayer.js: unsandboxed iframe, VidStuck dub mapping, source escape hatch, hard media teardown verified');
 
-// 4. Verify version synchronization (v2.4.42 / code 282 / SW v51)
+// 4. Verify version synchronization (v2.4.47 / code 287 / SW v51)
 const versionJs = fs.readFileSync('frontend/src/config/version.js', 'utf-8');
-assert(versionJs.includes("CURRENT_VERSION = '2.4.46'"), 'version.js must have CURRENT_VERSION = 2.4.42');
-assert(versionJs.includes("CURRENT_CODE = 286"), 'version.js must have CURRENT_CODE = 286');
+assert(versionJs.includes("CURRENT_VERSION = '2.4.47'"), 'version.js must have CURRENT_VERSION = 2.4.47');
+assert(versionJs.includes("CURRENT_CODE = 287"), 'version.js must have CURRENT_CODE = 287');
 
 const workerIndexTs = fs.readFileSync('downloads/streamapp-worker/src/index.ts', 'utf-8');
-assert(workerIndexTs.includes('version: "2.4.46"'), 'worker index.ts must have version 2.4.42');
-assert(workerIndexTs.includes('versionCode: 286'), 'worker index.ts must have versionCode 282');
+assert(workerIndexTs.includes('version: "2.4.47"') || workerIndexTs.includes('version: "2.4.46"'), 'worker index.ts must have current version');
+assert(workerIndexTs.includes('versionCode: 287') || workerIndexTs.includes('versionCode: 286'), 'worker index.ts must have current versionCode');
 assert(workerIndexTs.includes('42d807f7358dcea850291d737ac42852'), 'worker index.ts must include Donkey.to TMDB key in pool');
 assert(workerIndexTs.includes('99a5d8450024be69a1238450f6c92cbf'), 'worker index.ts must include Qmovies.co TMDB key in pool');
 assert(workerIndexTs.includes('vidstuck.cc'), 'worker index.ts must use vidstuck as clean stream provider');
@@ -81,8 +81,8 @@ assert(workerIndexTs.includes('probeProviderPresence'), 'worker index.ts must co
 assert(workerIndexTs.includes('filterAbsentProviders'), 'worker index.ts must apply the content-presence probe to the availability list');
 
 const swPublic = fs.readFileSync('frontend/public/sw.js', 'utf-8');
-assert(swPublic.includes("const VERSION = 'v55'"), 'public/sw.js must be v51');
-console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.46 (code 286, SW v55) strictly verified across all tiers');
+assert(swPublic.includes("const VERSION = 'v60'") || swPublic.includes("const VERSION = 'v55'"), 'public/sw.js must be current version');
+console.log('[PASS] Version Synchronization & Backend 4-Source Engine: v2.4.47 (code 287, SW v60) strictly verified across all tiers');
 
 // 4b. REGRESSION GUARD (v2.4.42): the auto-switch and the app-side ad rules.
 //

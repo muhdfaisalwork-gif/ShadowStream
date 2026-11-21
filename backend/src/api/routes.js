@@ -836,4 +836,77 @@ router.get('/categories', async (req, res) => {
     }
 });
 
+// -----------------------------------------------------------------------------
+// Gemma 4 Frontend I/O Gateway (/api/v1/ai/frontend-gateway)
+// Bridges the frontend UI directly to the local Gemma 4 model (Ollama :11434)
+// Handling natural language search, recommendation synthesis, and UI actions
+// -----------------------------------------------------------------------------
+router.post('/ai/frontend-gateway', async (req, res) => {
+    const { prompt, context, conversation = [], mode = 'chat' } = req.body || {};
+    if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({ error: 'Valid prompt string is required' });
+    }
+
+    const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+    const MODEL = process.env.GEMMA4_MODEL || 'gemma4:12b';
+
+    const systemInstruction = `You are the Gemma 4 Frontend Intelligence Engine for SSMoviesTVs (https://ssmoviestvs.site).
+Your responsibility is 100% frontend I/O:
+1. Parse user queries, intents, and feelings into direct streaming recommendations and UI actions.
+2. Return helpful, concise, cinematic recommendations with title, year, genre, and reason to watch.
+3. When helpful, suggest specific UI actions:
+   - ACTION_NAVIGATE: "/watch/:id", "/movies", "/tv", "/live", "/genre/:name"
+   - ACTION_SEARCH: query string
+   - ACTION_SET_MODE: "fit" | "fill" | "full" | "crop" | "stretch"
+4. Always maintain a welcoming, modern, fast streaming assistant persona.`;
+
+    const messages = [
+        { role: 'system', content: systemInstruction },
+        ...conversation.slice(-6),
+        {
+            role: 'user',
+            content: context ? `[UI Context: ${JSON.stringify(context)}]\n${prompt}` : prompt
+        }
+    ];
+
+    try {
+        const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: MODEL,
+                messages,
+                stream: false,
+                options: { temperature: 0.7, top_p: 0.9 }
+            }),
+            signal: AbortSignal.timeout(18000)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ollama returned status ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const reply = data?.message?.content || 'Here are some great titles currently available on SSMoviesTVs.';
+
+        res.json({
+            ok: true,
+            model: MODEL,
+            reply,
+            mode,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        console.warn(`[Gemma4 Gateway] Local Ollama fallback triggered:`, err.message);
+        // Fallback response if Ollama is momentarily busy or compiling
+        res.json({
+            ok: true,
+            model: 'gemma4:fallback',
+            reply: `Here are popular trending picks streaming right now on SSMoviesTVs. Use the search bar or categories above to explore!`,
+            error: err.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 export default router;
