@@ -15,7 +15,7 @@ export default function Gemma4Assistant({ onNavigate, onSetScreenMode, currentSc
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: "👋 Hi! I'm Gemma 4, your streaming copilot. Looking for a movie, TV show, or specific genre? Or want me to switch screen aspect ratio (Fit, Fill, Full, Crop, Stretch)?"
+            content: "👋 Hi! I'm ShadowStream Copilot (powered by Groq AI). Looking for movie or TV show recommendations from our 204k+ titles, or want to switch screen modes (Fit, Fill, Full, Crop, Stretch)?"
         }
     ]);
     const [isLoading, setIsLoading] = useState(false);
@@ -109,10 +109,10 @@ export default function Gemma4Assistant({ onNavigate, onSetScreenMode, currentSc
                 <button
                     className="gemma4-assistant-bubble"
                     onClick={() => setIsOpen(true)}
-                    title="Ask Gemma 4 Frontend AI"
-                    aria-label="Open Gemma 4 Assistant"
+                    title="Ask ShadowStream AI Copilot"
+                    aria-label="Open ShadowStream Assistant"
                 >
-                    <span className="gemma4-badge">Gemma 4</span>
+                    <span className="gemma4-badge">AI Copilot</span>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                     </svg>
@@ -124,7 +124,7 @@ export default function Gemma4Assistant({ onNavigate, onSetScreenMode, currentSc
                     <div className="gemma4-assistant-header">
                         <div className="gemma4-assistant-title">
                             <span className="gemma4-status-dot"></span>
-                            <span>Gemma 4 • Frontend AI</span>
+                            <span>ShadowStream Copilot • Groq AI</span>
                         </div>
                         <button
                             className="gemma4-close-btn"
@@ -144,7 +144,7 @@ export default function Gemma4Assistant({ onNavigate, onSetScreenMode, currentSc
                         {isLoading && (
                             <div className="gemma4-msg assistant">
                                 <div className="gemma4-msg-content gemma4-thinking">
-                                    <span>Gemma 4 is thinking...</span>
+                                    <span>Searching ShadowStream catalog with Groq AI...</span>
                                 </div>
                             </div>
                         )}
@@ -154,7 +154,7 @@ export default function Gemma4Assistant({ onNavigate, onSetScreenMode, currentSc
                     <form className="gemma4-input-form" onSubmit={handleSend}>
                         <input
                             type="text"
-                            placeholder="Ask Gemma 4 for recommendations or screen modes..."
+                            placeholder="Ask for movies, TV series, or screen modes..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             disabled={isLoading}
