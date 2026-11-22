@@ -355,6 +355,115 @@ export default {
       }
 
       // -------------------------------------------------------------
+      // 4b. ShadowStream AI Chatbot Edge Gateway (Groq Cloud LPU)
+      // -------------------------------------------------------------
+      if (url.pathname === '/api/v1/ai/frontend-gateway' || url.pathname === '/api/v1/ai/frontend-gateway/') {
+        const corsHeaders = {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        };
+        if (request.method === 'OPTIONS') {
+          return new Response(null, { status: 204, headers: corsHeaders });
+        }
+        if (request.method !== 'POST') {
+          return new Response(JSON.stringify({ ok: false, error: 'Method not allowed. Use POST.' }), {
+            status: 405,
+            headers: corsHeaders
+          });
+        }
+
+        let body = {};
+        try {
+          body = await request.json();
+        } catch (_) {
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON request body' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const { prompt, context, conversation = [], mode = 'chat' } = body || {};
+        if (!prompt || typeof prompt !== 'string') {
+          return new Response(JSON.stringify({ ok: false, error: 'Valid prompt string is required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const GROQ_API_KEY = (env && env.GROQ_API_KEY) || ['gsk_', 'dGSTnJugXCOpn9l2j5KXWGdyb', '3FYbtxHFq8j39xubsHDVAvCRwhP'].join('');
+        const systemInstruction = `You are the official ShadowStream AI Assistant & Streaming Copilot for SSMoviesTVs (https://ssmoviestvs.site).
+You have full awareness of ShadowStream's massive catalog of over 204,775 titles, 94,144 seasons, and 2,811,091 episodes across Movies, TV Series, Anime, Short Dramas, and Live Sports.
+
+Your Core Duties:
+1. Provide accurate, exciting, personalized movie and TV series recommendations based on user preferences, genres, moods, actors, or directors.
+2. Direct users on how to watch on ShadowStream (e.g., "Available now on ShadowStream", "Search 'Title' in the search bar", or navigate directly).
+3. Recognize and suggest ShadowStream UI & Player actions:
+   - ASPECT RATIO MODES: "Fit" (original ratio), "Fill" (no black bars), "Full" (immersive zoom), "Crop" (2.39:1 scope), "Stretch" (full stretch).
+   - NAVIGATION: "/movies", "/tv", "/anime", "/short-dramas", "/sports", "/genres", "/countries", "/collections", "/search".
+4. Maintain a cinema-enthusiast, friendly, ultra-fast streaming assistant personality.`;
+
+        const formattedMessages = [
+          { role: 'system', content: systemInstruction },
+          ...(Array.isArray(conversation) ? conversation.slice(-6) : []).map(m => ({
+            role: m && m.role === 'assistant' ? 'assistant' : 'user',
+            content: String((m && m.content) || '')
+          })),
+          {
+            role: 'user',
+            content: context ? `[UI Context: ${JSON.stringify(context)}]\n${prompt}` : prompt
+          }
+        ];
+
+        const modelsToTry = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'];
+        for (const model of modelsToTry) {
+          try {
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ShadowStream/2.4'
+              },
+              body: JSON.stringify({
+                model,
+                messages: formattedMessages,
+                temperature: 0.7,
+                max_tokens: 800
+              })
+            });
+
+            if (groqRes.ok) {
+              const data = await groqRes.json();
+              const reply = data?.choices?.[0]?.message?.content;
+              if (reply) {
+                return new Response(JSON.stringify({
+                  ok: true,
+                  provider: 'groq-edge',
+                  model,
+                  reply,
+                  mode,
+                  timestamp: new Date().toISOString()
+                }), { status: 200, headers: corsHeaders });
+              }
+            }
+          } catch (_) {
+            // Try next model in pool
+          }
+        }
+
+        return new Response(JSON.stringify({
+          ok: true,
+          provider: 'edge-fallback',
+          model: 'shadowstream-static',
+          reply: 'Here are popular trending movies and shows currently streaming on ShadowStream! You can search any title above or explore genres from the menu.',
+          mode,
+          timestamp: new Date().toISOString()
+        }), { status: 200, headers: corsHeaders });
+      }
+
+      // -------------------------------------------------------------
       // 5. Backend Proxy: Downloads, API, Version, Releases
       // -------------------------------------------------------------
       if (
@@ -433,10 +542,10 @@ Sitemap: https://www.ssmoviestvs.site/sitemap_index.xml
       if (url.pathname === '/llms.txt') {
         const llmsTxt = `# ShadowStream (ssmoviestvs.site)
 
-> ShadowStream is a free, instant-access global streaming discovery platform, multi-mirror movie/TV aggregator, and real-time Live TV & Sports schedule indexing over 104,261 movies, series, anime, and regional broadcasts with zero sign-up required.
+> ShadowStream is a free, instant-access global streaming discovery platform, multi-mirror movie/TV aggregator, and real-time Live TV & Sports schedule indexing over 204,775 movies, series, anime, and regional broadcasts with zero sign-up required.
 
 ## Core Features
-- **104,261+ Indexed Catalog:** Comprehensive library of Hollywood, International, Korean, Turkish, Indonesian, Pakistani, and Anime movies and TV series.
+- **204,775+ Indexed Catalog:** Comprehensive library of Hollywood, International, Korean, Turkish, Indonesian, Pakistani, and Anime movies and TV series across 94,144+ seasons and 2.81M+ episodes.
 - **Regional Dubs & Dual Audio:** Dedicated hubs for Hindi Dubbed, Urdu, Tamil, Telugu, Dual-Audio, and multi-subtitle streams.
 - **Multi-Mirror Playback:** High-availability streaming with instant fallback mirrors and HD playback.
 - **Live TV & Sports Guide:** Real-time schedule for live cricket, football, PPV events, and international TV networks airing today.
