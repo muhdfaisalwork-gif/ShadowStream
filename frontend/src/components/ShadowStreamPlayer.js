@@ -10,6 +10,7 @@ import { getApiBase } from '../utils/api';
 import { isNoAdsActive, toggleNoAds, onNoAdsChange, onAdBlocked, getBlockedCount, recordBlocked } from '../utils/adShield';
 import { AudioPreferencesAPI } from '../utils/storage';
 import { convertSrtGzToVtt } from '../utils/subtitleFetcher';
+import { subscribeScreenMode } from '../utils/assistantBridge';
 
 // Providers that did not hand us a playable frame, with the time they failed.
 //
@@ -275,6 +276,14 @@ export default function ShadowStreamPlayer({
         if (viewToastTimerRef.current) clearTimeout(viewToastTimerRef.current);
         viewToastTimerRef.current = setTimeout(() => setViewModeToast(null), 1600);
     }, []);
+
+    useEffect(() => {
+        return subscribeScreenMode((mode) => {
+            if (VIEW_MODES.includes(mode)) {
+                applyViewMode(mode);
+            }
+        });
+    }, [applyViewMode]);
 
     const nextViewMode = useCallback(() => {
         setViewMode((prev) => {

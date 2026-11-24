@@ -213,45 +213,111 @@ export default {
           }
         }`;
 
+        // 1) Primary: AniList GraphQL with strict 3.5s timeout
         try {
           const aniRes = await fetch('https://graphql.anilist.co', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+              'User-Agent': 'ShadowStream/2.4'
             },
-            body: JSON.stringify({ query, variables: { search: cleanTitle } })
+            body: JSON.stringify({ query, variables: { search: cleanTitle } }),
+            signal: AbortSignal.timeout(3500)
           });
-          if (!aniRes.ok) {
-            return new Response(JSON.stringify({ ok: false, status: aniRes.status }), { headers: corsHeaders });
+          if (aniRes.ok) {
+            const json = await aniRes.json();
+            const media = json.data?.Media;
+            if (media) {
+              return new Response(JSON.stringify({
+                ok: true,
+                source: 'anilist',
+                anilistId: media.id,
+                malId: media.idMal,
+                romaji: media.title?.romaji || null,
+                english: media.title?.english || null,
+                native: media.title?.native || null,
+                synonyms: media.synonyms || [],
+                status: media.status,
+                episodes: media.episodes,
+                nextAiringEpisode: media.nextAiringEpisode ? {
+                  episode: media.nextAiringEpisode.episode,
+                  airingAt: media.nextAiringEpisode.airingAt,
+                  timeUntilAiring: media.nextAiringEpisode.timeUntilAiring
+                } : null,
+                coverImage: media.coverImage?.large || media.coverImage?.medium
+              }), { headers: corsHeaders });
+            }
           }
-          const json = await aniRes.json();
-          const media = json.data?.Media;
-          if (!media) {
-            return new Response(JSON.stringify({ ok: false, message: 'No anime match found' }), { headers: corsHeaders });
-          }
+        } catch (_) {}
 
-          return new Response(JSON.stringify({
-            ok: true,
-            anilistId: media.id,
-            malId: media.idMal,
-            romaji: media.title?.romaji || null,
-            english: media.title?.english || null,
-            native: media.title?.native || null,
-            synonyms: media.synonyms || [],
-            status: media.status,
-            episodes: media.episodes,
-            nextAiringEpisode: media.nextAiringEpisode ? {
-              episode: media.nextAiringEpisode.episode,
-              airingAt: media.nextAiringEpisode.airingAt,
-              timeUntilAiring: media.nextAiringEpisode.timeUntilAiring
-            } : null,
-            coverImage: media.coverImage?.large || media.coverImage?.medium
-          }), { headers: corsHeaders });
+        // 2) Secondary: Jikan v4 (MyAnimeList) with strict 3.5s timeout
+        try {
+          const jikanRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(cleanTitle)}&limit=1`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'ShadowStream/2.4'
+            },
+            signal: AbortSignal.timeout(3500)
+          });
+          if (jikanRes.ok) {
+            const jikanJson = await jikanRes.json();
+            const item = Array.isArray(jikanJson?.data) ? jikanJson.data[0] : null;
+            if (item) {
+              return new Response(JSON.stringify({
+                ok: true,
+                source: 'jikan',
+                anilistId: null,
+                malId: item.mal_id || null,
+                romaji: item.title || null,
+                english: item.title_english || item.title || null,
+                native: item.title_japanese || null,
+                synonyms: Array.isArray(item.title_synonyms) ? item.title_synonyms : [],
+                status: item.status || null,
+                episodes: item.episodes || null,
+                nextAiringEpisode: null,
+                coverImage: item.images?.jpg?.large_image_url || item.images?.jpg?.image_url || null
+              }), { headers: corsHeaders });
+            }
+          }
+        } catch (_) {}
+
+        // 3) Guaranteed Local Edge Fallback: ShadowStream R2 Catalog Search
+        try {
+          const catRes = await fetch(`https://streamapp-catalog.muhd-faisal-work.workers.dev/api/v1/search?q=${encodeURIComponent(cleanTitle)}`, {
+            headers: { 'User-Agent': 'ShadowStream/2.4', 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(5000)
+          });
+          if (catRes.ok) {
+            const catData = await catRes.json();
+            const items = Array.isArray(catData?.items) ? catData.items : [];
+            const match = items.find(it => it.type === 'anime' || it.isAnime)
+              || items.find(it => it.type === 'tv')
+              || items[0];
+            if (match) {
+              return new Response(JSON.stringify({
+                ok: true,
+                source: 'catalog',
+                slug: match.slug || null,
+                tmdbId: match.tmdbId || null,
+                anilistId: null,
+                malId: null,
+                romaji: match.originalTitle || match.title || null,
+                english: match.title || null,
+                native: null,
+                synonyms: [],
+                status: match.status || 'FINISHED',
+                episodes: null,
+                nextAiringEpisode: null,
+                coverImage: match.poster || null
+              }), { headers: corsHeaders });
+            }
+          }
         } catch (e) {
           return new Response(JSON.stringify({ ok: false, error: e.message }), { headers: corsHeaders });
         }
+
+        return new Response(JSON.stringify({ ok: false, message: 'No anime match found' }), { headers: corsHeaders });
       }
 
       // -------------------------------------------------------------
@@ -269,21 +335,28 @@ export default {
           return new Response(null, { status: 204, headers: corsHeaders });
         }
 
+        const FRESH_TTL_MS = 6 * 60 * 60 * 1000;
+        let cachedStatic = null;
         if (env.ASSETS) {
           try {
             const assetRes = await env.ASSETS.fetch(new Request(new URL('/airing_today.json', request.url), request));
             if (assetRes && assetRes.ok) {
-              const body = await assetRes.json();
-              return new Response(JSON.stringify(body), { headers: corsHeaders });
+              cachedStatic = await assetRes.json();
+              const updatedMs = cachedStatic?.updatedAt ? Date.parse(cachedStatic.updatedAt) : NaN;
+              if (!Number.isNaN(updatedMs) && (Date.now() - updatedMs) < FRESH_TTL_MS) {
+                return new Response(JSON.stringify(cachedStatic), { headers: corsHeaders });
+              }
             }
           } catch (_) {}
         }
 
         try {
-          const tvmRes = await fetch('https://api.tvmaze.com/schedule?country=US');
+          const tvmRes = await fetch('https://api.tvmaze.com/schedule?country=US', {
+            headers: { 'User-Agent': 'ShadowStream/2.4', 'Accept': 'application/json' }
+          });
           if (tvmRes.ok) {
             const list = await tvmRes.json();
-            const items = (Array.isArray(list) ? list : []).slice(0, 30).map(entry => {
+            const items = (Array.isArray(list) ? list : []).slice(0, 40).map(entry => {
               const show = entry.show || {};
               const img = show.image || entry.image || {};
               return {
@@ -300,11 +373,27 @@ export default {
                 isLiveToday: true
               };
             });
-            return new Response(JSON.stringify({ ok: true, source: 'TVMaze Live', items }), { headers: corsHeaders });
+            if (items.length > 0) {
+              return new Response(JSON.stringify({
+                ok: true,
+                updatedAt: new Date().toISOString(),
+                totalCount: items.length,
+                source: 'TVMaze Live',
+                items
+              }), { headers: corsHeaders });
+            }
           }
         } catch (e) {
+          if (cachedStatic) {
+            return new Response(JSON.stringify(cachedStatic), { headers: corsHeaders });
+          }
           return new Response(JSON.stringify({ ok: false, error: e.message, items: [] }), { headers: corsHeaders });
         }
+
+        if (cachedStatic) {
+          return new Response(JSON.stringify(cachedStatic), { headers: corsHeaders });
+        }
+        return new Response(JSON.stringify({ ok: true, updatedAt: new Date().toISOString(), totalCount: 0, items: [] }), { headers: corsHeaders });
       }
 
       // -------------------------------------------------------------
@@ -323,33 +412,61 @@ export default {
           return new Response(null, { status: 204, headers: corsHeaders });
         }
 
+        const FRESH_TTL_MS = 6 * 60 * 60 * 1000;
+        let staticData = null;
         if (env.ASSETS) {
           try {
             const assetRes = await env.ASSETS.fetch(new Request(new URL('/sports_hub.json', request.url), request));
             if (assetRes && assetRes.ok) {
-              const body = await assetRes.json();
-              return new Response(JSON.stringify(body), { headers: corsHeaders });
+              staticData = await assetRes.json();
+              const updatedMs = staticData?.updatedAt ? Date.parse(staticData.updatedAt) : NaN;
+              if (!Number.isNaN(updatedMs) && (Date.now() - updatedMs) < FRESH_TTL_MS) {
+                return new Response(JSON.stringify(staticData), { headers: corsHeaders });
+              }
             }
           } catch (_) {}
         }
 
         try {
-          const espnRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard', {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-          });
-          const espnData = espnRes.ok ? await espnRes.json() : null;
+          const feeds = [
+            { league: 'Premier League', url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard' },
+            { league: 'NBA', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard' }
+          ];
+          const results = await Promise.allSettled(
+            feeds.map(async (f) => {
+              const r = await fetch(f.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+              if (!r.ok) return [];
+              const d = await r.json();
+              return (d?.events || []).map(ev => ({
+                id: ev.id,
+                name: ev.name,
+                league: f.league,
+                status: ev.status?.type?.shortDetail || ev.status?.type?.description || '',
+                isLive: ev.status?.type?.state === 'in',
+                date: ev.date || null
+              }));
+            })
+          );
+
+          const liveMatches = results
+            .filter(r => r.status === 'fulfilled')
+            .flatMap(r => r.value);
+
+          const channels = Array.isArray(staticData?.channels) ? staticData.channels : [];
+          const categories = Array.isArray(staticData?.categories) ? staticData.categories : [];
           return new Response(JSON.stringify({
             ok: true,
-            totalChannels: 0,
-            matches: (espnData?.events || []).map(ev => ({
-              id: ev.id,
-              name: ev.name,
-              league: 'Premier League',
-              isLive: ev.status?.type?.state === 'in'
-            })),
-            channels: []
+            updatedAt: new Date().toISOString(),
+            totalChannels: staticData?.totalChannels || channels.length,
+            totalMatches: liveMatches.length > 0 ? liveMatches.length : (staticData?.totalMatches || 0),
+            categories,
+            matches: liveMatches.length > 0 ? liveMatches : (staticData?.matches || []),
+            channels
           }), { headers: corsHeaders });
         } catch (e) {
+          if (staticData) {
+            return new Response(JSON.stringify(staticData), { headers: corsHeaders });
+          }
           return new Response(JSON.stringify({ ok: false, error: e.message, channels: [] }), { headers: corsHeaders });
         }
       }

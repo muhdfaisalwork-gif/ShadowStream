@@ -43,10 +43,10 @@ export const DEFAULT_PROVIDERS: Record<string, ProviderEntry> = {
     vidy: {
         slug: 'vidy',
         displayName: 'Vidy (Multi-Audio HD)',
-        resolveMode: 'iframe_only',
+        resolveMode: 'disabled',
         buildUrl: (id, type, s, e) =>
             isTv(type, s) ? `https://www.vidy.st/tv/${id}/${cleanS(s)}/${cleanE(e)}?color=FFA500` : `https://www.vidy.st/movie/${id}?color=FFA500`,
-        note: 'Donkey.to verified high-speed engine with multi-audio dubbing & subtitle switcher.',
+        note: 'Disabled (v2.4.47): vidy.st permanently banned due to broken frames and aggressive ads.',
     },
 
     videasy: {

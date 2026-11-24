@@ -1165,13 +1165,29 @@ async function handleProviderHealth(env: Env): Promise<Response> {
 
  */
 
+function normalizeTypeFilter(raw: string | null): string | null {
+    if (!raw) return null;
+    const cleaned = raw.trim().toLowerCase();
+    if (!cleaned) return null;
+    if (['series', 'tv_show', 'tv-show', 'tv-series', 'show', 'shows'].includes(cleaned)) {
+        return 'tv';
+    }
+    if (['movies', 'film', 'films'].includes(cleaned)) {
+        return 'movie';
+    }
+    if (['short-drama', 'short-dramas', 'short_dramas', 'shortdrama'].includes(cleaned)) {
+        return 'short_drama';
+    }
+    return cleaned;
+}
+
 function applyListFilters(items: any[], params: URLSearchParams): any[] {
 
     let out = items;
 
 
 
-    const typeFilter = params.get("type");
+    const typeFilter = normalizeTypeFilter(params.get("type"));
 
     if (typeFilter) {
 
@@ -2407,7 +2423,7 @@ if (colObj) {
 
 
 
-    let typeFilter = params.get("type");
+    let typeFilter = normalizeTypeFilter(params.get("type"));
 
     if (!typeFilter) {
 
